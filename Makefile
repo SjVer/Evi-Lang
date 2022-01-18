@@ -6,8 +6,7 @@
 CC = g++
 LLVMVERSION = 12
 
-# MUTE = -Wall -Wno-write-strings -Wno-sign-compare -Wno-comment -Wno-class-memaccess
-MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
+MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -Wno-init-list-lifetime
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
 CXXFLAGS = $(MUTE) -lm -DCOMPILER=\"$(CC)\" `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
@@ -65,7 +64,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 phcs: $(PHCS)
 $(PHCS):
 	@printf "[phc's] compiling $@..."
-	$(CC) $(CXXFLAGS) $(HEADERDIR)/$@ -c
+	@$(CC) $(CXXFLAGS) $(HEADERDIR)/$@ -c
 	@printf "\b\b done!\n"
 
 

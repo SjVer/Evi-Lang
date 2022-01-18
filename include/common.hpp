@@ -53,6 +53,8 @@ More info at %s.\nBuild: %s %s on %s (%s)."
 	DEBUG_MARKER " line %d passed!",__LINE__) << endl
 #define DEBUG_PRINT_VAR(value, formatspec) cout << tools::fstr(\
 	DEBUG_MARKER " var %s = " #formatspec, #value, value) << endl
+#define DEBUG_PRINT_MSG(format, ...) cout << tools::fstr( \
+	DEBUG_MARKER " " format, __VA_ARGS__) << endl
 
 // status enum
 typedef enum
