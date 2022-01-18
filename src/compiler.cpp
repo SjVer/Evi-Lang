@@ -142,6 +142,31 @@ bool Compiler::match(TokenType type)
 	return true;
 }
 
+// ======================= state =======================
+
+void Compiler::add_local(Token* identtoken)
+{
+	#define LOCALS _current_scope._locals
+
+	string name = string(identtoken->start, identtoken->length);
+
+	// try to find local
+	bool found = false;
+
+	if(find(LOCALS.begin(), LOCALS.end(), name) != LOCALS.end()) found = true;
+
+	for(auto scope = end(_scope_stack); !found && scope != begin(_scope_stack); --scope)
+	{
+		if(find((*scope)._locals.begin(), (*scope)._locals.end(), name) != (*scope)._locals.end())
+			{ found = true; break; }
+	}
+
+	if(found) errorAt(identtoken, "Variable already exists in current scope.");
+	else _current_scope._locals.push_back(name);
+
+	#undef LOCALS
+}
+
 // ====================== grammar ======================
 
 
@@ -162,6 +187,7 @@ void Compiler::variable_declaration()
 	// get name
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '%'.");
 	string name = PREV_TOKEN_STR;
+	add_local(&_previous);
 
 	// get type
 	consume(TOKEN_TYPE, tools::fstr("Expected type after '%%%s'.", name.c_str()));
@@ -169,11 +195,11 @@ void Compiler::variable_declaration()
 	if(!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
 	EviType type = GET_EVI_TYPE(typestr);
 
-	// get initializer
+	// // get initializer
 	llvm::Constant* init_const = consume_type(type, "Invalid initializer for type %s.", typestr);
 
 	// codegen
-	if(_current_module == _top_module) // global
+	if(_current_scope._depth == 0) // global
 	{
 		_top_module->getOrInsertGlobal(name, type._llvm_type);
 		llvm::GlobalVariable* global_var = _top_module->getNamedGlobal(name);
@@ -183,7 +209,7 @@ void Compiler::variable_declaration()
 	}
 	else // local
 	{
-		
+		// TODO: implement this
 	}
 }
 
@@ -193,6 +219,7 @@ void Compiler::start()
 {
 	// init. top module
 	_top_module = make_unique<llvm::Module>(LLVM_MODULE_TOP_NAME, __context);
+	// _current_module = _top_module;
 }
 
 void Compiler::finish()
@@ -218,6 +245,9 @@ Status Compiler::compile()
 	_scanner = Scanner(_source.c_str());
 	_hadError = false;
 	_panicMode = false;
+
+	_scope_stack = vector<Scope>();
+	_current_scope = (Scope){ 0, vector<string>() };
 
 	// printTokensFromSrc(_source.c_str());
 

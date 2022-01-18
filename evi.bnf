@@ -20,15 +20,17 @@ loop		: "(" statement ")"
 return 		: "~" expression
 
 
-expression	: logical_or
+expression	: ternary
 
+ternary		: logical_or ("?" expression (":" ternary)*)*
 logical_or	: logical_and ("||" logical_and)*
-logical_and	: equality ("&&" equality)* ;
-# TODO: bitwise or/xor/and
+logical_and	: bitwise_or ("&&" bitwise_or)*
+bitwise_or	: bitwise_and ("|" bitwise_and)*
+bitwise_and	: equality ("&" equality)*
 equality	: comparison (("!=" | "==") comparison)*
 comparison	: term ((">" | ">=" | "<" | "<=") term)*
 term		: factor (("-" | "+") factor)*
 factor		: unary (("/" | "*") unary)*
 unary		: ("!" | "-" | "++" | "--") unary | call | primary
-call		: primray "(" arguments? ")"
+call		: primary "(" arguments? ")"
 primary		: NUMBER | CHAR | STRING | "$" IDENT | "(" expression ")"
