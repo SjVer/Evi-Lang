@@ -1,0 +1,25 @@
+{
+    "name": "evi-lang",
+    "displayName": "Evi-Lang",
+    "description": "Evi syntax highlighting extension",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.63.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "evi",
+            "aliases": ["Evi", "evi"],
+            "extensions": [".evi"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "evi",
+            "scopeName": "source.evi",
+            "path": "./syntaxes/evi.tmLanguage.json"
+        }]
+    }
+}

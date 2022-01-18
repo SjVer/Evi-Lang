@@ -1,0 +1,4 @@
+bin/
+.vscode/
+**/*.phc
+**/*.gch

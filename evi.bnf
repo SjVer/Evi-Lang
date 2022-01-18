@@ -1,0 +1,34 @@
+program		: (func_decl | var_decl)*
+
+
+func_decl	: "@" IDENT "(" TYPE* ")"
+			| "@" IDENT "(" TYPE* ")" "{" (func_decl | var_decl | statement)* "}"
+
+var_decl	: "%" IDENT ("," IDENT)* TYPE
+			| "%" IDENT ("," IDENT)* TYPE expression ("," expression)*
+
+
+statement	: expression
+			| assignment
+			| loop
+			| return
+
+assignment	: "=" IDENT expression
+loop		: "(" statement ")"
+			| "(" statement, expression ")"
+			| "(" statement, expression, statement ")"
+return 		: "~" expression
+
+
+expression	: logical_or
+
+logical_or	: logical_and ("||" logical_and)*
+logical_and	: equality ("&&" equality)* ;
+# TODO: bitwise or/xor/and
+equality	: comparison (("!=" | "==") comparison)*
+comparison	: term ((">" | ">=" | "<" | "<=") term)*
+term		: factor (("-" | "+") factor)*
+factor		: unary (("/" | "*") unary)*
+unary		: ("!" | "-" | "++" | "--") unary | call | primary
+call		: primray "(" arguments? ")"
+primary		: NUMBER | CHAR | STRING | "$" IDENT | "(" expression ")"

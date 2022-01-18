@@ -1,0 +1,37 @@
+#ifndef EVI_INSTRUCTIONS_H
+#define EVI_INSTRUCTIONS_H
+
+typedef enum
+{
+	OP_CONSTANT,
+	OP_TRUE,
+	OP_FALSE,
+	OP_POP,
+
+	// OP_SET_VAR,
+	// OP_GET_VAR,
+	// OP_GET_INDEX,
+	// OP_SET_INDEX,
+
+	// OP_DIMENSIONS,
+	// OP_NEGATE,
+	OP_NOT,
+
+	OP_ADD,
+	OP_SUBTRACT,
+	OP_MULTIPLY,
+	OP_DIVIDE,
+	OP_MODULO,
+
+	OP_EQUAL,
+	OP_GREATER,
+	OP_LESS,
+
+	// OP_CALL,
+	// OP_EVAL_BLOCK,
+	// OP_TERNARY,
+	// OP_RETURN,
+	OP_END_REPL,
+} OpCode;
+
+#endif
