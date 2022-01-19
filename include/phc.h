@@ -17,3 +17,5 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
+llvm::LLVMContext __context;

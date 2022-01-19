@@ -1,6 +1,10 @@
 #include <argp.h>
 #include "common.hpp"
-#include "compiler.hpp"
+#include "parser.hpp"
+
+#ifdef DEBUG
+#include "debug.hpp"
+#endif
 
 // ================= arg stuff =======================
 
@@ -91,14 +95,29 @@ int main(int argc, char **argv)
 		arguments.outfile = strtok(arguments.outfile, ".");
 	}
 
-	printf("file: '%s', output: '%s', verbose: %d\n",
-		arguments.args[0], arguments.outfile, arguments.verbose);
-
 	// ===================================
 
-	Compiler compiler;
-	compiler.configure(arguments.args[0], arguments.outfile);
-	compiler.compile();
+	AST astree;
+
+	// parse program
+	Parser parser;
+	Status parser_status = parser.parse(arguments.args[0], &astree);
+	if(parser_status != STATUS_SUCCESS) return parser_status;
+
+	#ifdef DEBUG
+	// generate visualization
+	ASTVisualizer().visualize("ast.svg", &astree);
+	#endif
+
+	// // type check
+	// TypeChecker checker;
+	// Status checker_status = checker.check(&astree);
+	// if(checker_status != STATUS_SUCCESS) return checker_status;
+
+	// // codegen
+	// CodeGenerator codegen;
+	// Status codegen_status = codegen.generate(arguments.outfile, &astree);
+	// if(codegen_status != STATUS_SUCCESS) return codegen_status;
 
 	return 0;
 }
