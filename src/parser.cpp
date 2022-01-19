@@ -8,10 +8,10 @@
 void Parser::error_at(Token *token, string message)
 {
 	// already in panicmode. swallow error.
-	if (_panicMode)
+	if (_panic_mode)
 		return;
 
-	_panicMode = true;
+	_panic_mode = true;
 
 	fprintf(stderr, "[%s:%d] Error", _infile.c_str(), token->line);
 
@@ -29,7 +29,7 @@ void Parser::error_at(Token *token, string message)
 	}
 
 	fprintf(stderr, ": %s\n", message.c_str());
-	_hadError = true;
+	_had_error = true;
 	exit(1);
 }
 
@@ -109,7 +109,7 @@ void Parser::add_local(Token *identtoken)
 	if (find(LOCALS.begin(), LOCALS.end(), name) != LOCALS.end())
 		found = true;
 
-	for (auto scope = end(_scope_stack); !found && scope != begin(_scope_stack); --scope)
+	for (auto scope = _scope_stack.end(); !found && scope != _scope_stack.begin(); --scope)
 	{
 		if (find((*scope)._locals.begin(), (*scope)._locals.end(), name) != (*scope)._locals.end())
 		{
@@ -165,8 +165,8 @@ Status Parser::parse(string infile, AST* astree)
 	_infile = infile;
 	_source = tools::readf(_infile);
 	_scanner = Scanner(_source.c_str());
-	_hadError = false;
-	_panicMode = false;
+	_had_error = false;
+	_panic_mode = false;
 
 	_scope_stack = vector<Scope>();
 	_current_scope = (Scope){0, vector<string>()};

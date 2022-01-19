@@ -6,9 +6,9 @@
 CC = g++
 LLVMVERSION = 12
 
-MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -Wno-init-list-lifetime
+MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
-CXXFLAGS = $(MUTE) -lm -DCOMPILER=\"$(CC)\" `$(LLVMFLAGS)`
+CXXFLAGS = $(MUTE) -DCOMPILER=\"$(CC)\" `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 
 # Makefile settings - Can be customized.

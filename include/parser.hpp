@@ -7,8 +7,6 @@
 
 #include "phc.h"
 
-#include <stack>
-
 using namespace std;
 
 // ==== ============= ====
@@ -16,8 +14,7 @@ using namespace std;
 class Parser: private Visitor
 {
 public:
-	Parser(): 	_statements(), _scope_stack(), 
-				_builder(__context) {}
+	Parser(): _scope_stack() {}
 
 	Status parse(string infile, AST* astree);
 
@@ -89,7 +86,7 @@ private:
 
 	AST* _astree;
 
-	stack<Scope> _scope_stack;
+	vector<Scope> _scope_stack;
 	Scope _current_scope;
 
 	string _infile, _source;

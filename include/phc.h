@@ -1,3 +1,5 @@
+#pragma once
+
 #include "llvm/Config/llvm-config.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"

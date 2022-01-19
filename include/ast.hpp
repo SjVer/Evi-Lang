@@ -13,36 +13,42 @@ class StmtNode;
 // class LiteralNode;
 
 // visitor class
-abstract class Visitor
+class Visitor
 {
-public:
-	abstract void visit(VarDeclNode*);
-	// abstract void visit(ExprNode*);
-	// abstract void visit(LiteralNode*);
-}
+	public:
+	#define VISIT(node) virtual void visit(node*) const = 0
+	VISIT(VarDeclNode);
+	#undef VISIT
+};
 
 // astnode class (visited by visitor)
-abstract class ASTNode
+class ASTNode
 {
-public: 
-	// accpet visitor
-	void accept(Visitor *visitor) { v->visit(this); }
+	public: 
+	// accept visitor
+	virtual void accept(Visitor *v) const = 0;
 };
 
 // abstract syntax tree
-typedef AST vector<StmtNode>;
+typedef vector<StmtNode> AST;
 
 // =================================================
 
-class StmtNode: public ASTNode;
+#define ACCEPT() void accept(Visitor *v) { v->visit(this); }
+
+class StmtNode: public ASTNode { ACCEPT(); };
 
 	class VarDeclNode: public StmtNode
 	{
+		public:
+		ACCEPT();
 		VarDeclNode(string ident, EviType type):
 			_identifier(ident), _type(type) {}; 
+		private:
 		string _identifier;
 		EviType _type;
 		// ExprNode initializer;
-	}
+	};
 
+#undef ACCEPT
 #endif
