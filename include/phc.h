@@ -1,5 +1,3 @@
-#pragma once
-
 #include "llvm/Config/llvm-config.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
@@ -19,5 +17,3 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
-llvm::LLVMContext __context;

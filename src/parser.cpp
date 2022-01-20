@@ -129,17 +129,19 @@ void Parser::add_local(Token *identtoken)
 // ===================== statements ====================
 
 // parses a declaration
-StmtNode Parser::declaration()
+StmtNode* Parser::declaration()
 {
 	if (match(TOKEN_MODULO))
 		return variable_declaration();
 	else
 		advance();
 	// 	errorAtCurrent(":(");
+
+	/* temp */ return new StmtNode();
 }
 
 // parses a variable declaration
-StmtNode Parser::variable_declaration()
+StmtNode* Parser::variable_declaration()
 {
 	// get name
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '%'.");
@@ -152,7 +154,7 @@ StmtNode Parser::variable_declaration()
 	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
 	EviType type = GET_EVI_TYPE(typestr);
 
-	return VarDeclNode(name, type);
+	return new VarDeclNode(name, type);
 }
 
 // ======================= misc. =======================

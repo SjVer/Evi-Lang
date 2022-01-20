@@ -1,6 +1,7 @@
 #ifndef EVI_AST_H
 #define EVI_AST_H
 
+#include "common.hpp"
 #include "phc.h"
 #include "types.hpp"
 
@@ -16,39 +17,37 @@ class StmtNode;
 class Visitor
 {
 	public:
-	#define VISIT(node) virtual void visit(node*) const = 0
-	VISIT(VarDeclNode);
-	#undef VISIT
+	// #define VISIT(node) virtual void visit(node*) = 0
+	virtual void visit(VarDeclNode* node) = 0;
+	// #undef VISIT
 };
 
 // astnode class (visited by visitor)
 class ASTNode
 {
 	public: 
-	// accept visitor
-	virtual void accept(Visitor *v) const = 0;
+	// virtual ~ASTNode() = 0;
+	virtual void accept(Visitor* v) = 0;
 };
 
 // abstract syntax tree
-typedef vector<StmtNode> AST;
+typedef vector<StmtNode*> AST;
 
 // =================================================
 
-#define ACCEPT() void accept(Visitor *v) { v->visit(this); }
-
-class StmtNode: public ASTNode { ACCEPT(); };
+class StmtNode: public ASTNode 
+	{ public: virtual void accept(Visitor* v) = 0; };
 
 	class VarDeclNode: public StmtNode
 	{
 		public:
-		ACCEPT();
-		VarDeclNode(string ident, EviType type):
-			_identifier(ident), _type(type) {}; 
-		private:
+
+		VarDeclNode(string identifier, EviType type):
+			_identifier(identifier), _type(type) {};
+		void accept(Visitor *v) { v->visit(this); }
+
 		string _identifier;
 		EviType _type;
-		// ExprNode initializer;
 	};
 
-#undef ACCEPT
 #endif

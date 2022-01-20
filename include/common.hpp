@@ -1,6 +1,8 @@
 #ifndef EVI_COMMON_H
 #define EVI_COMMON_H
 
+#pragma once
+
 #include <cstring>
 #include <assert.h>
 

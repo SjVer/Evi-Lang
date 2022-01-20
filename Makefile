@@ -3,7 +3,7 @@
 ########################################################################
 
 # Compiler settings - Can be customized.
-CC = g++
+CC = clang++
 LLVMVERSION = 12
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
@@ -26,7 +26,10 @@ OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
 APP = $(BINDIR)/$(APPNAME)
 DEP = $(OBJ:$(OBJDIR)/%.o=%.d)
 
-PHCS = phc.h
+PHC = $(HEADERDIR)/phc.h
+PHCFLAGS = $(CXXFLAGS) -x c++-header $(PHC)
+# INC_PHC_FLAG = -include $(PHC)
+INC_PHC_FLAG = -include-pch $(PHC).gch
 
 DEBUGDEFS = -D DEBUG -g
 
@@ -56,15 +59,14 @@ $(APP): $(OBJ) | makedirs
 # $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
-	@$(CC) $(CXXFLAGS) -include $(PHCS) -I $(HEADERDIR) -o $@ -c $<
+	@$(CC) $(CXXFLAGS) $(INC_PHC_FLAG) -I $(HEADERDIR) -o $@ -c $<
 	@printf "\b\b done!\n"
 	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
 
 # Builds phc's
-phcs: $(PHCS)
-$(PHCS):
-	@printf "[phc's] compiling $@..."
-	@$(CC) $(CXXFLAGS) $(HEADERDIR)/$@ -c
+pch:
+	@printf "[pch] compiling $(PHC)..."
+	@$(CC) $(PHCFLAGS)
 	@printf "\b\b done!\n"
 
 

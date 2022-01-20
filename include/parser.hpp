@@ -11,7 +11,7 @@ using namespace std;
 
 // ==== ============= ====
 
-class Parser: private Visitor
+class Parser
 {
 public:
 	Parser(): _scope_stack() {}
@@ -68,8 +68,8 @@ private:
 
 	void add_local(Token *identtoken);
 
-	StmtNode declaration();
-	StmtNode variable_declaration();
+	StmtNode* declaration();
+	StmtNode* variable_declaration();
 
 	void scope_up();
 	Scope scope_down();

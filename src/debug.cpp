@@ -1,14 +1,16 @@
 #include "debug.hpp"
 #include "tools.hpp"
 
-void ASTVisualizer::visualize(string path, AST* astree);
+stringstream _stream;
+
+void ASTVisualizer::visualize(string path, AST* astree)
 {
-	_stream = sstream();
+	_stream = stringstream();
 	_nodecount = -1;
 
 	_stream << HEADER;
 
-	for(auto& node : astree) node.accept(this);
+	for(auto& node : *astree) node->accept(this);
 
 	_stream << FOOTER << endl;
 
@@ -28,5 +30,5 @@ void ASTVisualizer::visit(VarDeclNode* node)
 {
 	int thisnode = ADD_NODE("Variable Declaration");
 	CONNECT_NODES(thisnode, ADD_NODE(node->_identifier.c_str()));
-	CONNECT_NODES(thisnode, ADD_NODE(STRINIFY(node->_type)));
+	CONNECT_NODES(thisnode, ADD_NODE(STRINGIFY(node->_type)));
 }
