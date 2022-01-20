@@ -31,7 +31,7 @@ PHCFLAGS = $(CXXFLAGS) -x c++-header $(PHC)
 # INC_PHC_FLAG = -include $(PHC)
 INC_PHC_FLAG = -include-pch $(PHC).gch
 
-DEBUGDEFS = -D DEBUG -g
+DEBUGDEFS = -D DEBUG -ggdb
 
 OBJCOUNT_NOPAD = $(shell v=`echo $(OBJ) | wc -w`; echo `seq 1 $$(expr $$v)`)
 OBJCOUNT = $(foreach v,$(OBJCOUNT_NOPAD),$(shell printf '%02d' $(v)))
@@ -108,6 +108,9 @@ debug: CXXFLAGS += $(DEBUGDEFS)
 debug: printdebug
 debug: all
 
+.PHONY: valgrind
+valgrind: debug $(APP)
+	@valgrind bin/evi test/test.evi -o bin/test.ll
 
 git:
 	git add --all

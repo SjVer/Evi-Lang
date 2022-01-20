@@ -137,7 +137,7 @@ StmtNode* Parser::declaration()
 		advance();
 	// 	errorAtCurrent(":(");
 
-	/* temp */ return new StmtNode();
+	/* temp */ return nullptr;
 }
 
 // parses a variable declaration

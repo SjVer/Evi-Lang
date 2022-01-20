@@ -14,7 +14,7 @@ class ASTVisualizer: public Visitor
 	void visit(VarDeclNode* node);
 
 	private:
-	// stringstream _stream;
+	stringstream _stream;
 	int _nodecount;
 };
 
@@ -23,7 +23,9 @@ class ASTVisualizer: public Visitor
 	ranksep=.3;\n\
 	edge [arrowsize=.5]\n\
 	\n\
-	"
+	node0 [label=\"Program\"]\n\
+	\n\
+"
 #define FOOTER "}"
 
 #endif
