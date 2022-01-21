@@ -15,7 +15,6 @@ class Parser
 {
 public:
 	Parser(): _scope_stack() {}
-
 	Status parse(string infile, AST* astree);
 
 private:
@@ -72,7 +71,7 @@ private:
 	StmtNode* variable_declaration();
 
 	ExprNode* expression();
-	ExprNode *primary();
+	ExprNode* primary();
 
 	void scope_up();
 	Scope scope_down();

@@ -12,6 +12,7 @@ class ASTVisualizer: public Visitor
 	public:
 	void visualize(string path, AST* astree);
 	void visit(VarDeclNode* node);
+	void visit(LiteralNode* node);
 
 	private:
 	stringstream _stream;

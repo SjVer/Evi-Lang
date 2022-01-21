@@ -4,6 +4,7 @@
 #include "common.hpp"
 #include "phc.h"
 #include "types.hpp"
+#include "scanner.hpp"
 
 // =================================================
 
@@ -36,30 +37,40 @@ typedef vector<StmtNode*> AST;
 
 // =================================================
 
-class StmtNode: public ASTNode 
-	{ public: virtual void accept(Visitor* v) = 0; };
+#define ACCEPT void accept(Visitor *v) { v->visit(this); }
+#define VIRTUAL_ACCEPT virtual void accept(Visitor *v) = 0;
+
+class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 
 	class VarDeclNode: public StmtNode
 	{
 		public:
 
-		VarDeclNode(string identifier, EviType type):
-			_identifier(identifier), _type(type) {};
-		void accept(Visitor *v) { v->visit(this); }
+		VarDeclNode(string identifier, EviType type, ExprNode* expr):
+			_identifier(identifier), _type(type), _expr(expr) {}
+		ACCEPT
 
 		string _identifier;
 		EviType _type;
+		ExprNode* _expr;
 	};
 
-class ExprNode: public ASTNode 
-	{ public: virtual void accept(Visitor* v) = 0; };
+class ExprNode: public ASTNode { public: VIRTUAL_ACCEPT };
 
-	class LiteralNode: public StmtNode
-	{
-		public:
+	class PrimaryNode: public StmtNode { public: VIRTUAL_ACCEPT };
+	
+		// numbers and strings n shit
+		class LiteralNode: public PrimaryNode
+		{
+			public:
 
-		LiteralNode() {};
-		void accept(Visitor *v) { v->visit(this); }
-	};
+			LiteralNode(string token, TokenType tokentype):
+				_token(token), _tokentype(tokentype) {}
+			ACCEPT
 
+			string _token;
+			TokenType _tokentype;
+		};
+
+#undef ACCEPT
 #endif

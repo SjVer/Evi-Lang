@@ -2,7 +2,7 @@
 #include "tools.hpp"
 
 #define ADD_NODE(name) (_stream << \
-	tools::fstr("\tnode%d [label=\"%s\"]\n", _nodecount++, name), _nodecount - 1)
+	tools::fstr("\tnode%d [label=\"%s\"]\n", _nodecount, name), _nodecount++)
 
 #define CONNECT_NODES(node1, node2) (_stream << \
 	tools::fstr("\tnode%d -> node%d\n", node1, node2))
@@ -26,7 +26,8 @@ void ASTVisualizer::visualize(string path, AST* astree)
 
 	// write to file
 	DEBUG_PRINT_MSG("Generating AST image...");
-	system(tools::fstr("echo '%s' | dot -Tsvg > %s", _stream.str().c_str(), path.c_str()).c_str());
+	int status = system(tools::fstr("echo '%s' | dot -Tsvg > %s", _stream.str().c_str(), path.c_str()).c_str());
+	if(status) cout << _stream.str() << endl;
 }
 
 // =========================================
@@ -37,11 +38,15 @@ void ASTVisualizer::visualize(string path, AST* astree)
 // VarDeclNode
 void ASTVisualizer::visit(VarDeclNode* node)
 {
-	string label1 = tools::fstr("Declare \\\"%s\\\"", node->_identifier.c_str());
-	int thisnode = ADD_NODE(label1.c_str());
+	string namelabel = tools::fstr("Declare \\\"%s\\\"", node->_identifier.c_str());
+	int thisnode = ADD_NODE(namelabel.c_str());
 	
-	string label2 = tools::fstr("type: %s", node->_type._name.c_str());
-	CONNECT_NODES(thisnode, ADD_NODE(label2.c_str()));
+	// string typelabel = tools::fstr("type: %s", node->_type._name.c_str());
+	// CONNECT_NODES(thisnode, ADD_NODE(typelabel.c_str()));
+	CONNECT_NODES(thisnode, ADD_NODE(node->_type._name.c_str()));
+
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_expr->accept(this);
 }
 
 // === Expressions ===
@@ -49,7 +54,7 @@ void ASTVisualizer::visit(VarDeclNode* node)
 // LiteralNode
 void ASTVisualizer::visit(LiteralNode* node)
 {
-	ADD_NODE("Some literal");
+	ADD_NODE(tools::unescstr(node->_token, true, false).c_str());
 }
 
 #undef ADD_NODE

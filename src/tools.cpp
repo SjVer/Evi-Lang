@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -33,6 +34,33 @@ string tools::fstr(string format, ...)
     va_end(args);
 
     return string(buffer);
+}
+
+// turn shit like '\n' into '\\n'
+string tools::unescstr(string str, bool ign_s_quotes, bool ign_d_quotes)
+{
+    stringstream ret;
+    for(int i = 0; i < str.length(); i++)
+    {
+        #define CASE(ch, res) case ch: ret << res; break
+        switch(str[i])
+        {
+            CASE('\a', "\\a");
+            CASE('\b', "\\b");
+            CASE('\e', "\\e");
+            CASE('\f', "\\f");
+            CASE('\n', "\\n");
+            CASE('\r', "\\r");
+            CASE('\t', "\\t");
+            CASE('\v', "\\v");
+            CASE('\\', "\\\\");
+            CASE('\'', (ign_s_quotes ? "\'" : "\\\'"));
+            CASE('\"', (ign_d_quotes ? "\"" : "\\\""));
+            default: ret << str[i];
+        }
+        #undef CASE
+    }
+    return ret.str();
 }
 
 // ========== file ops ========== 

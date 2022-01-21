@@ -157,14 +157,14 @@ StmtNode* Parser::variable_declaration()
 	EviType type = GET_EVI_TYPE(typestr);
 
 	// get expression
-	ExprNode *expr = expression();
+	ExprNode* expr = expression();
 
-	return new VarDeclNode(name, type);
+	return new VarDeclNode(name, type, expr);
 }
 
 // ===================== expressions ===================
 
-ExprNode* expression()
+ExprNode* Parser::expression()
 {
 	// expression : ternary
 	// return ternary();
@@ -172,12 +172,14 @@ ExprNode* expression()
 	return primary();
 }
 
-ExprNode* primary()
+ExprNode* Parser::primary()
 {
 	// primary	: NUMBER | CHAR | STRING | "(" expression ")"
 	// 			| "$" IDENT ("(" arguments? ")")?
 	
-	if(match)
+	if(match(TOKEN_INTEGER) || match(TOKEN_FLOAT)
+	|| match(TOKEN_CHARACTER) || match(TOKEN_STRING))
+		return (ExprNode*)(new LiteralNode(PREV_TOKEN_STR, _previous.type));
 }
 
 // ======================= misc. =======================
