@@ -22,11 +22,12 @@ typedef struct
 {
 	llvm::Type* _llvm_type;
 	InitializerType _initializer_type;
+	string _name;
 	int _alignment;
 } EviType;
 
-#define EVI_INT_TYPE(bitsnum) \
-	((EviType){llvm::IntegerType::get(__context, bitsnum), INIT_INTEGER, 4})
+#define EVI_INT_TYPE(name, bitsnum) \
+	((EviType){llvm::IntegerType::get(__context, bitsnum), INIT_INTEGER, name, 4})
 
 // ================================
 
@@ -47,11 +48,11 @@ static void init_builtin_evi_types()
 	if(__evi_builtin_types_initialized) return;
 	__evi_builtin_types_initialized = true;
 
-	ADD_EVI_TYPE(string("i1"),  EVI_INT_TYPE(1));
-	ADD_EVI_TYPE(string("i4"),  EVI_INT_TYPE(4));
-	ADD_EVI_TYPE(string("i8"),  EVI_INT_TYPE(8));
-	ADD_EVI_TYPE(string("i16"), EVI_INT_TYPE(16));
-	ADD_EVI_TYPE(string("i32"), EVI_INT_TYPE(32));
+	ADD_EVI_TYPE(string("i1"),  EVI_INT_TYPE("i1", 1));
+	ADD_EVI_TYPE(string("i4"),  EVI_INT_TYPE("i4", 4));
+	ADD_EVI_TYPE(string("i8"),  EVI_INT_TYPE("i8", 8));
+	ADD_EVI_TYPE(string("i16"), EVI_INT_TYPE("i16", 16));
+	ADD_EVI_TYPE(string("i32"), EVI_INT_TYPE("i32", 32));
 }
 
 #endif

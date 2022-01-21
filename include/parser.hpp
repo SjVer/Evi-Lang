@@ -71,6 +71,9 @@ private:
 	StmtNode* declaration();
 	StmtNode* variable_declaration();
 
+	ExprNode* expression();
+	ExprNode *primary();
+
 	void scope_up();
 	Scope scope_down();
 

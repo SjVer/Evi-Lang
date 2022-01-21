@@ -10,16 +10,17 @@
 // forward declarate nodes
 class StmtNode;
 	class VarDeclNode;
-// class ExprNode;
-// class LiteralNode;
+class ExprNode;
+	class LiteralNode;
 
 // visitor class
 class Visitor
 {
 	public:
-	// #define VISIT(node) virtual void visit(node*) = 0
-	virtual void visit(VarDeclNode* node) = 0;
-	// #undef VISIT
+	#define VISIT(node) virtual void visit(node*) = 0
+	VISIT(VarDeclNode);
+	VISIT(LiteralNode);
+	#undef VISIT
 };
 
 // astnode class (visited by visitor)
@@ -48,6 +49,17 @@ class StmtNode: public ASTNode
 
 		string _identifier;
 		EviType _type;
+	};
+
+class ExprNode: public ASTNode 
+	{ public: virtual void accept(Visitor* v) = 0; };
+
+	class LiteralNode: public StmtNode
+	{
+		public:
+
+		LiteralNode() {};
+		void accept(Visitor *v) { v->visit(this); }
 	};
 
 #endif

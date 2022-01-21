@@ -31,6 +31,8 @@ equality	: comparison (("!=" | "==") comparison)*
 comparison	: term ((">" | ">=" | "<" | "<=") term)*
 term		: factor (("-" | "+") factor)*
 factor		: unary (("/" | "*") unary)*
-unary		: ("!" | "-" | "++" | "--") unary | call | primary
-call		: primary "(" arguments? ")"
-primary		: NUMBER | CHAR | STRING | "$" IDENT | "(" expression ")"
+unary		: ("!" | "-" | "++" | "--") unary | primary
+primary		: NUMBER | CHAR | STRING | "(" expression ")"
+			| "$" IDENT ("(" arguments? ")")?
+
+arguments	: expression ("," expression)*

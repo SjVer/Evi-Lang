@@ -131,11 +131,13 @@ void Parser::add_local(Token *identtoken)
 // parses a declaration
 StmtNode* Parser::declaration()
 {
-	if (match(TOKEN_MODULO))
+	if(match(TOKEN_MODULO))
 		return variable_declaration();
-	else
-		advance();
-	// 	errorAtCurrent(":(");
+	// else if(match(TOKEN_AT))
+		// return function_declaration();
+	//else errorAtCurrent("Expected declaration.");
+	
+	else advance();
 
 	/* temp */ return nullptr;
 }
@@ -154,7 +156,28 @@ StmtNode* Parser::variable_declaration()
 	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
 	EviType type = GET_EVI_TYPE(typestr);
 
+	// get expression
+	ExprNode *expr = expression();
+
 	return new VarDeclNode(name, type);
+}
+
+// ===================== expressions ===================
+
+ExprNode* expression()
+{
+	// expression : ternary
+	// return ternary();
+
+	return primary();
+}
+
+ExprNode* primary()
+{
+	// primary	: NUMBER | CHAR | STRING | "(" expression ")"
+	// 			| "$" IDENT ("(" arguments? ")")?
+	
+	if(match)
 }
 
 // ======================= misc. =======================
