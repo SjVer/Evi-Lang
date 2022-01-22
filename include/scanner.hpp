@@ -20,7 +20,6 @@ typedef enum
 	TOKEN_BANG,
 	TOKEN_QUESTION,
 	TOKEN_COLON,
-	TOKEN_NEWLINE,
 	TOKEN_STAR,
 	TOKEN_MODULO,
 	TOKEN_DOLLAR,
@@ -59,6 +58,7 @@ typedef enum
 	TOKEN_TYPE,
 
 	// misc.
+	TOKEN_NEWLINE,
 	TOKEN_ERROR,
 	TOKEN_EOF
 } TokenType;

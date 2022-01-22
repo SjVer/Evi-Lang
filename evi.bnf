@@ -1,38 +1,43 @@
-program		: (func_decl | var_decl)*
+program			: (func_decl | var_decl)*
 
 
-func_decl	: "@" IDENT "(" TYPE* ")"
-			| "@" IDENT "(" TYPE* ")" "{" (func_decl | var_decl | statement)* "}"
+declaration		: func_decl
+				| var_decl
+				| statement
 
-var_decl	: "%" IDENT ("," IDENT)* TYPE
-			| "%" IDENT ("," IDENT)* TYPE expression ("," expression)*
-
-
-statement	: expression
-			| assignment
-			| loop
-			| return
-
-assignment	: "=" IDENT expression
-loop		: "(" statement ")"
-			| "(" statement, expression ")"
-			| "(" statement, expression, statement ")"
-return 		: "~" expression
+func_decl		: "@" IDENT TYPE "(" TYPE* ")" statement?
+var_decl		: "%" IDENT ("," IDENT)* TYPE expression?
 
 
-expression	: ternary
+statement		: assignment
+				| loop
+				| return
+				| block
+				| expression
 
-ternary		: logical_or ("?" expression (":" ternary)*)*
-logical_or	: logical_and ("||" logical_and)*
-logical_and	: bitwise_or ("&&" bitwise_or)*
-bitwise_or	: bitwise_and ("|" bitwise_and)*
-bitwise_and	: equality ("&" equality)*
-equality	: comparison (("!=" | "==") comparison)*
-comparison	: term ((">" | ">=" | "<" | "<=") term)*
-term		: factor (("-" | "+") factor)*
-factor		: unary (("/" | "*") unary)*
-unary		: ("!" | "-" | "++" | "--") unary | primary
-primary		: NUMBER | CHAR | STRING | "(" expression ")"
-			| "$" IDENT ("(" arguments? ")")?
+assignment		: "=" IDENT expression
+loop			: "(" expression ")" statement
+				| "(" statement, expression ")" statement
+				| "(" statement, expression, statement ")" statement
+return 			: "~" expression
+block			: "{" declaration* "}"
 
-arguments	: expression ("," expression)*
+
+expression		: ternary
+
+ternary			: logical_or ("?" expression (":" ternary)*)*
+logical_or		: logical_and ("||" logical_and)*
+logical_and		: bitwise_or ("&&" bitwise_or)*
+bitwise_or		: bitwise_xor ("|" bitwise_xor)*
+bitwise_xor		: bitwise_and ("^" bitwise_and)*
+bitwise_and		: equality ("&" equality)*
+equality		: comparison (("!=" | "==") comparison)*
+comparison		: bitwise_shift ((">" | ">=" | "<" | "<=") bitwise_shift)*
+bitwise_shift	: term (("<<" | ">>") term)*
+term			: factor (("-" | "+") factor)*
+factor			: unary (("/" | "*") unary)*
+unary			: ("!" | "-" | "++" | "--") unary | primary
+primary			: NUMBER | CHAR | STRING | "(" expression ")"
+				| "$" IDENT ("(" arguments? ")")?
+
+arguments		: expression ("," expression)*

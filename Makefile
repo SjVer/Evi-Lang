@@ -110,7 +110,7 @@ debug: all
 
 .PHONY: valgrind
 valgrind: debug $(APP)
-	@valgrind bin/evi test/test.evi -o bin/test.ll
+	@valgrind $(args) bin/evi test/test.evi -o bin/test.ll
 
 git:
 	git add --all

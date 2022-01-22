@@ -11,8 +11,16 @@ class ASTVisualizer: public Visitor
 {
 	public:
 	void visualize(string path, AST* astree);
-	void visit(VarDeclNode* node);
-	void visit(LiteralNode* node);
+	
+	#define VISIT(_node) void visit(_node* node)
+	VISIT(FuncDeclNode);
+	VISIT(VarDeclNode);
+	VISIT(BlockNode);
+		VISIT(LogicalNode);
+		VISIT(BinaryNode);
+		VISIT(UnaryNode);
+		VISIT(LiteralNode);
+	#undef VISIT
 
 	private:
 	stringstream _stream;
@@ -20,7 +28,7 @@ class ASTVisualizer: public Visitor
 };
 
 #define HEADER "digraph astgraph {\n\
-	node [shape=box, fontsize=12, fontname=\"Courier\", height=.1];\n\
+	node [shape=none, fontsize=12, fontname=\"Courier\", height=.1];\n\
 	ranksep=.3;\n\
 	edge [arrowsize=.5]\n\
 	\n\

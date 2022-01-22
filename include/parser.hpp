@@ -21,37 +21,10 @@ private:
 
 	// types
 
-	typedef enum
-	{
-		PREC_NONE,
-		PREC_TERNARY,	 // ?:
-		PREC_OR,		 // ||
-		PREC_AND,		 // &&
-		PREC_B_OR,		 // |
-		PREC_B_XOR,		 // ^
-		PREC_B_AND,		 // &
-		PREC_EQUALITY,	 // == !=
-		PREC_COMPARISON, // < > <= >=
-		PREC_SHIFT, 	 // << >>
-		PREC_TERM,	 	 // + -
-		PREC_FACTOR,	 // * /
-		PREC_UNARY,		 // ! - $ ++ --
-		PREC_PRIMARY	 // literals n shit
-	} Precedence;
-
-	typedef void (Parser::*ParseFn)();
-
 	typedef struct
 	{
-		ParseFn prefix;
-		ParseFn infix;
-		Precedence precedence;
-	} ParseRule;
-
-	typedef struct
-	{
-		int _depth;
-		vector<string> _locals;
+		int depth;
+		vector<string> symbols;
 	} Scope;
 
 	// methods
@@ -63,18 +36,34 @@ private:
 	void advance();
 	bool check(TokenType type);
 	void consume(TokenType type, string message);
+	void consume_terminator(string after);
 	bool match(TokenType type);
+	bool is_at_end();
 
-	void add_local(Token *identtoken);
+	void add_symbol(Token *identtoken);
+	void scope_up();
+	void scope_down();
 
 	StmtNode* declaration();
-	StmtNode* variable_declaration();
-
-	ExprNode* expression();
-	ExprNode* primary();
-
-	void scope_up();
-	Scope scope_down();
+		StmtNode* function_declaration();
+		StmtNode* variable_declaration();
+		StmtNode* statement();
+			StmtNode* block();
+			StmtNode* expression_statement();
+				ExprNode* expression();
+				// ExprNode* ternary();
+				ExprNode* logical_or();
+				ExprNode* logical_and();
+				ExprNode* bitwise_or();
+				ExprNode* bitwise_xor();
+				ExprNode* bitwise_and();
+				ExprNode* equality();
+				ExprNode* comparison();
+				ExprNode* bitwise_shift();
+				ExprNode* term();
+				ExprNode* factor();
+				ExprNode* unary();
+				ExprNode* primary();
 
 	// members
 

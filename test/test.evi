@@ -1,2 +1,4 @@
-%a i32 "line\nline"
-%char i8 'a'
+@f i8 ()
+{
+    %a i32 2 * 3 + 1.5
+}
