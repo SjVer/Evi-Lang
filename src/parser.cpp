@@ -153,9 +153,7 @@ void Parser::scope_up()
 
 void Parser::scope_down()
 {
-	Scope topscope = _scope_stack[_scope_stack.size()];
-	DEBUG_PRINT_VAR(topscope.symbols.size(), %d);
-	_current_scope = _scope_stack[_scope_stack.size()];
+	_current_scope = _scope_stack[_scope_stack.size() - 1];
 	_scope_stack.pop_back();
 }
 
@@ -205,9 +203,9 @@ StmtNode* Parser::function_declaration()
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
 
 	// get body
-	DEBUG_PRINT_MSG("Start function body.");
+	DEBUG_PRINT_F_MSG("Start function body (\"%s\").", name.c_str());
 	StmtNode* body = statement();
-	DEBUG_PRINT_MSG("End function body.");
+	DEBUG_PRINT_F_MSG("End function body (\"%s\").", name.c_str());
 	consume_terminator("function declaration.");
 	
 	return new FuncDeclNode(name, type, body);
