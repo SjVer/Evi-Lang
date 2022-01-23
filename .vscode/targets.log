@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Jan 23 14:47:12 2022
+# Make data base, printed on Sun Jan 23 14:58:09 2022
 
 # Variables
 
@@ -191,7 +191,7 @@ BINDIR = bin
 # makefile (from 'Makefile', line 6)
 CC = clang++
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-538aefd0-d26f-4b23-97b0-48d8b41771be.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0e1d15b9-7211-4c63-a779-fef625cb2eb8.sock
 # environment
 XDG_SESSION_ID = c2
 # environment
@@ -289,10 +289,10 @@ LC_ADDRESS = nl_NL.UTF-8
 # environment
 LANG = C
 # environment
- 
 VSCODE_PID = 2224
 # variable set hash-table stats:
 # Load=140/1024=14%, Rehash=0, Collisions=43/210=20%
+ 
 
 # Pattern-specific Variable Values
 
@@ -560,6 +560,6 @@ newfile:
 # strcache performance: lookups = 120 / hit rate = 57%
 # hash-table stats:
 # Load=51/8192=1%, Rehash=0, Collisions=2/120=2%
-# Finished Make data base on Sun Jan 23 14:47:12 2022
+# Finished Make data base on Sun Jan 23 14:58:09 2022
 
  

@@ -36,7 +36,6 @@ private:
 	void advance();
 	bool check(TokenType type);
 	void consume(TokenType type, string message);
-	void consume_terminator(string after);
 	bool match(TokenType type);
 	bool is_at_end();
 

@@ -3,20 +3,431 @@
 	"name": "Evi",
 	"scopeName": "source.evi",
 	"patterns": [
-		{ "include": "#comments" }
+		{ "include": "#pre-directives" },
+		{ "include": "#comments" },
+
+		{ "include": "#declarations" },
+		
+		{ "include": "#operators" },
+		{ "include": "#separators" },
+
+		{ "include": "#illegals" }
 	],
-	"repository": {
-		"comments": {
-			"name": "comment.evi",
+	"repository": 
+	{
+
+
+		"pre-directives":
+		{
 			"patterns": [
 				{
-					"name": "comment.line.evi",
-					"match": ";.*$"
+					"begin": "^\\s*((#)\\s*(apply))\\b\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.directive.evi"
+						},
+						"2": {
+							"name": "punctuation.definition.directive.evi"
+						}
+					},
+					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
+					"name": "meta.preprocessor.apply.evi",
+					"patterns": [
+						{
+							"begin": "\"",
+							"beginCaptures": {
+								"0": {
+									"name": "punctuation.definition.string.begin.evi"
+								}
+							},
+							"end": "\"",
+							"endCaptures": {
+								"0": {
+									"name": "punctuation.definition.string.end.evi"
+								}
+							},
+							"name": "string.quoted.double.apply.evi"
+						},
+						{ "include": "#illegals" }
+					]
 				},
 				{
+					"begin": "^\\s*((#)\\s*(flag))\\b\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.directive.evi"
+						},
+						"2": {
+							"name": "punctuation.definition.directive.evi"
+						}
+					},
+					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
+					"name": "meta.preprocessor.flag.evi",
+					"patterns": [
+						{
+							"match": "[A-z_]+[0-z_]*",
+							"name": "entity.name.function.flag.evi"
+						},
+						{ "include": "#illegals" }
+					]
+				}
+			]
+		},
+		"comments": 
+		{
+			"patterns": [
+				{
 					"name": "comment.block.evi",
-					"begin": ";=",
-					"end": "=;"
+					"begin": "\\\\:",
+					"end": ":\\\\"
+				},
+				{
+					"name": "comment.line.evi",
+					"match": "\\\\.*$"
+				}
+			]
+		},
+
+
+		"declarations":
+		{
+			"name": "meta.declaration.evi",
+			"patterns": [
+				{ "include": "#pre-directives" },
+				{ "include": "#comments" },
+
+				{ "include": "#vardeclarations" },
+				{ "include": "#funcdeclarations" },
+				{ "include": "#statements" },
+
+				{ "include": "#illegals" }
+			]
+		},
+
+		"vardeclarations":
+		{
+			"name": "meta.declaration.variable.evi",
+			"begin": "(%)\\s*",
+			"beginCaptures": { "0": { "name": "keyword.declaration.variable.evi" } },
+			
+			"patterns": [
+				{ "include": "#variable-name" },
+				{ "include": "#illegals" }
+			],
+
+			"end": ";|$"
+		},
+		"variable-name": 
+		{
+			"name": "meta.declaration.variable.name.evi",
+			"begin": "([A-z_]+[0-z_]*)(?:\\s*,\\s*([A-z_]+[0-z_]*))*",
+			"beginCaptures": { 
+				"0": { "name": "entity.name.variable.evi" },
+				"1": { "name": "entity.name.variable.evi" }
+			},
+
+			"patterns": [
+				{ "include": "#variable-initializer" },
+				{ "include": "#illegals" }
+			],
+
+			"end": ";|$"
+		},
+		"variable-initializer":
+		{
+			"name": "meta.declaration.variable.initializer.evi",
+			"begin": " ",
+			
+			"patterns": [
+				{ "include": "#types" },
+				{ "include": "#expressions" },
+				{ "match": ",", "name": "punctuation.delimeter.evi" },
+				{ "include": "#illegals" }
+			],
+			
+			"end": ";|$"
+		},
+		
+		"funcdeclarations": 
+		{
+			"name": "meta.declaration.function.evi",
+			"begin": "(@)\\s*",
+			"beginCaptures": { "0": { "name": "keyword.declaration.function.evi" } },
+			
+			"patterns": [
+				{ "include": "#function-name" },
+				{ "include": "#illegals" }
+			],
+
+			"end": ";|$"
+		},
+		"function-name": 
+		{
+			"name": "meta.declaration.function.name.evi",
+			"begin": "[A-z_]+[0-z_]*",
+			"beginCaptures": { "0": { "name": "entity.name.function.evi" } },
+
+			"patterns": [
+				{ "include": "#function-type" },
+				{ "include": "#illegals" }
+			],
+
+			"end": ";|$"
+		},
+		"function-type":
+		{
+			"name": "meta.declaration.function.type.evi",
+			"begin": " ",
+
+			"patterns": [
+				{ "include": "#types" },
+				{ "include": "#function-parameters" },
+				{ "include": "#blocks" },
+				{ "include": "#illegals" }
+			],
+
+			"end": ";|$"
+		},
+		"function-parameters": 
+		{
+			"name": "meta.declaration.function.parameters.evi",
+			"begin": "\\(",	
+
+			"patterns": [
+				{ "include": "#types" },
+				{ "include": "#separators" },
+				{ "include": "#illegals" }
+			],
+
+			"end": "\\)"
+		},
+
+
+		"statements":
+		{
+			"name": "meta.statement.evi",
+			"patterns": [
+				{ "include": "#pre-directives" },
+				{ "include": "#comments" },
+
+				{ "include": "#blocks" },
+				{ "include": "#expressions" }
+			]
+		},
+		"blocks": {
+			"name": "meta.statement.block.evi",
+			"begin": "\\{",
+			"patterns": [{ "include": "#declarations" }],
+			"end": "\\}"
+		},
+
+		"expressions":
+		{
+			"name": "meta.expression.evi",
+			"patterns": [
+				{ "include": "#pre-directives" },
+				{ "include": "#comments" },
+
+				{ "include": "#operators" },
+				{ "include": "#variables" },
+				{ "include": "#numbers" },
+				{ "include": "#strings" },
+
+				{ "include": "#illegals" }
+			]
+		},
+		"operators": 
+		{
+			"patterns": [
+				{
+					"name": "keyword.operator.bitwise.shift.evi",
+					"match": "<<|>>|>>"
+				},
+				{
+					"name": "keyword.operator.comparison.evi",
+					"match": "==|/="
+				},
+				{
+					"name": "keyword.operator.relational.evi",
+					"match": "<=|>=|<>|<|>"
+				},
+				{
+					"name": "keyword.operator.logical.evi",
+					"match": "\\!|&&|\\|\\||\\?\\?"
+				},
+				{
+					"name": "keyword.operator.bitwise.evi",
+					"match": "\\&|\\^|\\|"
+				},
+				{
+					"name": "keyword.operator.decrement.evi",
+					"match": "--"
+				},
+				{
+					"name": "keyword.operator.increment.evi",
+					"match": "\\+\\+"
+				},
+				{
+					"name": "keyword.operator.arithmetic.evi",
+					"match": "\\*|/|-|\\+"
+				},
+				{
+					"begin": "\\(",
+					"name": "meta.expression-grouping.evi",
+
+					"patterns": [{ "include": "#expression" }],
+					
+					"end": "\\)"
+				}
+			]
+		},
+
+
+		"variables": 
+		{
+			"name": "meta.variable.evi",
+			"patterns": [
+				{
+					"name": "variable.name.evi",
+					"match": "($)([A-z_]+[0-z_]*)"
+				}
+			]
+		},
+		"numbers": 
+		{
+			"patterns": [
+				{
+					"name": "constant.numeric.hexadecimal.evi",
+					"match": "\\b0(x|X)[0-f]+\\b"
+				},
+				{
+					"name": "constant.numeric.octal.evi",
+					"match": "\\b0(c|C)[0-7]+\\b"
+				},
+				{
+					"name": "constant.numeric.binary.evi",
+					"match": "\\b0(b|B)[0-1]+\\b"
+				},
+				{
+					"name": "constant.numeric.decimal.evi",
+					"match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+				}
+			]
+		},
+		"strings":
+		{
+			"patterns": [
+				{
+					"begin": "\"",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.begin.evi"
+						}
+					},
+					"end": "\"",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.end.evi"
+						}
+					},
+					"name": "string.quoted.double.evi",
+					"patterns": [
+						{
+							"include": "#string_escaped_char"
+						},
+						{
+							"include": "#string_placeholder"
+						}
+					]
+				},
+				{
+					"begin": "'",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.begin.evi"
+						}
+					},
+					"end": "'",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.end.evi"
+						}
+					},
+					"name": "string.quoted.single.evi",
+					"patterns": [
+						{
+							"include": "#string_escaped_char"
+						}
+					]
+				}
+			]
+		},
+		"string_escaped_char": 
+		{
+			"patterns": [
+				{
+					"match": "(?x)\\\\ (\n\\\\\t\t\t |\n[abefnprtv'\"?]   |\n[0-3]\\d{,2}\t |\n[4-7]\\d?\t\t|\nx[a-fA-F0-9]{,2} |\nu[a-fA-F0-9]{,4} |\nU[a-fA-F0-9]{,8} )",
+					"name": "constant.character.escape.evi"
+				},
+				{
+					"match": "\\\\.",
+					"name": "invalid.illegal.unknown-escape.evi"
+				}
+			]
+		},
+		"string_placeholder": 
+		{
+			"patterns": [
+				{
+					"match": "(?x) %\n(\\d+\\$)?\t\t\t\t\t\t   # field (argument #)\n[#0\\- +']*\t\t\t\t\t\t  # flags\n[,;:_]?\t\t\t\t\t\t\t  # separator character (AltiVec)\n((-?\\d+)|\\*(-?\\d+\\$)?)?\t\t  # minimum field width\n(\\.((-?\\d+)|\\*(-?\\d+\\$)?)?)?\t# precision\n(hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)? # length modifier\n[diouxXDOUeEfFgGaACcSspn%]\t\t   # conversion type",
+					"name": "constant.other.placeholder.evi"
+				},
+				{
+					"match": "(%)(?!\"\\s*(PRI|SCN))",
+					"captures": {
+						"1": {
+							"name": "invalid.illegal.placeholder.evi"
+						}
+					}
+				}
+			]
+		},
+		"types":
+		{
+			"name": "meta.type.evi",
+			"patterns": [
+				{
+					"name": "storage.type.integer.evi",
+					"match": "i1|(?:u)?i(?:(?:16|32|64)|(?:4|8))"
+				}
+			]
+		},
+
+
+		"separators": 
+		{
+			"patterns": [
+				{
+					"name": "punctuation.terminator.evi",
+					"match": ";"
+				},
+				{
+					"name": "punctuation.delimiter.evi",
+					"match": ","
+				}
+			]
+		},
+
+
+		"illegals":
+		{
+			"patterns": [
+				{
+					"match": "\\s+"
+				},
+				{
+					"name": "invalid.illegal.evi",
+					"match": "\\S+"
 				}
 			]
 		}

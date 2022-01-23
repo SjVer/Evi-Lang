@@ -187,12 +187,12 @@ void Scanner::skipWhitespaces()
 		// case '#':
 		// 	while(peek() != '\n') advance();
 		// 	break;
-		case ';':
-			if (peekNext() == '=')
+		case '\\':
+			if (peekNext() == ':')
 			{
 				for (;;)
 				{
-					if (peek() == '=' && peekNext() == ';')
+					if (peek() == ':' && peekNext() == '\\')
 					{
 						advance();
 						advance();
@@ -253,6 +253,7 @@ Token Scanner::scanToken()
 		case '~': return makeToken(TOKEN_TILDE);
 		case '^': return makeToken(TOKEN_CARET);
 		case '@': return makeToken(TOKEN_AT);
+		case ';': return makeToken(TOKEN_SEMICOLON);
 
 		// two-character
 		// case '+': return makeToken(match('+') ? TOKEN_PLUS_PLUS : TOKEN_PLUS);

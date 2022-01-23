@@ -6,7 +6,6 @@ mkdir -p bin/obj
 printf "[01/6] compiling scanner.cpp into scanner.o..."
 clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/scanner.o -c src/scanner.cpp
 printf "\b\b done!\n"
- 
 printf "[02/6] compiling types.cpp into types.o..."
 clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/types.o -c src/types.cpp
 printf "\b\b done!\n"
@@ -22,7 +21,6 @@ printf "\b\b done!\n"
 printf "[06/6] compiling debug.cpp into debug.o..."
 clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/debug.o -c src/debug.cpp
 printf "\b\b done!\n"
- 
 printf "[final] compiling final product evi..."
 clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -o bin/evi bin/obj/scanner.o bin/obj/types.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o `llvm-config-12 --cxxflags --ldflags --system-libs --libs`
 printf "\b\b done!\n"

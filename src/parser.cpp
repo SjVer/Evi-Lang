@@ -84,17 +84,6 @@ void Parser::consume(TokenType type, string message)
 	error_at_current(message);
 }
 
-// consumes a terminator. this can be a newline or EOF
-// in normal cases, but also a '}' when in a block.
-// braces won't be consumed but checked.
-void Parser::consume_terminator(string after)
-{
-	if(!match(TOKEN_NEWLINE) && !match(TOKEN_EOF) && 
-	!(_current_scope.depth > 0 || check(TOKEN_RIGHT_BRACE)))
-		error_at_current(tools::fstr("Expected newline%s after %s.",
-			_current_scope.depth > 0 ? ", EOF or '}'" : " or EOF", after.c_str()));
-}
-
 // returns true and advances if the current token is of the given type
 bool Parser::match(TokenType type)
 {
@@ -165,13 +154,11 @@ StmtNode* Parser::declaration()
 	//					| var_decl
 	//					| statement
 
-	while(match(TOKEN_NEWLINE)) {}
-
 	if(match(TOKEN_MODULO))
 		return variable_declaration();
 	else if(match(TOKEN_AT))
 		return function_declaration();
-	
+
 	else
 	{
 		DEBUG_PRINT_F_MSG("declaration falling through to statement. (%d)", _current.type);
@@ -244,9 +231,8 @@ StmtNode* Parser::statement()
 	// 				| block
 	// 				| expression
 
-	while(match(TOKEN_NEWLINE)) {}
-
 	if(match(TOKEN_LEFT_BRACE)) return block();
+
 	else
 	{
 		DEBUG_PRINT_F_MSG("statement falling through to expression. (%d)", _current.type);
@@ -273,7 +259,7 @@ StmtNode* Parser::block()
 StmtNode* Parser::expression_statement()
 {
 	ExprNode* expr = expression();
-	consume_terminator("expression");
+	consume(TOKEN_)
 	return (StmtNode*)expr;	
 }
 

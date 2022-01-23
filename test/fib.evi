@@ -1,32 +1,33 @@
 #apply "std-io"
+#flag DEBUG
 
-@fib i32 () {
-	%i, n i32,
+@fib i32 (i8, i8) {
+	%i, n i32;
 
-	; initialize first and second terms
-	%t1, t2 i32 0, 1,
+	\ initialize first and second terms
+	%t1, t2 i32 0, 1;
 
-	; initialize the next term (3rd term)
-	%tn i32 $t1 + $t2
+	\ initialize the next term (3rd term)
+	%tn i32 $t1 + $t2;
 
-	; get no. of terms from user
-	=n $nextint("Enter the number of terms: ")
+	\ get no. of terms from user
+	=n $nextint("Enter the number of terms: ");
 
-	; print the first two terms t1 and t2
-	$printf("Fibonacci Series: %d, %d, ", $t1, $t2)
+	\ print the first two terms t1 and t2
+	$printf("Fibonacci Series: %d, %d, ", $t1, $t2);
 
-	; print 3rd to nth terms
+	\ print 3rd to nth terms
   	(=i 3, <= $i $n, ++$i) {
-	    $printf("%d, ", $tn)
-	    =t1 $t2
-	    =t2 $tn
-	    =tn $t1 + $t2
+	    $printf("%d, ", $tn);
+	    =t1 $t2;
+	    =t2 $tn;
+	    =tn $t1 + $t2;
 	}
 }
 
-%zero i32 0
+%zero i32 0;
 
 @main i32 () {
-	$fib()
-	~ $zero
+	$fib();
+	~ $zero;
 }
