@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sat Jan 22 17:36:29 2022
+# Make data base, printed on Sun Jan 23 14:47:12 2022
 
 # Variables
 
@@ -19,7 +19,6 @@ DESKTOP_SESSION = cinnamon
 # default
 .SHELLFLAGS := -c
 # makefile (from 'Makefile', line 25)
- 
 OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
 # environment
 XDG_SESSION_CLASS = user
@@ -96,7 +95,7 @@ GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
 GJS_DEBUG_OUTPUT = stderr
 # environment
-SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1631,unix/Xeon-L5410:/tmp/.ICE-unix/1631
+SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1585,unix/Xeon-L5410:/tmp/.ICE-unix/1585
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -120,7 +119,7 @@ XDG_SESSION_DESKTOP = cinnamon
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2173
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2224
 # automatic
 %F = $(notdir $%)
 # environment
@@ -142,7 +141,7 @@ HEADERDIR = include
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1703
+SSH_AGENT_PID = 1657
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = X-Cinnamon
 # environment
@@ -192,7 +191,7 @@ BINDIR = bin
 # makefile (from 'Makefile', line 6)
 CC = clang++
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-ef38c6f7-84d1-4458-be90-1f226d5e01e9.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-538aefd0-d26f-4b23-97b0-48d8b41771be.sock
 # environment
 XDG_SESSION_ID = c2
 # environment
@@ -290,7 +289,8 @@ LC_ADDRESS = nl_NL.UTF-8
 # environment
 LANG = C
 # environment
-VSCODE_PID = 2173
+ 
+VSCODE_PID = 2224
 # variable set hash-table stats:
 # Load=140/1024=14%, Rehash=0, Collisions=43/210=20%
 
@@ -304,7 +304,6 @@ VSCODE_PID = 2173
 # src (device 2053, inode 3038540): 8 files, no impossibilities.
 
 # 23 files, no impossibilities in 2 directories.
- 
 
 # Implicit Rules
 
@@ -506,9 +505,8 @@ pch:
 
 bin/obj/scanner.o: src/scanner.cpp | makedirs
 #  Implicit rule search has been done.
- 
 #  Implicit/static pattern stem: 'scanner'
-#  Last modified 2022-01-22 17:22:41.632054692
+#  Last modified 2022-01-22 22:56:30.253765935
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -521,7 +519,7 @@ bin/obj/scanner.o: src/scanner.cpp | makedirs
 
 bin/evi: bin/obj/scanner.o bin/obj/types.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o | makedirs
 #  Implicit rule search has not been done.
-#  Last modified 2022-01-22 17:33:54.433873981
+#  Last modified 2022-01-22 23:02:44.952749391
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -562,6 +560,6 @@ newfile:
 # strcache performance: lookups = 120 / hit rate = 57%
 # hash-table stats:
 # Load=51/8192=1%, Rehash=0, Collisions=2/120=2%
-# Finished Make data base on Sat Jan 22 17:36:29 2022
+# Finished Make data base on Sun Jan 23 14:47:12 2022
 
  
