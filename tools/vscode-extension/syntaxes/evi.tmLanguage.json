@@ -3,9 +3,7 @@
 	"name": "Evi",
 	"scopeName": "source.evi",
 	"patterns": [
-		{ "include": "#comments" },
-		{ "include": "#operators" },
-		{ "include": "#strings"  }
+		{ "include": "#comments" }
 	],
 	"repository": {
 		"comments": {
@@ -21,56 +19,6 @@
 					"end": "=;"
 				}
 			]
-		},
-			
-		"operators" : {
-				"patterns": [
-					{
-						"match": "\\-\\-",
-						"name": "keyword.operator.decrement.evi"
-					},
-					{
-						"match": "\\+\\+",
-						"name": "keyword.operator.increment.evi"
-					},
-					{
-						"match": "(==|!=|<=|>=|<|>)",
-						"name": "keyword.operator.comparison.evi"
-					},
-					{
-						"match": "(&&|\\|\\)",
-						"name": "keyword.operator.logical.evi"
-					},
-					{
-						"match": "(\\+|\\-|\\*|/|&|^)",
-						"name": "keyword.operator.arithmetic.evi"
-					},
-					{
-						"match": "(\\?|\\:)",
-						"name": "keyword.operator.ternary.evi"
-					}
-				]
-		},
-
-		"strings": {
-			"name": "string.quoted.double.evi",
-			"begin": "\"",
-			"end": "\"",
-			"patterns": [
-				{ "include": "#escaped-chars" },
-				{ "include": "#format-specifiers" }
-			]
-		},
-		"escaped-chars":
-		{
-			"name": "constant.character.escape.evi",
-			"match": "\\(?:\\|[abefnrtv'\"?]|[0-3][0-9]{0,2}|[4-7][0-9]?|x[a-fA-F0-9]+|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8})"
-		},
-		"format-specifiers": {
-			"name": "constant.character.placeholder.evi",
-			"match": "(?x)%(\\d+\\$)?[#0- +']*[,;:_]?((-?\\d+)|\\*(-?\\d+\\$)?)?(\\.((-?\\d+)|\\*(-?\\d+\\$)?)?)?(hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)?(\\[[^\\]]+\\]|[am]s|[diouxXDOUeEfFgGaACcSspn%])"
 		}
-		
-
 	}
 }

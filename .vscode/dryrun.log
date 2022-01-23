@@ -1,0 +1,6 @@
+make --dry-run --keep-going --print-directory
+make: Entering directory '/home/sjoerd/Coding/Languages/Evi-Lang'
+mkdir -p bin
+mkdir -p bin/obj
+make: Leaving directory '/home/sjoerd/Coding/Languages/Evi-Lang'
+ 
