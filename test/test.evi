@@ -1,10 +1,5 @@
-%a i32 0x2 * 3 + 1.5; \ declare var "a"
-
-@g i8 ();
-
-@f i8 (i32)
+@main i32 (i32)
 {
-    %b i1 \: boolean :\ 1;
-    $printf("%d\n", $a);
-    ~ $b;
+    \ for(int i = 0; i < 10; i++)
+    (%i i32 0; $i < 10; =i ++$i;) f(1);
 }

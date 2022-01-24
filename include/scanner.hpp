@@ -23,7 +23,7 @@ typedef enum
 	TOKEN_SEMICOLON,
 	TOKEN_STAR,
 	TOKEN_MODULO,
-	TOKEN_DOLLAR,
+	// TOKEN_DOLLAR,
 	TOKEN_TILDE,
 	TOKEN_CARET,
 	TOKEN_AT,
@@ -51,6 +51,8 @@ typedef enum
 	TOKEN_LESS_EQUAL,
 
 	// Literals.
+	TOKEN_VARIABLE_REF,
+	TOKEN_PARAMETER_REF,
 	TOKEN_IDENTIFIER,
 	TOKEN_INTEGER,
 	TOKEN_FLOAT,
@@ -59,7 +61,7 @@ typedef enum
 	TOKEN_TYPE,
 
 	// misc.
-	TOKEN_NEWLINE,
+	// TOKEN_NEWLINE,
 	TOKEN_ERROR,
 	TOKEN_EOF
 } TokenType;
@@ -100,6 +102,7 @@ private:
 	Token string();
 	Token character();
 	Token number();
+	Token reference();
 	Token type_or_identifier();
 	void skipWhitespaces();
 };

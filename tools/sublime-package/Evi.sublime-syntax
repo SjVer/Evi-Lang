@@ -60,16 +60,22 @@ contexts:
         - include: escaped-char
 
   operator:
-    - match: (?:\+\+|--)
-      scope: keyword.operator.arithmetic.evi
-    - match: <<|>>|&&|\|\|
-      scope: keyword.operator.arithmetic.evi
-    - match: <\=|>\=|\=\=|<|>|\!\=
+    - match: <<|>>|>>
+      scope: keyword.operator.bitwise.shift.evi
+    - match: ==|/=
       scope: keyword.operator.comparison.evi
-    - match: \+|\-|/|\||\*|!
+    - match: <=|>=|<>|<|>
+      scope: keyword.operator.relational.evi
+    - match: \!|&&|\|\||\?\?
+      scope: keyword.operator.logical.evi
+    - match: \&|\^|\|
+      scope: keyword.operator.bitwise.evi
+    - match: --
+      scope: keyword.operator.decrement.evi
+    - match: \+\+
+      scope: keyword.operator.increment.evi
+    - match: \*|/|-|\+
       scope: keyword.operator.arithmetic.evi
-    - match: '\?|:(?!:)'
-      scope: keyword.operator.ternary.c
 
   # EXPRESSION
 
@@ -96,16 +102,16 @@ contexts:
       scope: variable.parameter.evi
 
   call:
-    - match: '(\${{ident}})\s*\('
+    - match: '({{ident}})\s*\('
       captures:
         1: variable.function.evi
-      push:
-        - include: comment
-        # args
-        - meta_scope: meta.function-call-arguments.evi
-        - include: expression
-        - match: '\)'
-          pop: true
+      # push:
+      #   - include: comment
+      #   # args
+      #   - meta_scope: meta.function-call-arguments.evi
+      #   - include: expression
+      #   - match: '\)'
+      #     pop: true
 
   # STATEMENTS
 

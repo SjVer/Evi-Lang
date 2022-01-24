@@ -5,7 +5,6 @@
 
 #include <cstring>
 #include <assert.h>
-
 #include "tools.hpp"
 
 using namespace std;
@@ -49,6 +48,7 @@ More info at %s.\nBuild: %s %s on %s (%s)."
 // usefull macros
 #define STRINGIFY(value) #value
 
+#ifdef DEBUG
 #define __DEBUG_MARKER(file, line) "[debug:" file ":" STRINGIFY(line) "]"
 #define DEBUG_MARKER __DEBUG_MARKER(__FILE__, __LINE__)
 #define DEBUG_PRINT_LINE() cout << tools::fstr(\
@@ -56,8 +56,15 @@ More info at %s.\nBuild: %s %s on %s (%s)."
 #define DEBUG_PRINT_VAR(value, formatspec) cout << tools::fstr(\
 	DEBUG_MARKER " var %s = " #formatspec, #value, value) << endl
 #define DEBUG_PRINT_MSG(msg) cout << DEBUG_MARKER " " msg << endl;
-#define DEBUG_PRINT_F_MSG(format, ...) cout << tools::fstr( \
+#define DEBUG_PRINT_F_MSG(format, ...) cout <<  tools::fstr( \
 	DEBUG_MARKER " " format, __VA_ARGS__) << endl
+#else
+#define DEBUG_MARKER {}
+#define DEBUG_PRINT_LINE() {}
+#define DEBUG_PRINT_VAR(value, formatspec) {}
+#define DEBUG_PRINT_MSG(msg) {}
+#define DEBUG_PRINT_F_MSG(format, ...) {}
+#endif
 
 // status enum
 typedef enum

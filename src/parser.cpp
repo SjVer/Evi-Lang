@@ -84,6 +84,13 @@ void Parser::consume(TokenType type, string message)
 	error_at_current(message);
 }
 
+EviType Parser::get_prev_as_type()
+{
+	string typestr = PREV_TOKEN_STR;
+	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
+	return GET_EVI_TYPE(typestr);
+}
+
 // returns true and advances if the current token is of the given type
 bool Parser::match(TokenType type)
 {
@@ -102,42 +109,58 @@ bool Parser::is_at_end()
 
 // ======================= state =======================
 
-// adds a local variable to the current scope
-// if the variable already exists an error is thrown
-void Parser::add_symbol(Token *identtoken)
+// checks if the given variable already exists
+bool Parser::check_variable(string name)
 {
-	#define LOCALS _current_scope.symbols
+	if (find(_current_scope.symbols.begin(), _current_scope.symbols.end(), name) != _current_scope.symbols.end())
+		return true;
 
-	string name = string(identtoken->start, identtoken->length);
-
-	// try to find local
-	bool found = false;
-
-	if (find(LOCALS.begin(), LOCALS.end(), name) != LOCALS.end())
-		found = true;
-
-	for (auto scope = _scope_stack.rbegin(); !found && scope != _scope_stack.rend(); scope++)
+	for (auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
 	{
 		if (find((*scope).symbols.begin(), (*scope).symbols.end(), name) != (*scope).symbols.end())
-		{
-			found = true;
-			break;
-		}
+			return true;
 	}
+	return false;
+}
 
-	if (found)
-		error_at(identtoken, "Symbol already exists in current scope.");
-	else
-		_current_scope.symbols.push_back(name);
+// checks if the given function already exists
+bool Parser::check_function(string name)
+{
+	if(_current_scope.functions.find(name) != _current_scope.functions.end())
+		return true;
 
-	#undef LOCALS
+	for (auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
+	{
+		if (scope->functions.find(name) != scope->functions.end())
+			return true;
+	}
+	return false;
+}
+
+void Parser::add_variable(Token* identtoken)
+{
+	string name = string(identtoken->start, identtoken->length);
+
+	if(check_function(name)) error_at(identtoken, "Function with identical name already exists in current scope.");
+	else if (check_variable(name)) error_at(identtoken, "Variable already exists in current scope.");
+	else _current_scope.symbols.push_back(name);
+}
+
+void Parser::add_function(Token* identtoken, int arity)
+{
+	string name = string(identtoken->start, identtoken->length);
+
+	if(check_function(name)) error_at(identtoken, "Function already exists in current scope.");
+	else if (check_variable(name)) error_at(identtoken, "Variable with identical name already exists in current scope.");
+	else _current_scope.functions.insert(pair<string, int>(name, arity));
 }
 
 void Parser::scope_up()
 {
 	int depth = _current_scope.depth + 1;
+	int param_count = _current_scope.param_count;
 	_scope_stack.push_back(_current_scope);
-	_current_scope = (Scope){depth, vector<string>()};
+	_current_scope = (Scope){depth, param_count, vector<string>(), map<string, int>()};
 }
 
 void Parser::scope_down()
@@ -160,10 +183,10 @@ StmtNode* Parser::declaration()
 		return function_declaration();
 
 	else
-	{
-		DEBUG_PRINT_F_MSG("declaration falling through to statement. (%d)", _current.type);
+	// {
+		// DEBUG_PRINT_F_MSG("declaration falling through to statement. (%d)", _current.type);
 		return statement();
-	}
+	// }
 }
 
 StmtNode* Parser::function_declaration()
@@ -174,51 +197,97 @@ StmtNode* Parser::function_declaration()
 	// get name
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '@'.");
 	string name = PREV_TOKEN_STR;
-	add_symbol(&_previous);
+	Token tok = _previous;
 
 	// get type
 	consume(TOKEN_TYPE, tools::fstr("Expected type after '@%s'.", name.c_str()));
-	string typestr = PREV_TOKEN_STR;
-	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
-	EviType type = GET_EVI_TYPE(typestr);
+	EviType ret_type = get_prev_as_type();
 
 	consume(TOKEN_LEFT_PAREN, "Expect '(' after return type.");
 
 	// get parameters
-	// TODO: parameters
+	vector<EviType> params;
+	while(!check(TOKEN_RIGHT_PAREN)) do
+	{
+		if (params.size() >= 255) error_at_current("Parameter count exceeded limit of 255.");
+		consume(TOKEN_TYPE, "Expected parameter.");
+		params.push_back(get_prev_as_type());
+
+	} while (match(TOKEN_COMMA));
 
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+	add_function(&tok, params.size());
 
-	// get body
-	DEBUG_PRINT_F_MSG("Start function body (\"%s\").", name.c_str());
-	StmtNode* body = statement();
-	DEBUG_PRINT_F_MSG("End function body (\"%s\").", name.c_str());
-	consume_terminator("function declaration.");
-	
-	return new FuncDeclNode(name, type, body);
+	// get body?
+	if(match(TOKEN_SEMICOLON))
+	{
+		// declaration
+		// DEBUG_PRINT_F_MSG("Declared function (\"%s\").", name.c_str());
+		return new FuncDeclNode(name, ret_type, params, nullptr);
+	}
+	else
+	{
+		// definition
+		// DEBUG_PRINT_F_MSG("Start function body (\"%s\").", name.c_str());
+		scope_up();
+		_current_scope.param_count = params.size();
+		StmtNode* body = declaration();
+		scope_down();
+		// DEBUG_PRINT_F_MSG("End function body (\"%s\").", name.c_str());
+		return new FuncDeclNode(name, ret_type, params, body);
+	}
 }
 
 StmtNode* Parser::variable_declaration()
 {
-	// var_decl		: "%" IDENT ("," IDENT)* TYPE
-	//				| "%" IDENT ("," IDENT)* TYPE expression ("," expression)*
+	// var_decl		: "%" IDENT ("," IDENT)* TYPE (expression ("," expression)*)?
 
-	// get name
-	consume(TOKEN_IDENTIFIER, "Expected identifier after '%'.");
-	string name = PREV_TOKEN_STR;
-	add_symbol(&_previous);
+	// get name(s)
+	vector<string> names;
+	do
+	{
+		consume(TOKEN_IDENTIFIER, names.size() > 0 ? 
+			"Expected identifier after ','." :
+			"Expected identifier after '%'.");
+		names.push_back(PREV_TOKEN_STR);
+		add_variable(&_previous);
+
+	} while(match(TOKEN_COMMA));
 
 	// get type
-	consume(TOKEN_TYPE, tools::fstr("Expected type after '%%%s'.", name.c_str()));
+	consume(TOKEN_TYPE, "Expected type.");
 	string typestr = PREV_TOKEN_STR;
 	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
 	EviType type = GET_EVI_TYPE(typestr);
 
-	// get expression
-	ExprNode* expr = expression();
-	consume_terminator("variable declaration.");
+	vector<VarDeclNode*> decls;
+	// get initializers(s)?
+	if(match(TOKEN_SEMICOLON))
+	{
+		// declarations
+		for(string& name : names) decls.push_back(new VarDeclNode(name, type, nullptr));
+	}
+	else
+	{
+		// definitions
+		
+		for(int i = 0; i < names.size(); i++)
+		{
+			ExprNode* expr = expression();
+			if(i + 1 < names.size()) consume(TOKEN_COMMA, "Expected ',' after expression.");
+			decls.push_back(new VarDeclNode(string(names[i]), type, expr));
+		}
+		consume(TOKEN_SEMICOLON, "Expected ';' after variable defenition.");
+	}
 
-	return new VarDeclNode(name, type, expr);
+	assert(names.size() == decls.size());
+	if(names.size() == 1) return decls[0];
+	else
+	{
+		AST stmts;
+		for(VarDeclNode*& decl : decls) stmts.push_back(decl);
+		return new BlockNode(stmts, true);
+	}
 }
 
 // ===================== statements ====================
@@ -231,16 +300,95 @@ StmtNode* Parser::statement()
 	// 				| block
 	// 				| expression
 
-	if(match(TOKEN_LEFT_BRACE)) return block();
 
+	if(match(TOKEN_EQUAL)) 			 return assign_statement();
+	else if(match(TOKEN_TILDE)) 	 return return_statement();
+	else if(match(TOKEN_LEFT_PAREN)) return loop_statement();
+	else if(match(TOKEN_LEFT_BRACE)) return block_statement();
+	else
+	// {
+	// 	DEBUG_PRINT_F_MSG("statement falling through to expression. (%d)", _current.type);
+		return expression_statement();
+	// }
+}
+
+StmtNode* Parser::assign_statement()
+{
+	// assignment	: "=" IDENT expression	
+	consume(TOKEN_IDENTIFIER, "Expected identifier after '='.");
+	string ident = PREV_TOKEN_STR;
+	if(!check_variable(ident)) error("Variable doesn't exist in current scope.");
+
+	ExprNode* expr = expression();
+	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
+
+	return new AssignNode(ident, expr);
+}
+
+StmtNode* Parser::loop_statement()
+{
+	// loop		: "(" expression ")" declaration
+	//			| "(" declaration ";" expression ";)" declaration
+	//			| "(" declaration ";" expression ";" declaration ";)" declaration
+
+	// 1st version: while-loop
+	// 2nd version: while-loop with initializer
+	// 3rd version: for-loop
+
+	// we can't look ahead so we check later when we know 
+	// how many expressions or statements we have what they are
+
+	scope_up();
+
+	Token firsttoken = _current;
+	StmtNode* first = declaration();
+	
+	if(!check(TOKEN_RIGHT_PAREN)) // 2nd or 3rd version
+	{
+		// 2nd is always expression
+		ExprNode* second = expression();
+		consume(TOKEN_SEMICOLON, "Expected ';' after condition.");
+		
+		if(!check(TOKEN_RIGHT_PAREN)) // 3rd version
+		{
+			StmtNode* third = declaration();
+			consume(TOKEN_RIGHT_PAREN, "Expected ')' after incrementer.");
+			StmtNode* body = declaration();
+			scope_down();
+			
+			return new LoopNode(first, second, third, body);
+		}
+		
+		consume(TOKEN_RIGHT_PAREN, "Expected ')' after ';' after condition.");
+		StmtNode* body = declaration();
+		scope_down();
+
+		return new LoopNode(first, second, nullptr, body);
+	}
+
+	consume(TOKEN_RIGHT_PAREN, "Expected ')' after condition.");
+	StmtNode* body = declaration();
+	scope_down();
+	
+	ExprNode* newfirst = dynamic_cast<ExprNode*>(first);
+	if(newfirst == nullptr) error_at(&firsttoken, "Expected expression, not statement.");
+		
+	return new LoopNode(nullptr, newfirst, nullptr, body);
+}
+
+StmtNode* Parser::return_statement()
+{
+	// return 	: "~" expression?
+	if(match(TOKEN_SEMICOLON)) return new ReturnNode(nullptr);
 	else
 	{
-		DEBUG_PRINT_F_MSG("statement falling through to expression. (%d)", _current.type);
-		return expression_statement();
+		ExprNode* expr = expression();
+		consume(TOKEN_SEMICOLON, "Expected ';' after return statement.");
+		return new ReturnNode(expr);
 	}
 }
 
-StmtNode* Parser::block()
+StmtNode* Parser::block_statement()
 {
 	// block		: "{" declaration* "}"
 
@@ -259,7 +407,7 @@ StmtNode* Parser::block()
 StmtNode* Parser::expression_statement()
 {
 	ExprNode* expr = expression();
-	consume(TOKEN_)
+	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
 	return (StmtNode*)expr;	
 }
 
@@ -443,22 +591,60 @@ ExprNode* Parser::unary()
 
 ExprNode* Parser::primary()
 {
-	// primary	: NUMBER | CHAR | STRING | "(" expression ")"
-	// 			| "$" IDENT ("(" arguments? ")")?
+	// primary		: NUMBER | CHAR | STRING | "(" expression ")"
+	//				| reference | call
+
+	// reference	: "$" (IDENT | INTEGER)
+	// call			: IDENT "(" (expression ("," expression)*)? ")"
 	
+	// literals
 	if(match(TOKEN_INTEGER) || match(TOKEN_FLOAT)
 	|| match(TOKEN_CHARACTER) || match(TOKEN_STRING))
 		return (ExprNode*)(new LiteralNode(PREV_TOKEN_STR, _previous.type));
-	
 
-	if(match(TOKEN_LEFT_PAREN))
+	// grouping
+	else if(match(TOKEN_LEFT_PAREN))
 	{
 		ExprNode* expr = expression();
 		consume(TOKEN_RIGHT_PAREN, "Expected ')' after parenthesized expression.");
-		return expr;
+		return new GroupingNode(expr);
 	}
-	
+
+	// references
+	else if(match(TOKEN_VARIABLE_REF))
+	{
+		string name = PREV_TOKEN_STR.erase(0, 1);
+		if(!check_variable(name)) error("Variable doesn't exist in current scope.");
+		return new ReferenceNode(name, -1, TOKEN_VARIABLE_REF);
+	}
+	else if(match(TOKEN_PARAMETER_REF))
+	{
+		int intval = strtol(PREV_TOKEN_STR.erase(0, 1).c_str(), NULL, 10);
+		if(intval >= _current_scope.param_count) error(tools::fstr(
+			"Parameter reference exceeds arity of %d.", intval));
+		return new ReferenceNode("", intval, TOKEN_PARAMETER_REF);
+	}
+
+	// calls
+	else if (match(TOKEN_IDENTIFIER))
+	{
+		string name = PREV_TOKEN_STR;
+		vector<ExprNode*> args;
+		
+		consume(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
+		if(!check(TOKEN_RIGHT_PAREN)) do
+		{
+			args.push_back(expression());
+			if(args.size() >= 255) error("Argument count exceeded limit of 255.");
+		
+		} while(match(TOKEN_COMMA));
+		consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
+		
+		return new CallNode(name, args);
+	}
+
 	error_at_current("Expected expression.");
+	return nullptr;
 }
 
 // ======================= misc. =======================
@@ -476,15 +662,13 @@ Status Parser::parse(string infile, AST* astree)
 	_panic_mode = false;
 
 	_scope_stack = vector<Scope>();
-	_current_scope = (Scope){0, vector<string>()};
+	_current_scope = (Scope){0, 0, vector<string>(), map<string, int>()};
 
 	// printTokensFromSrc(_source.c_str());
 
 	advance();
 	while (!match(TOKEN_EOF))
 	{
-		while(match(TOKEN_NEWLINE)) continue;
-
 		if(match(TOKEN_MODULO))
 			_astree->push_back(variable_declaration());
 		else if(match(TOKEN_AT))

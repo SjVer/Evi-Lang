@@ -172,6 +172,25 @@ Token Scanner::type_or_identifier()
 	return makeToken(TOKEN_IDENTIFIER);
 }
 
+Token Scanner::reference()
+{
+	if(isAlpha(peek()))
+	{
+		// variable
+		advance();
+		while (isAlpha(peek()) || isDigit(peek())) advance();
+		return makeToken(TOKEN_VARIABLE_REF);
+	}
+	else if(isDigit(peek()))
+	{
+		// parameter
+		advance();
+		while (isDigit(peek())) advance();
+		return makeToken(TOKEN_PARAMETER_REF);
+	}
+	else return errorToken("Expected identifier or integer.");
+}
+
 void Scanner::skipWhitespaces()
 {
 	for (;;)
@@ -184,9 +203,10 @@ void Scanner::skipWhitespaces()
 		case '\t':
 			advance();
 			break;
-		// case '#':
-		// 	while(peek() != '\n') advance();
-		// 	break;
+		case '\n':
+			_line++;
+			advance();
+			break;
 		case '\\':
 			if (peekNext() == ':')
 			{
@@ -249,7 +269,6 @@ Token Scanner::scanToken()
 		case ',': return makeToken(TOKEN_COMMA);
 		case '*': return makeToken(TOKEN_STAR);
 		case '%': return makeToken(TOKEN_MODULO);
-		case '$': return makeToken(TOKEN_DOLLAR);
 		case '~': return makeToken(TOKEN_TILDE);
 		case '^': return makeToken(TOKEN_CARET);
 		case '@': return makeToken(TOKEN_AT);
@@ -268,20 +287,9 @@ Token Scanner::scanToken()
 		case '&': return match('&') ? makeToken(TOKEN_AND_AND) : makeToken(TOKEN_AND);
 
 		// literals
+		case '$': return reference();
 		case '"': return string();
 		case '\'': return character();
-
-		case '\n':
-		{
-			while (peek() == '\n')
-			{
-				advance();
-				_line++;
-			}
-			Token token = makeToken(TOKEN_NEWLINE);
-			_line++;
-			return token;
-		}
 
 		case '#':
 		{
@@ -306,11 +314,14 @@ Token Scanner::scanToken()
 			// }
 
 			// else return errorToken("Preprocessor failed to correctly process directive.");
-			// return makeToken(TOKEN_IGNORE);
+			return scanToken();
 		}
 	}
 
-	return errorToken("Unexpected character.");
+	char* errstr = new char[25]; // just above what's needed
+	strcpy(errstr, "Unexpected character 'X'.");
+	errstr[strlen(errstr) - 3] = c;
+	return errorToken(errstr);
 }
 
 // =========================
@@ -325,18 +336,16 @@ char *getTokenStr(TokenType type)
 		case TOKEN_LEFT_BRACE: return "LEFT_BRACE";
 		case TOKEN_RIGHT_BRACE: return "RIGHT_BRACE";
 		case TOKEN_SLASH: return "SLASH";
-		case TOKEN_GREATER: return "GREATER";
-		case TOKEN_LESS: return "LESS";
 		case TOKEN_COMMA: return "COMMA";
 		case TOKEN_QUESTION: return "QUESTION";
 		case TOKEN_COLON: return "COLON";
-		case TOKEN_NEWLINE: return "NEWLINE";
+		case TOKEN_SEMICOLON: return "SEMICOLON";
 		case TOKEN_STAR: return "STAR";
 		case TOKEN_MODULO: return "MODULO";
-		case TOKEN_DOLLAR: return "DOLLAR";
 		case TOKEN_BANG: return "BANG";
 		case TOKEN_TILDE: return "TILDE";
 		case TOKEN_AT: return "AT";
+		case TOKEN_CARET: return "CARET";
 		case TOKEN_HASHTAG: return "HASHTAG";
 
 		// One or two character tokens.
@@ -344,6 +353,10 @@ char *getTokenStr(TokenType type)
 		case TOKEN_PLUS_PLUS: return "PLUS_PLUS";
 		case TOKEN_MINUS: return "MINUS";
 		case TOKEN_MINUS_MINUS: return "MINUS_MINUS";
+		case TOKEN_GREATER: return "GREATER";
+		case TOKEN_GREATER_GREATER: return "GREATER_GREATER";
+		case TOKEN_LESS: return "LESS";
+		case TOKEN_LESS_LESS: return "LESS_LESS";
 		case TOKEN_EQUAL: return "EQUAL";
 		case TOKEN_EQUAL_EQUAL: return "EQUAL_EQUAL";
 		case TOKEN_AND: return "AND";
@@ -358,6 +371,8 @@ char *getTokenStr(TokenType type)
 
 		// Literals.
 		case TOKEN_IDENTIFIER: return "IDENTIFIER";
+		case TOKEN_VARIABLE_REF: return "VARIABLE_REF";
+		case TOKEN_PARAMETER_REF: return "PARAMETER_REF";
 		case TOKEN_INTEGER: return "INTEGER";
 		case TOKEN_FLOAT: return "FLOAT";
 		case TOKEN_CHARACTER: return "CHARACTER";
@@ -367,7 +382,6 @@ char *getTokenStr(TokenType type)
 		// misc.
 		case TOKEN_ERROR: return "ERROR";
 		case TOKEN_EOF: return "EOF";
-		default: return "<TOKEN_NOT_FOUND>";
 	}
 }
 

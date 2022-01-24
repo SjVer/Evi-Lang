@@ -15,11 +15,17 @@ class ASTVisualizer: public Visitor
 	#define VISIT(_node) void visit(_node* node)
 	VISIT(FuncDeclNode);
 	VISIT(VarDeclNode);
+	VISIT(AssignNode);
+	VISIT(LoopNode);
+	VISIT(ReturnNode);
 	VISIT(BlockNode);
 		VISIT(LogicalNode);
 		VISIT(BinaryNode);
 		VISIT(UnaryNode);
-		VISIT(LiteralNode);
+		VISIT(GroupingNode);
+			VISIT(LiteralNode);
+			VISIT(ReferenceNode);
+			VISIT(CallNode);
 	#undef VISIT
 
 	private:
@@ -28,10 +34,10 @@ class ASTVisualizer: public Visitor
 };
 
 #define HEADER "digraph astgraph {\n\
-	node [shape=none, fontsize=12, fontname=\"Courier\", height=.1];\n\
-	ranksep=.3;\n\
-	edge [arrowsize=.5]\n\
-	\n\
+	node [shape=rect, fontsize=12, fontname=\"Courier\", height=.1];\n\
+	ranksep=.4;\n\
+	edge [arrowsize=.5, arrowhead=\"none\"]\n\
+	rankdir=\"UD\"\n\
 	node0 [label=\"Program\"]\n\
 	\n\
 "

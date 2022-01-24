@@ -7,6 +7,9 @@
 #define CONNECT_NODES(node1, node2) (_stream << \
 	tools::fstr("\tnode%d -> node%d\n", node1, node2))
 
+#define CONNECT_NODES_LABELED(node1, node2, label) (_stream << \
+	tools::fstr("\tnode%d -> node%d [label=" #label ", fontsize=10, fontname=\"Courier\"]\n", node1, node2))
+
 void ASTVisualizer::visualize(string path, AST* astree)
 {
 	_stream = stringstream();
@@ -31,49 +34,111 @@ void ASTVisualizer::visualize(string path, AST* astree)
 
 // =========================================
 // All visit methods MUST invoke ADD_NODE() at least once!
+#define VISIT(_node) void ASTVisualizer::visit(_node* node)
 
 // === Statements ===
 
-// FuncDeclNode
-void ASTVisualizer::visit(FuncDeclNode* node)
+VISIT(FuncDeclNode)
 {
-	string namelabel = tools::fstr("Declare \\\"%s\\\"", node->_identifier.c_str());
+	string namelabel = tools::fstr("@ %s", node->_identifier.c_str());
+	int thisnode = ADD_NODE(namelabel.c_str());
+
+	// ret type	and params
+	string infolabel;
+	int c = 0;
+	if(node->_params.size() > 0) for(auto& p : node->_params)
+		{ infolabel += tools::fstr("%%%d ", c) + p._name + "\\n"; c++; }
+	infolabel += "~ " + node->_ret_type._name;
+
+	CONNECT_NODES(thisnode, ADD_NODE(infolabel.c_str()));
+
+	// body
+	if(node->_body)
+	{
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_body->accept(this);
+	}
+}
+
+VISIT(VarDeclNode)
+{
+	string namelabel = tools::fstr("%% %s", node->_identifier.c_str());
 	int thisnode = ADD_NODE(namelabel.c_str());
 	
 	CONNECT_NODES(thisnode, ADD_NODE(node->_type._name.c_str()));
+
+	if(node->_expr)
+	{
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_expr->accept(this);
+	}
+}
+
+VISIT(AssignNode)
+{
+	// string lable = "= " + node->_ident;
+	int thisnode = ADD_NODE(("= " + node->_ident).c_str());
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_expr->accept(this);
+}
+
+VISIT(LoopNode)
+{
+	int thisnode = ADD_NODE("(;;)");;
+	int anchor = _nodecount; _nodecount++;
+	_stream << tools::fstr("\tnode%d [label=\"\", shape=\"none\", width=0, height=0]\n", anchor);
+	CONNECT_NODES(thisnode, anchor);
+
+	if(node->_first)
+	{
+		CONNECT_NODES_LABELED(anchor, _nodecount, "init");
+		node->_first->accept(this);
+	}
+
+	CONNECT_NODES_LABELED(anchor, _nodecount, "cond");
+	node->_second->accept(this);
+
+	if(node->_third) // must be for-loop
+	{
+		CONNECT_NODES_LABELED(anchor, _nodecount, "incr");
+		node->_third->accept(this);
+	}
 
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_body->accept(this);
 }
 
-// VarDeclNode
-void ASTVisualizer::visit(VarDeclNode* node)
+VISIT(ReturnNode)
 {
-	string namelabel = tools::fstr("Declare \\\"%s\\\"", node->_identifier.c_str());
-	int thisnode = ADD_NODE(namelabel.c_str());
-	
-	CONNECT_NODES(thisnode, ADD_NODE(node->_type._name.c_str()));
-
-	CONNECT_NODES(thisnode, _nodecount);
-	node->_expr->accept(this);
+	int thisnode = ADD_NODE("~");
+	if(node->_expr)
+	{
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_expr->accept(this);
+	}
 }
 
-// BlockNode
-void ASTVisualizer::visit(BlockNode* node)
+VISIT(BlockNode)
 {
-	int thisnode = ADD_NODE("Block");
-	for(auto& node : node->_statements)
+	int thisnode;
+	if(node->_secret)
+	{
+		_stream << tools::fstr("\tnode%d [label=\"\", shape=\"none\", width=0, height=0]\n", _nodecount);
+		thisnode = _nodecount++;
+	}
+	else thisnode = ADD_NODE("{}");
+
+	for(auto& subnode : node->_statements)
 	{
 		// node id will be _nodecount
 		CONNECT_NODES(thisnode, _nodecount);
-		node->accept(this);
+		subnode->accept(this);
 	}
 }
 
 // === Expressions ===
 
-// Logical
-void ASTVisualizer::visit(LogicalNode* node)
+VISIT(LogicalNode)
 {
 	int thisnode;
 	switch(node->_optype)
@@ -89,20 +154,30 @@ void ASTVisualizer::visit(LogicalNode* node)
 	node->_right->accept(this);
 }
 
-// BinaryNode
-void ASTVisualizer::visit(BinaryNode* node)
+VISIT(BinaryNode)
 {
 	int thisnode;
 	switch(node->_optype)
 	{
+		case TOKEN_PIPE: 	  		thisnode = ADD_NODE("|"); break;
+		case TOKEN_CARET: 	  		thisnode = ADD_NODE("^"); break;
+		case TOKEN_AND:       		thisnode = ADD_NODE("&"); break;
+
+		case TOKEN_EQUAL_EQUAL:		thisnode = ADD_NODE("=="); break;
+		case TOKEN_SLASH_EQUAL:		thisnode = ADD_NODE("/="); break;
+
+		case TOKEN_GREATER_EQUAL:	thisnode = ADD_NODE(">="); break;
+		case TOKEN_LESS_EQUAL:		thisnode = ADD_NODE("<="); break;
+		case TOKEN_GREATER:			thisnode = ADD_NODE(">"); break;
+		case TOKEN_LESS:			thisnode = ADD_NODE("<"); break;
+
+		case TOKEN_GREATER_GREATER: thisnode = ADD_NODE(">>"); break;
+		case TOKEN_LESS_LESS: 		thisnode = ADD_NODE("<<"); break;
+
 		case TOKEN_PLUS:  			thisnode = ADD_NODE("+"); break;
 		case TOKEN_MINUS: 			thisnode = ADD_NODE("-"); break;
 		case TOKEN_STAR:  			thisnode = ADD_NODE("*"); break;
 		case TOKEN_SLASH:			thisnode = ADD_NODE("/"); break;
-		case TOKEN_PIPE: 	  		thisnode = ADD_NODE("|"); break;
-		case TOKEN_AND:       		thisnode = ADD_NODE("&"); break;
-		case TOKEN_GREATER_GREATER: thisnode = ADD_NODE(">>"); break;
-		case TOKEN_LESS_LESS: 		thisnode = ADD_NODE("<<"); break;
 		default: assert(false);
 	}
 
@@ -112,8 +187,7 @@ void ASTVisualizer::visit(BinaryNode* node)
 	node->_right->accept(this);
 }
 
-// UnaryNode
-void ASTVisualizer::visit(UnaryNode* node)
+VISIT(UnaryNode)
 {
 	int thisnode;
 	switch(node->_optype)
@@ -129,11 +203,41 @@ void ASTVisualizer::visit(UnaryNode* node)
 	node->_expr->accept(this);
 }
 
-// LiteralNode
-void ASTVisualizer::visit(LiteralNode* node)
+VISIT(GroupingNode)
+{
+	int thisnode = ADD_NODE("()");
+	// node id will be _nodecount
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_expr->accept(this);
+}
+
+
+VISIT(LiteralNode)
 {
 	ADD_NODE(tools::unescstr(node->_token, true, false).c_str());
 }
 
+VISIT(ReferenceNode)
+{
+	if(node->_type == TOKEN_VARIABLE_REF)
+		ADD_NODE(tools::fstr("$ %s", node->_variable.c_str()).c_str());
+	else if(node->_type == TOKEN_PARAMETER_REF)
+		ADD_NODE(tools::fstr("$ %d", node->_parameter).c_str());
+	else assert(false);
+}
+
+VISIT(CallNode)
+{
+	int thisnode = ADD_NODE(tools::fstr("%s ()", node->_ident.c_str()).c_str());
+
+	for(auto& subnode : node->_arguments)
+	{
+		// node id will be _nodecount
+		CONNECT_NODES(thisnode, _nodecount);
+		subnode->accept(this);
+	}
+}
+
 #undef ADD_NODE
 #undef CONNECT_NODES
+#undef VISIT

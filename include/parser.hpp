@@ -24,7 +24,9 @@ private:
 	typedef struct
 	{
 		int depth;
+		int param_count;
 		vector<string> symbols;
+		map<string, int> functions;
 	} Scope;
 
 	// methods
@@ -36,33 +38,40 @@ private:
 	void advance();
 	bool check(TokenType type);
 	void consume(TokenType type, string message);
+	EviType get_prev_as_type();
 	bool match(TokenType type);
 	bool is_at_end();
 
-	void add_symbol(Token *identtoken);
+	bool check_variable(string name);
+	bool check_function(string name);
+	void add_variable(Token* identtoken);
+	void add_function(Token* identtoken, int arity);
 	void scope_up();
 	void scope_down();
 
-	StmtNode* declaration();
-		StmtNode* function_declaration();
-		StmtNode* variable_declaration();
-		StmtNode* statement();
-			StmtNode* block();
-			StmtNode* expression_statement();
-				ExprNode* expression();
-				// ExprNode* ternary();
-				ExprNode* logical_or();
-				ExprNode* logical_and();
-				ExprNode* bitwise_or();
-				ExprNode* bitwise_xor();
-				ExprNode* bitwise_and();
-				ExprNode* equality();
-				ExprNode* comparison();
-				ExprNode* bitwise_shift();
-				ExprNode* term();
-				ExprNode* factor();
-				ExprNode* unary();
-				ExprNode* primary();
+	StmtNode* statement();
+		StmtNode* declaration();
+			StmtNode* function_declaration();
+			StmtNode* variable_declaration();
+		StmtNode* assign_statement();
+		StmtNode* loop_statement();
+		StmtNode* return_statement();
+		StmtNode* block_statement();
+		StmtNode* expression_statement();
+			ExprNode* expression();
+			// ExprNode* ternary();
+			ExprNode* logical_or();
+			ExprNode* logical_and();
+			ExprNode* bitwise_or();
+			ExprNode* bitwise_xor();
+			ExprNode* bitwise_and();
+			ExprNode* equality();
+			ExprNode* comparison();
+			ExprNode* bitwise_shift();
+			ExprNode* term();
+			ExprNode* factor();
+			ExprNode* unary();
+			ExprNode* primary();
 
 	// members
 
