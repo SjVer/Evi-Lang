@@ -83,10 +83,11 @@ contexts:
     - include: string-char
 
     - include: punctuation
+    - match: ';'
+      scope: punctuation.terminator.expression.evi
+      pop: true
     - include: invalids
 
-    - match: $\n?
-      pop: true
 
   variable:
     - match: '(\$)({{ident}})'
@@ -121,7 +122,7 @@ contexts:
       captures:
         1: keyword.operator.assignment.evi
         2: meta.assignment.target.evi
-      set: expression
+      # push: expression
 
   return:
     - include: comment
@@ -146,8 +147,13 @@ contexts:
           scope: storage.type.evi
           set:
             - include: comment
-            - meta_scope: meta.declaration.variable.initializers.evi
+            - meta_scope: meta.declaration.variable.initializer.evi
             - include: expression
+
+            - match: ';'
+              scope: punctuation.terminator.evi
+              pop: true
+          
 
         - match: \S
           scope: invalid.illegal.evi
@@ -169,16 +175,21 @@ contexts:
 
             - match: '\b{{type}}\b'
               scope: variable.parameter.evi
+            - match: \,
+              scope: punctuation.delimeter.parameter.evi
             - match: \)
               pop: true
             - match: \S
               scope: invalid.illegal.evi
           pop: true
+    
+    - match: ';'
+      scope: punctuation.terminator.evi
 
   # MISC
 
   punctuation:
-    - match: \,|\(|\)|\{|\}
+    - match: '\,|\(|\)|\{|\}'
       scope: punctuation.separator.evi
 
   invalids:
@@ -187,14 +198,14 @@ contexts:
       scope: invalid.misplaced.evi
 
   comment:
-    - match: ';\='
+    - match: '\\:'
       scope: punctuation.definition.comment.evi
       push:
         - meta_scope: comment.line.evi
-        - match: '\=;'
+        - match: ':\\'
           pop: true
 
-    - match: ';'
+    - match: '\\'
       scope: punctuation.definition.comment.evi
       push:
         # This is an anonymous context push for brevity.

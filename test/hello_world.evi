@@ -1,6 +1,6 @@
 #apply "std_io"
 
 @main i32 () {
-	$print("Hello World!\n")
-	~ 0
+	$print("Hello World!\n");
+	~ 0;
 }

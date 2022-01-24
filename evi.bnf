@@ -15,7 +15,7 @@ statement		: assignment
 				| block
 				| expression
 
-assignment		: "=" IDENT expression
+assignment		: "=" IDENT expression	
 loop			: "(" expression ")" statement
 				| "(" statement, expression ")" statement
 				| "(" statement, expression, statement ")" statement

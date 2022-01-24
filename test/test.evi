@@ -2,7 +2,9 @@
 
 @g i8 ();
 
-@f i8 ()
+@f i8 (i32)
 {
     %b i1 \: boolean :\ 1;
+    $printf("%d\n", $a);
+    ~ $b;
 }

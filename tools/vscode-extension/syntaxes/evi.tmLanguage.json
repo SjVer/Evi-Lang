@@ -289,7 +289,11 @@
 			"patterns": [
 				{
 					"name": "variable.name.evi",
-					"match": "($)([A-z_]+[0-z_]*)"
+					"match": "(\\$)([A-z_]+[0-z_]*)"
+				},
+				{
+					"name": "variable.name.evi",
+					"match": "(\\$)([A-z_]+[0-z_]*)"
 				}
 			]
 		},
