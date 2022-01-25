@@ -30,6 +30,8 @@ void ASTVisualizer::visualize(string path, AST* astree)
 	DEBUG_PRINT_MSG("Generating AST image...");
 	int status = system(tools::fstr("echo '%s' | dot -Tsvg > %s", _stream.str().c_str(), path.c_str()).c_str());
 	if(status) cout << _stream.str() << endl;
+	else system(tools::fstr("eog %s", path.c_str()).c_str());
+	remove(path.c_str());
 }
 
 // =========================================
@@ -80,6 +82,20 @@ VISIT(AssignNode)
 	int thisnode = ADD_NODE(("= " + node->_ident).c_str());
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_expr->accept(this);
+}
+
+VISIT(IfNode)
+{
+	int thisnode = ADD_NODE("??");
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_cond->accept(this);
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_if->accept(this);
+	if(node->_else)
+	{
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_else->accept(this);
+	}
 }
 
 VISIT(LoopNode)
@@ -145,11 +161,17 @@ VISIT(LogicalNode)
 	{
 		case TOKEN_PIPE_PIPE: thisnode = ADD_NODE("||"); break;
 		case TOKEN_AND_AND:   thisnode = ADD_NODE("&&"); break;
+		case TOKEN_QUESTION:  thisnode = ADD_NODE("?:"); break;
 		default: assert(false);
 	}
 
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_left->accept(this);
+	if(node->_middle)
+	{
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_middle->accept(this);
+	}
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_right->accept(this);
 }

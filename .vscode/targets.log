@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Jan 23 14:58:09 2022
+# Make data base, printed on Tue Jan 25 08:27:21 2022
 
 # Variables
 
@@ -89,13 +89,13 @@ MAKE_HOST := x86_64-pc-linux-gnu
 # environment
 PATH = /home/sjoerd/.local/bin:/usr/local/maven/bin:/home/sjoerd/.local/bin:/usr/local/maven/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/sjoerd/Apps/cmdline-tools/bin:/home/sjoerd/.local/bin
 # makefile (from 'Makefile', line 34)
-DEBUGDEFS = -D DEBUG -ggdb
+DEBUGDEFS = -DDEBUG -ggdb
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
 GJS_DEBUG_OUTPUT = stderr
 # environment
-SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1585,unix/Xeon-L5410:/tmp/.ICE-unix/1585
+SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1576,unix/Xeon-L5410:/tmp/.ICE-unix/1576
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -119,7 +119,7 @@ XDG_SESSION_DESKTOP = cinnamon
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2224
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2208
 # automatic
 %F = $(notdir $%)
 # environment
@@ -141,7 +141,7 @@ HEADERDIR = include
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1657
+SSH_AGENT_PID = 1648
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = X-Cinnamon
 # environment
@@ -191,7 +191,7 @@ BINDIR = bin
 # makefile (from 'Makefile', line 6)
 CC = clang++
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0e1d15b9-7211-4c63-a779-fef625cb2eb8.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-49f6837f-a382-41e7-a61a-1df3202c39dc.sock
 # environment
 XDG_SESSION_ID = c2
 # environment
@@ -289,10 +289,10 @@ LC_ADDRESS = nl_NL.UTF-8
 # environment
 LANG = C
 # environment
-VSCODE_PID = 2224
+VSCODE_PID = 2208
 # variable set hash-table stats:
-# Load=140/1024=14%, Rehash=0, Collisions=43/210=20%
  
+# Load=140/1024=14%, Rehash=0, Collisions=43/210=20%
 
 # Pattern-specific Variable Values
 
@@ -301,9 +301,9 @@ VSCODE_PID = 2224
 # Directories
 
 # . (device 2053, inode 2490466): 15 files, no impossibilities.
-# src (device 2053, inode 3038540): 8 files, no impossibilities.
+# src (device 2053, inode 3038540): 9 files, no impossibilities.
 
-# 23 files, no impossibilities in 2 directories.
+# 24 files, no impossibilities in 2 directories.
 
 # Implicit Rules
 
@@ -391,14 +391,14 @@ printdebug:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-22 17:36:28.369793275
+#  Last modified 2022-01-24 16:20:55.676263713
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
 src/scanner.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-18 20:24:30.604262276
+#  Last modified 2022-01-24 14:58:52.874874885
 #  File has been updated.
 #  Successfully updated.
 
@@ -462,6 +462,12 @@ makedirs:
 #  File has not been updated.
 
 # Not a target:
+bin/obj/codegen.o:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
 run:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
@@ -506,7 +512,7 @@ pch:
 bin/obj/scanner.o: src/scanner.cpp | makedirs
 #  Implicit rule search has been done.
 #  Implicit/static pattern stem: 'scanner'
-#  Last modified 2022-01-22 22:56:30.253765935
+#  Last modified 2022-01-24 20:32:00.91472702
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -517,9 +523,9 @@ bin/obj/scanner.o: src/scanner.cpp | makedirs
 	@printf "\b\b done!\n"
 	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
 
-bin/evi: bin/obj/scanner.o bin/obj/types.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o | makedirs
+bin/evi: bin/obj/scanner.o bin/obj/types.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o bin/obj/codegen.o | makedirs
 #  Implicit rule search has not been done.
-#  Last modified 2022-01-22 23:02:44.952749391
+#  Last modified 2022-01-24 21:24:47.010041042
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -547,19 +553,19 @@ newfile:
 	touch $(HEADERDIR)/$(name).hpp
 
 # files hash-table stats:
-# Load=27/1024=3%, Rehash=0, Collisions=4/92=4%
+# Load=28/1024=3%, Rehash=0, Collisions=4/94=4%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 51 / storage = 468 B / avg = 9 B
-# current buf: size = 8162 B / used = 468 B / count = 51 / avg = 9 B
+# strcache buffers: 1 (0) / strings = 53 / storage = 498 B / avg = 9 B
+# current buf: size = 8162 B / used = 498 B / count = 53 / avg = 9 B
 
-# strcache performance: lookups = 120 / hit rate = 57%
+# strcache performance: lookups = 122 / hit rate = 56%
 # hash-table stats:
-# Load=51/8192=1%, Rehash=0, Collisions=2/120=2%
-# Finished Make data base on Sun Jan 23 14:58:09 2022
+# Load=53/8192=1%, Rehash=0, Collisions=2/122=2%
+# Finished Make data base on Tue Jan 25 08:27:21 2022
 
  

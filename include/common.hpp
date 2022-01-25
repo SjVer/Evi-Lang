@@ -31,6 +31,11 @@ using namespace std;
 #define OS_NAME "Other"
 #endif
 
+#define COLOR_RED "\x1b[1;31m"
+#define COLOR_PURPLE "\x1b[1;35m"
+#define COLOR_NONE "\x1b[0m"
+#define COLOR_BOLD "\x1b[1m"
+
 // app info
 #define APP_NAME "evi"
 #define APP_VERSION "0.0.1"
@@ -70,7 +75,8 @@ More info at %s.\nBuild: %s %s on %s (%s)."
 typedef enum
 {
 	STATUS_SUCCESS = 0,
-	STATUS_COMPILE_ERROR = 65,
+	STATUS_CLI_ERROR = 64,
+	STATUS_PARSE_ERROR = 65,
 } Status;
 
 #endif

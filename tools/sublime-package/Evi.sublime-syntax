@@ -66,7 +66,7 @@ contexts:
       scope: keyword.operator.comparison.evi
     - match: <=|>=|<>|<|>
       scope: keyword.operator.relational.evi
-    - match: \!|&&|\|\||\?\?
+    - match: \!|&&|\|\||\?\?|:|\?
       scope: keyword.operator.logical.evi
     - match: \&|\^|\|
       scope: keyword.operator.bitwise.evi
@@ -120,6 +120,7 @@ contexts:
 
     - include: assignment
     - include: return
+    - include: if_and_loop
     - include: expression
 
   assignment:
@@ -136,11 +137,20 @@ contexts:
       scope: keyword.control.flow.return.evi
       set: expression
 
+  if_and_loop:
+    - include: comment
+    - match: \?\?
+      scope: keyword.control.flow.if.evi
+    - match: '::'
+      scope: keyword.control.flow.else.evi
+    - match: \!\!
+      scope: keyword.control.flow.loop.evi
+
   declaration:
     - include: comment, pre-directive
 
     # variable
-    - match: '(\%)({{ident}})(?:\s*\,\s*({{ident}}))*'
+    - match: '(\%)\s*({{ident}})(?:\s*\,\s*({{ident}}))*'
       captures:
         1: keyword.declaration.variable.evi,
         2: entity.name.variable.evi
@@ -165,7 +175,7 @@ contexts:
           scope: invalid.illegal.evi
 
     # functions
-    - match: '(\@)({{ident}})'
+    - match: '(\@)\s*({{ident}})'
       captures:
         1: keyword.declaration.function.evi
         2: entity.name.function.evi

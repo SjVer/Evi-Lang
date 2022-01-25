@@ -14,6 +14,7 @@ class StmtNode;
 	class VarDeclNode;
 	class BlockNode;
 	class AssignNode;
+	class IfNode;
 	class LoopNode;
 	class ReturnNode;
 
@@ -35,6 +36,7 @@ class Visitor
 	VISIT(FuncDeclNode);
 	VISIT(VarDeclNode);
 	VISIT(AssignNode);
+	VISIT(IfNode);
 	VISIT(LoopNode);
 	VISIT(ReturnNode);
 	VISIT(BlockNode);
@@ -107,6 +109,19 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 		ExprNode* _expr;
 	};
 
+	class IfNode: public StmtNode
+	{
+		public:
+
+		IfNode(ExprNode* cond, StmtNode* if_, StmtNode* else_):
+			_cond(cond), _if(if_), _else(else_) {}
+		ACCEPT
+
+		ExprNode* _cond;
+		StmtNode* _if;
+		StmtNode* _else;
+	};
+
 	class LoopNode: public StmtNode
 	{
 		public:
@@ -154,13 +169,15 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 		{
 			public:
 
-			LogicalNode(TokenType optype, ExprNode* left, ExprNode* right):
-				_optype(optype), _left(left), _right(right) {}
+			LogicalNode(TokenType optype, ExprNode* left, 
+						ExprNode* right, ExprNode* middle = nullptr):
+				_optype(optype), _left(left), _right(right), _middle(middle) {}
 			ACCEPT
 
 			TokenType _optype;
 			ExprNode* _left;
 			ExprNode* _right;
+			ExprNode* _middle;
 		};
 
 		class BinaryNode: public ExprNode

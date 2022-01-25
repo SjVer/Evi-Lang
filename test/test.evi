@@ -1,5 +1,6 @@
-@main i32 (i32)
+@main i32 ()
 {
-    \ for(int i = 0; i < 10; i++)
-    (%i i32 0; $i < 10; =i ++$i;) f(1);
+	print(1);
+	print(2);
+	print(3);
 }

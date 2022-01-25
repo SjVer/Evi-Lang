@@ -3,6 +3,7 @@
 
 #include "scanner.hpp"
 #include "ast.hpp"
+#include "error.hpp"
 #include "common.hpp"
 
 #include "phc.h"
@@ -48,18 +49,20 @@ private:
 	void add_function(Token* identtoken, int arity);
 	void scope_up();
 	void scope_down();
+	void synchronize();
 
 	StmtNode* statement();
 		StmtNode* declaration();
 			StmtNode* function_declaration();
 			StmtNode* variable_declaration();
 		StmtNode* assign_statement();
+		StmtNode* if_statement();
 		StmtNode* loop_statement();
 		StmtNode* return_statement();
 		StmtNode* block_statement();
 		StmtNode* expression_statement();
 			ExprNode* expression();
-			// ExprNode* ternary();
+			ExprNode* ternary();
 			ExprNode* logical_or();
 			ExprNode* logical_and();
 			ExprNode* bitwise_or();
@@ -75,20 +78,15 @@ private:
 
 	// members
 
-	bool _had_error;
-	bool _panic_mode;
-
 	Scanner _scanner;
-
 	Token _current;
 	Token _previous;
 
 	AST* _astree;
-
 	vector<Scope> _scope_stack;
 	Scope _current_scope;
 
-	string _infile, _source;
+	ErrorDispatcher _error_dispatcher;
 
 	#define PREV_TOKEN_STR std::string(_previous.start, _previous.length)
 };

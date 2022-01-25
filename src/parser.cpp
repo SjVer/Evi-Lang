@@ -2,35 +2,20 @@
 #include "tools.hpp"
 
 #include <cstdlib>
+#include <exception>
 
 // ====================== errors =======================
 
 void Parser::error_at(Token *token, string message)
 {
-	// already in panicmode. swallow error.
-	if (_panic_mode)
-		return;
+	_error_dispatcher.dispatch_error_at(token, "Syntax Error", message.c_str());
 
-	_panic_mode = true;
-
-	fprintf(stderr, "[%s:%d] Error", _infile.c_str(), token->line);
-
-	if (token->type == TOKEN_EOF)
-	{
-		fprintf(stderr, " at end");
-	}
-	else if (token->type == TOKEN_ERROR)
-	{
-		// Nothing.
-	}
-	else
-	{
-		fprintf(stderr, " at '%.*s'", token->length, token->start);
-	}
-
-	fprintf(stderr, ": %s\n", message.c_str());
-	_had_error = true;
-	exit(1);
+	// print token
+	cerr << endl;
+	_error_dispatcher.dispatch_token_marked(token);
+	cerr << endl;
+	
+	exit(STATUS_PARSE_ERROR);
 }
 
 // displays an error at the previous token with the given message
@@ -177,22 +162,15 @@ StmtNode* Parser::declaration()
 	//					| var_decl
 	//					| statement
 
-	if(match(TOKEN_MODULO))
-		return variable_declaration();
-	else if(match(TOKEN_AT))
-		return function_declaration();
+	if(match(TOKEN_MODULO))  return variable_declaration();
+	else if(match(TOKEN_AT)) return function_declaration();
+	else return statement();
 
-	else
-	// {
-		// DEBUG_PRINT_F_MSG("declaration falling through to statement. (%d)", _current.type);
-		return statement();
-	// }
 }
 
 StmtNode* Parser::function_declaration()
 {
-	// func_decl	: "@" IDENT TYPE "(" TYPE* ")"
-	//				| "@" IDENT TYPE "(" TYPE* ")" "{" (func_decl | var_decl | statement)* "}"
+	// func_decl	: "@" IDENT TYPE "(" TYPE* ")" (statement | ";")
 
 	// get name
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '@'.");
@@ -213,7 +191,7 @@ StmtNode* Parser::function_declaration()
 		consume(TOKEN_TYPE, "Expected parameter.");
 		params.push_back(get_prev_as_type());
 
-	} while (match(TOKEN_COMMA));
+	} while (check(TOKEN_TYPE));
 
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
 	add_function(&tok, params.size());
@@ -231,7 +209,7 @@ StmtNode* Parser::function_declaration()
 		// DEBUG_PRINT_F_MSG("Start function body (\"%s\").", name.c_str());
 		scope_up();
 		_current_scope.param_count = params.size();
-		StmtNode* body = declaration();
+		StmtNode* body = statement();
 		scope_down();
 		// DEBUG_PRINT_F_MSG("End function body (\"%s\").", name.c_str());
 		return new FuncDeclNode(name, ret_type, params, body);
@@ -240,7 +218,7 @@ StmtNode* Parser::function_declaration()
 
 StmtNode* Parser::variable_declaration()
 {
-	// var_decl		: "%" IDENT ("," IDENT)* TYPE (expression ("," expression)*)?
+	// var_decl		: "%" IDENT ("," IDENT)* TYPE (expression ("," expression)*)? ";"
 
 	// get name(s)
 	vector<string> names;
@@ -295,26 +273,23 @@ StmtNode* Parser::variable_declaration()
 StmtNode* Parser::statement()
 {
 	// statement	: assignment
+	//				| if_branch
 	// 				| loop
 	//		 		| return
 	// 				| block
-	// 				| expression
+	// 				| expression ";"
 
-
-	if(match(TOKEN_EQUAL)) 			 return assign_statement();
-	else if(match(TOKEN_TILDE)) 	 return return_statement();
-	else if(match(TOKEN_LEFT_PAREN)) return loop_statement();
-	else if(match(TOKEN_LEFT_BRACE)) return block_statement();
-	else
-	// {
-	// 	DEBUG_PRINT_F_MSG("statement falling through to expression. (%d)", _current.type);
-		return expression_statement();
-	// }
+	if	   (match(TOKEN_EQUAL			 ))	return assign_statement();
+	else if(match(TOKEN_QUESTION_QUESTION)) return if_statement();
+	else if(match(TOKEN_TILDE			 ))	return return_statement();
+	else if(match(TOKEN_BANG_BANG	 	 ))	return loop_statement();
+	else if(match(TOKEN_LEFT_BRACE		 ))	return block_statement();
+	else									return expression_statement();
 }
 
 StmtNode* Parser::assign_statement()
 {
-	// assignment	: "=" IDENT expression	
+	// assignment	: "=" IDENT expression ";"
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '='.");
 	string ident = PREV_TOKEN_STR;
 	if(!check_variable(ident)) error("Variable doesn't exist in current scope.");
@@ -325,60 +300,39 @@ StmtNode* Parser::assign_statement()
 	return new AssignNode(ident, expr);
 }
 
+StmtNode* Parser::if_statement()
+{
+	consume(TOKEN_LEFT_PAREN, "Expect '(' after '\?\?'.");
+	ExprNode* cond = expression();
+	consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+	StmtNode* if_branch = statement();
+	StmtNode* else_branch = match(TOKEN_COLON_COLON) ? statement() : nullptr;
+	return new IfNode(cond, if_branch, else_branch);
+}
+
 StmtNode* Parser::loop_statement()
 {
-	// loop		: "(" expression ")" declaration
-	//			| "(" declaration ";" expression ";)" declaration
-	//			| "(" declaration ";" expression ";" declaration ";)" declaration
+	// loop		: "!!" "(" expression ")" statement
+	//			| "!!" "(" declaration ";" expression ";" declaration? ")" statement
 
 	// 1st version: while-loop
-	// 2nd version: while-loop with initializer
-	// 3rd version: for-loop
+	// 2nd version: for-loop
 
 	// we can't look ahead so we check later when we know 
 	// how many expressions or statements we have what they are
 
 	scope_up();
 
-	Token firsttoken = _current;
-	StmtNode* first = declaration();
-	
-	if(!check(TOKEN_RIGHT_PAREN)) // 2nd or 3rd version
-	{
-		// 2nd is always expression
-		ExprNode* second = expression();
-		consume(TOKEN_SEMICOLON, "Expected ';' after condition.");
-		
-		if(!check(TOKEN_RIGHT_PAREN)) // 3rd version
-		{
-			StmtNode* third = declaration();
-			consume(TOKEN_RIGHT_PAREN, "Expected ')' after incrementer.");
-			StmtNode* body = declaration();
-			scope_down();
-			
-			return new LoopNode(first, second, third, body);
-		}
-		
-		consume(TOKEN_RIGHT_PAREN, "Expected ')' after ';' after condition.");
-		StmtNode* body = declaration();
-		scope_down();
+	expression();
 
-		return new LoopNode(first, second, nullptr, body);
-	}
-
-	consume(TOKEN_RIGHT_PAREN, "Expected ')' after condition.");
-	StmtNode* body = declaration();
 	scope_down();
-	
-	ExprNode* newfirst = dynamic_cast<ExprNode*>(first);
-	if(newfirst == nullptr) error_at(&firsttoken, "Expected expression, not statement.");
-		
-	return new LoopNode(nullptr, newfirst, nullptr, body);
+	return nullptr;
 }
 
 StmtNode* Parser::return_statement()
 {
-	// return 	: "~" expression?
+	// return 	: "~" expression? ";"
 	if(match(TOKEN_SEMICOLON)) return new ReturnNode(nullptr);
 	else
 	{
@@ -394,13 +348,11 @@ StmtNode* Parser::block_statement()
 
 	AST statements = AST();
 	scope_up();
-	DEBUG_PRINT_F_MSG("Entered block! (new depth: %d)", _current_scope.depth);
 
 	while(!check(TOKEN_RIGHT_BRACE) && !is_at_end()) statements.push_back(declaration());
 	consume(TOKEN_RIGHT_BRACE, "Expected '}' after block.");
 	
 	scope_down();
-	DEBUG_PRINT_F_MSG("Exited block! (new depth: %d)", _current_scope.depth);
 	return (StmtNode*)(new BlockNode(statements));
 }
 
@@ -416,9 +368,26 @@ StmtNode* Parser::expression_statement()
 ExprNode* Parser::expression()
 {
 	// expression 	: ternary
-	// return ternary();
+	return ternary();
+}
 
-	return logical_or();
+ExprNode* Parser::ternary()
+{
+	// ternary		: logical_or ("?" expression (":" ternary)?)
+
+	ExprNode* expr = logical_or();
+
+	while(match(TOKEN_QUESTION))
+	{
+		ExprNode* middle = expression();
+		if(match(TOKEN_COLON))
+		{
+			ExprNode* right = ternary();
+			expr = new LogicalNode(TOKEN_QUESTION, expr, right, middle);
+		}
+	}
+
+	return expr;
 }
 
 ExprNode* Parser::logical_or()
@@ -428,9 +397,8 @@ ExprNode* Parser::logical_or()
 
 	while(match(TOKEN_PIPE_PIPE))
 	{
-		TokenType op = _previous.type;
 		ExprNode* right = logical_and();
-		expr = new LogicalNode(op, expr, right);
+		expr = new LogicalNode(TOKEN_PIPE_PIPE, expr, right);
 	}
 
 	return expr;
@@ -443,9 +411,8 @@ ExprNode* Parser::logical_and()
 
 	while(match(TOKEN_AND_AND))
 	{
-		TokenType op = _previous.type;
 		ExprNode* right = bitwise_or();
-		expr = new LogicalNode(op, expr, right);
+		expr = new LogicalNode(TOKEN_AND_AND, expr, right);
 	}
 
 	return expr;
@@ -458,9 +425,8 @@ ExprNode* Parser::bitwise_or()
 
 	while(match(TOKEN_PIPE))
 	{
-		TokenType op = _previous.type;
 		ExprNode* right = bitwise_xor();
-		expr = new BinaryNode(op, expr, right);
+		expr = new BinaryNode(TOKEN_PIPE, expr, right);
 	}
 
 	return expr;
@@ -473,9 +439,8 @@ ExprNode* Parser::bitwise_xor()
 
 	while(match(TOKEN_CARET))
 	{
-		TokenType op = _previous.type;
 		ExprNode* right = bitwise_and();
-		expr = new BinaryNode(op, expr, right);
+		expr = new BinaryNode(TOKEN_CARET, expr, right);
 	}
 
 	return expr;
@@ -488,9 +453,8 @@ ExprNode* Parser::bitwise_and()
 
 	while(match(TOKEN_AND))
 	{
-		TokenType op = _previous.type;
 		ExprNode* right = equality();
-		expr = new BinaryNode(op, expr, right);
+		expr = new BinaryNode(TOKEN_AND, expr, right);
 	}
 
 	return expr;
@@ -621,7 +585,7 @@ ExprNode* Parser::primary()
 	{
 		int intval = strtol(PREV_TOKEN_STR.erase(0, 1).c_str(), NULL, 10);
 		if(intval >= _current_scope.param_count) error(tools::fstr(
-			"Parameter reference exceeds arity of %d.", intval));
+			"Parameter reference exceeds arity of %d.", _current_scope.param_count));
 		return new ReferenceNode("", intval, TOKEN_PARAMETER_REF);
 	}
 
@@ -655,26 +619,20 @@ Status Parser::parse(string infile, AST* astree)
 	_astree = astree;
 
 	// set members
-	_infile = infile;
-	_source = tools::readf(_infile);
-	_scanner = Scanner(_source.c_str());
-	_had_error = false;
-	_panic_mode = false;
+	string* src = new string(tools::readf(infile));
+	_scanner = Scanner(src->c_str());
 
 	_scope_stack = vector<Scope>();
 	_current_scope = (Scope){0, 0, vector<string>(), map<string, int>()};
 
-	// printTokensFromSrc(_source.c_str());
+	_error_dispatcher = ErrorDispatcher(src->c_str(), infile.c_str());
 
 	advance();
 	while (!match(TOKEN_EOF))
 	{
-		if(match(TOKEN_MODULO))
-			_astree->push_back(variable_declaration());
-		else if(match(TOKEN_AT))
-			_astree->push_back(function_declaration());
-	
-		else error("Expected declaration.");
+		if(match(TOKEN_MODULO))  _astree->push_back(variable_declaration());
+		else if(match(TOKEN_AT)) _astree->push_back(function_declaration());
+		else error_at_current("Expected declaration at top-level code.");
 	}
 
 	DEBUG_PRINT_MSG("Parsing complete!");

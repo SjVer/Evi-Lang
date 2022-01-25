@@ -1,3 +1,4 @@
+#define ARGP_NO_EXIT
 #include <argp.h>
 #include "common.hpp"
 #include "parser.hpp"
@@ -86,7 +87,7 @@ int main(int argc, char **argv)
 	arguments.output_given = false;
 
 	/* Where the magic happens */
-	argp_parse(&argp, argc, argv, 0, 0, &arguments);
+	if(argp_parse(&argp, argc, argv, 0, 0, &arguments)) return STATUS_CLI_ERROR;
 
 	// figure out output file name
 	if(!arguments.output_given)
@@ -102,11 +103,11 @@ int main(int argc, char **argv)
 	// parse program
 	Parser parser;
 	Status parser_status = parser.parse(arguments.args[0], &astree);
-	if(parser_status != STATUS_SUCCESS) return parser_status;
+	if(parser_status != STATUS_SUCCESS) return parser_status; // unnessecary, parser exits itself
 
 	#ifdef DEBUG
 	// generate visualization
-	ASTVisualizer().visualize("ast.svg", &astree);
+	ASTVisualizer().visualize(string(arguments.args[0]) + ".svg", &astree);
 	#endif
 
 	// // type check
@@ -119,5 +120,5 @@ int main(int argc, char **argv)
 	// Status codegen_status = codegen.generate(arguments.outfile, &astree);
 	// if(codegen_status != STATUS_SUCCESS) return codegen_status;
 
-	return 0;
+	return STATUS_SUCCESS;
 }

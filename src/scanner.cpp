@@ -263,9 +263,6 @@ Token Scanner::scanToken()
 		case '}': return makeToken(TOKEN_RIGHT_BRACE);
 		// case '[': return makeToken(TOKEN_LEFT_B_BRACE);
 		// case ']': return makeToken(TOKEN_RIGHT_B_BRACE);
-		case '?': return makeToken(TOKEN_QUESTION);
-		case '!': return makeToken(TOKEN_BANG);
-		case ':': return makeToken(TOKEN_COLON);
 		case ',': return makeToken(TOKEN_COMMA);
 		case '*': return makeToken(TOKEN_STAR);
 		case '%': return makeToken(TOKEN_MODULO);
@@ -275,7 +272,6 @@ Token Scanner::scanToken()
 		case ';': return makeToken(TOKEN_SEMICOLON);
 
 		// two-character
-		// case '+': return makeToken(match('+') ? TOKEN_PLUS_PLUS : TOKEN_PLUS);
 		case '+': return makeToken(match('+') ? TOKEN_PLUS_PLUS   	: TOKEN_PLUS);
 		case '-': return makeToken(match('-') ? TOKEN_MINUS_MINUS  	: TOKEN_MINUS);
 		case '/': return makeToken(match('=') ? TOKEN_SLASH_EQUAL	: TOKEN_SLASH);
@@ -285,6 +281,9 @@ Token Scanner::scanToken()
 		
 		case '|': return match('|') ? makeToken(TOKEN_PIPE_PIPE) : makeToken(TOKEN_PIPE);
 		case '&': return match('&') ? makeToken(TOKEN_AND_AND) : makeToken(TOKEN_AND);
+		case '?': return match('?') ? makeToken(TOKEN_QUESTION_QUESTION) : makeToken(TOKEN_QUESTION);
+		case ':': return match(':') ? makeToken(TOKEN_COLON_COLON) : makeToken(TOKEN_COLON);
+		case '!': return match('!') ? makeToken(TOKEN_BANG_BANG) : makeToken(TOKEN_BANG);
 
 		// literals
 		case '$': return reference();
@@ -337,12 +336,9 @@ char *getTokenStr(TokenType type)
 		case TOKEN_RIGHT_BRACE: return "RIGHT_BRACE";
 		case TOKEN_SLASH: return "SLASH";
 		case TOKEN_COMMA: return "COMMA";
-		case TOKEN_QUESTION: return "QUESTION";
-		case TOKEN_COLON: return "COLON";
 		case TOKEN_SEMICOLON: return "SEMICOLON";
 		case TOKEN_STAR: return "STAR";
 		case TOKEN_MODULO: return "MODULO";
-		case TOKEN_BANG: return "BANG";
 		case TOKEN_TILDE: return "TILDE";
 		case TOKEN_AT: return "AT";
 		case TOKEN_CARET: return "CARET";
@@ -363,6 +359,12 @@ char *getTokenStr(TokenType type)
 		case TOKEN_AND_AND: return "AND_AND";
 		case TOKEN_PIPE: return "PIPE";
 		case TOKEN_PIPE_PIPE: return "PIPE_PIPE";
+		case TOKEN_QUESTION: return "QUESTION";
+		case TOKEN_QUESTION_QUESTION: return "QUESTION_QUESTION";
+		case TOKEN_COLON: return "COLON";
+		case TOKEN_COLON_COLON: return "COLON_COLON";
+		case TOKEN_BANG: return "BANG";
+		case TOKEN_BANG_BANG: return "BANG_BANG";
 
 		// Multi-character tokens
 		case TOKEN_SLASH_EQUAL: return "SLASH_EQUAL";

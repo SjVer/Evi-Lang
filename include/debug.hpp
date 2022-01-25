@@ -16,6 +16,7 @@ class ASTVisualizer: public Visitor
 	VISIT(FuncDeclNode);
 	VISIT(VarDeclNode);
 	VISIT(AssignNode);
+	VISIT(IfNode);
 	VISIT(LoopNode);
 	VISIT(ReturnNode);
 	VISIT(BlockNode);
