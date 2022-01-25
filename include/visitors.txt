@@ -1,0 +1,16 @@
+#define VISIT(_node) void visit(_node* node)
+VISIT(FuncDeclNode);
+VISIT(VarDeclNode);
+VISIT(AssignNode);
+VISIT(IfNode);
+VISIT(LoopNode);
+VISIT(ReturnNode);
+VISIT(BlockNode);
+	VISIT(LogicalNode);
+	VISIT(BinaryNode);
+	VISIT(UnaryNode);
+	VISIT(GroupingNode);
+		VISIT(LiteralNode);
+		VISIT(ReferenceNode);
+		VISIT(CallNode);
+#undef VISIT

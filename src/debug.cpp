@@ -236,7 +236,7 @@ VISIT(GroupingNode)
 
 VISIT(LiteralNode)
 {
-	ADD_NODE(tools::unescstr(node->_token, true, false).c_str());
+	ADD_NODE(tools::unescstr(node->_tokenstr, true, false).c_str());
 }
 
 VISIT(ReferenceNode)

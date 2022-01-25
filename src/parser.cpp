@@ -172,10 +172,11 @@ StmtNode* Parser::function_declaration()
 {
 	// func_decl	: "@" IDENT TYPE "(" TYPE* ")" (statement | ";")
 
+	Token tok = _previous;
+
 	// get name
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '@'.");
 	string name = PREV_TOKEN_STR;
-	Token tok = _previous;
 
 	// get type
 	consume(TOKEN_TYPE, tools::fstr("Expected type after '@%s'.", name.c_str()));
@@ -201,7 +202,7 @@ StmtNode* Parser::function_declaration()
 	{
 		// declaration
 		// DEBUG_PRINT_F_MSG("Declared function (\"%s\").", name.c_str());
-		return new FuncDeclNode(name, ret_type, params, nullptr);
+		return new FuncDeclNode(tok, name, ret_type, params, nullptr);
 	}
 	else
 	{
@@ -212,13 +213,15 @@ StmtNode* Parser::function_declaration()
 		StmtNode* body = statement();
 		scope_down();
 		// DEBUG_PRINT_F_MSG("End function body (\"%s\").", name.c_str());
-		return new FuncDeclNode(name, ret_type, params, body);
+		return new FuncDeclNode(tok, name, ret_type, params, body);
 	}
 }
 
 StmtNode* Parser::variable_declaration()
 {
 	// var_decl		: "%" IDENT ("," IDENT)* TYPE (expression ("," expression)*)? ";"
+
+	Token tok = _previous;
 
 	// get name(s)
 	vector<string> names;
@@ -243,7 +246,7 @@ StmtNode* Parser::variable_declaration()
 	if(match(TOKEN_SEMICOLON))
 	{
 		// declarations
-		for(string& name : names) decls.push_back(new VarDeclNode(name, type, nullptr));
+		for(string& name : names) decls.push_back(new VarDeclNode(tok, name, type, nullptr));
 	}
 	else
 	{
@@ -253,7 +256,7 @@ StmtNode* Parser::variable_declaration()
 		{
 			ExprNode* expr = expression();
 			if(i + 1 < names.size()) consume(TOKEN_COMMA, "Expected ',' after expression.");
-			decls.push_back(new VarDeclNode(string(names[i]), type, expr));
+			decls.push_back(new VarDeclNode(tok, string(names[i]), type, expr));
 		}
 		consume(TOKEN_SEMICOLON, "Expected ';' after variable defenition.");
 	}
@@ -264,7 +267,7 @@ StmtNode* Parser::variable_declaration()
 	{
 		AST stmts;
 		for(VarDeclNode*& decl : decls) stmts.push_back(decl);
-		return new BlockNode(stmts, true);
+		return new BlockNode(tok, stmts, true);
 	}
 }
 
@@ -290,6 +293,8 @@ StmtNode* Parser::statement()
 StmtNode* Parser::assign_statement()
 {
 	// assignment	: "=" IDENT expression ";"
+	Token tok = _previous;
+
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '='.");
 	string ident = PREV_TOKEN_STR;
 	if(!check_variable(ident)) error("Variable doesn't exist in current scope.");
@@ -297,18 +302,20 @@ StmtNode* Parser::assign_statement()
 	ExprNode* expr = expression();
 	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
 
-	return new AssignNode(ident, expr);
+	return new AssignNode(tok, ident, expr);
 }
 
 StmtNode* Parser::if_statement()
 {
+	Token tok = _previous;
+
 	consume(TOKEN_LEFT_PAREN, "Expect '(' after '\?\?'.");
 	ExprNode* cond = expression();
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
 	StmtNode* if_branch = statement();
 	StmtNode* else_branch = match(TOKEN_COLON_COLON) ? statement() : nullptr;
-	return new IfNode(cond, if_branch, else_branch);
+	return new IfNode(tok, cond, if_branch, else_branch);
 }
 
 StmtNode* Parser::loop_statement()
@@ -333,12 +340,13 @@ StmtNode* Parser::loop_statement()
 StmtNode* Parser::return_statement()
 {
 	// return 	: "~" expression? ";"
-	if(match(TOKEN_SEMICOLON)) return new ReturnNode(nullptr);
+	Token tok = _previous;
+	if(match(TOKEN_SEMICOLON)) return new ReturnNode(tok, nullptr);
 	else
 	{
 		ExprNode* expr = expression();
 		consume(TOKEN_SEMICOLON, "Expected ';' after return statement.");
-		return new ReturnNode(expr);
+		return new ReturnNode(tok, expr);
 	}
 }
 
@@ -347,13 +355,14 @@ StmtNode* Parser::block_statement()
 	// block		: "{" declaration* "}"
 
 	AST statements = AST();
+	Token tok = _previous;
 	scope_up();
 
 	while(!check(TOKEN_RIGHT_BRACE) && !is_at_end()) statements.push_back(declaration());
 	consume(TOKEN_RIGHT_BRACE, "Expected '}' after block.");
 	
 	scope_down();
-	return (StmtNode*)(new BlockNode(statements));
+	return (StmtNode*)(new BlockNode(tok, statements));
 }
 
 StmtNode* Parser::expression_statement()
@@ -379,11 +388,12 @@ ExprNode* Parser::ternary()
 
 	while(match(TOKEN_QUESTION))
 	{
+		Token tok = _previous;
 		ExprNode* middle = expression();
 		if(match(TOKEN_COLON))
 		{
 			ExprNode* right = ternary();
-			expr = new LogicalNode(TOKEN_QUESTION, expr, right, middle);
+			expr = new LogicalNode(tok, TOKEN_QUESTION, expr, right, middle);
 		}
 	}
 
@@ -397,8 +407,9 @@ ExprNode* Parser::logical_or()
 
 	while(match(TOKEN_PIPE_PIPE))
 	{
+		Token tok = _previous;
 		ExprNode* right = logical_and();
-		expr = new LogicalNode(TOKEN_PIPE_PIPE, expr, right);
+		expr = new LogicalNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -411,8 +422,9 @@ ExprNode* Parser::logical_and()
 
 	while(match(TOKEN_AND_AND))
 	{
+		Token tok = _previous;
 		ExprNode* right = bitwise_or();
-		expr = new LogicalNode(TOKEN_AND_AND, expr, right);
+		expr = new LogicalNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -425,8 +437,9 @@ ExprNode* Parser::bitwise_or()
 
 	while(match(TOKEN_PIPE))
 	{
+		Token tok = _previous;
 		ExprNode* right = bitwise_xor();
-		expr = new BinaryNode(TOKEN_PIPE, expr, right);
+		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -439,8 +452,9 @@ ExprNode* Parser::bitwise_xor()
 
 	while(match(TOKEN_CARET))
 	{
+		Token tok = _previous;
 		ExprNode* right = bitwise_and();
-		expr = new BinaryNode(TOKEN_CARET, expr, right);
+		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -453,8 +467,9 @@ ExprNode* Parser::bitwise_and()
 
 	while(match(TOKEN_AND))
 	{
+		Token tok = _previous;
 		ExprNode* right = equality();
-		expr = new BinaryNode(TOKEN_AND, expr, right);
+		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -467,9 +482,9 @@ ExprNode* Parser::equality()
 
 	while(match(TOKEN_SLASH_EQUAL) || match(TOKEN_EQUAL_EQUAL))
 	{
-		TokenType op = _previous.type;
+		Token tok = _previous;
 		ExprNode* right = comparison();
-		expr = new BinaryNode(op, expr, right);
+		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -483,9 +498,9 @@ ExprNode* Parser::comparison()
 	while(match(TOKEN_GREATER) || match(TOKEN_GREATER_EQUAL)
 	   || match(TOKEN_LESS)    || match(TOKEN_LESS_EQUAL))
 	{
-		TokenType op = _previous.type;
+		Token tok = _previous;
 		ExprNode* right = bitwise_shift();
-		expr = new BinaryNode(op, expr, right);
+		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -498,9 +513,9 @@ ExprNode* Parser::bitwise_shift()
 
 	while(match(TOKEN_LESS_LESS) || match(TOKEN_GREATER_GREATER))
 	{
-		TokenType op = _previous.type;
+		Token tok = _previous;
 		ExprNode* right = term();
-		expr = new BinaryNode(op, expr, right);
+		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -514,9 +529,9 @@ ExprNode* Parser::term()
 	
 	while(match(TOKEN_PLUS) || match(TOKEN_MINUS))
 	{
-		TokenType op = _previous.type;
+		Token tok = _previous;
 		ExprNode* right = factor();
-		expr = new BinaryNode(op, expr, right);
+		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -530,9 +545,9 @@ ExprNode* Parser::factor()
 	
 	while(match(TOKEN_STAR) || match(TOKEN_SLASH))
 	{
-		TokenType op = _previous.type;
+		Token tok = _previous;
 		ExprNode* right = unary();
-		expr = new BinaryNode(op, expr, right);
+		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
@@ -545,9 +560,9 @@ ExprNode* Parser::unary()
 	if(match(TOKEN_BANG) || match(TOKEN_MINUS)
 	|| match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS))
 	{
-		TokenType op = _previous.type;
+		Token tok = _previous;
 		ExprNode* expr = unary();
-		return new UnaryNode(op, expr);
+		return new UnaryNode(tok, tok.type, expr);
 	}
 
 	return primary();
@@ -564,14 +579,15 @@ ExprNode* Parser::primary()
 	// literals
 	if(match(TOKEN_INTEGER) || match(TOKEN_FLOAT)
 	|| match(TOKEN_CHARACTER) || match(TOKEN_STRING))
-		return (ExprNode*)(new LiteralNode(PREV_TOKEN_STR, _previous.type));
+		return (ExprNode*)(new LiteralNode(_previous, PREV_TOKEN_STR, _previous.type));
 
 	// grouping
 	else if(match(TOKEN_LEFT_PAREN))
 	{
+		Token tok = _previous;
 		ExprNode* expr = expression();
 		consume(TOKEN_RIGHT_PAREN, "Expected ')' after parenthesized expression.");
-		return new GroupingNode(expr);
+		return new GroupingNode(tok, expr);
 	}
 
 	// references
@@ -579,19 +595,20 @@ ExprNode* Parser::primary()
 	{
 		string name = PREV_TOKEN_STR.erase(0, 1);
 		if(!check_variable(name)) error("Variable doesn't exist in current scope.");
-		return new ReferenceNode(name, -1, TOKEN_VARIABLE_REF);
+		return new ReferenceNode(_previous, name, -1, TOKEN_VARIABLE_REF);
 	}
 	else if(match(TOKEN_PARAMETER_REF))
 	{
 		int intval = strtol(PREV_TOKEN_STR.erase(0, 1).c_str(), NULL, 10);
 		if(intval >= _current_scope.param_count) error(tools::fstr(
 			"Parameter reference exceeds arity of %d.", _current_scope.param_count));
-		return new ReferenceNode("", intval, TOKEN_PARAMETER_REF);
+		return new ReferenceNode(_previous, "", intval, TOKEN_PARAMETER_REF);
 	}
 
 	// calls
 	else if (match(TOKEN_IDENTIFIER))
 	{
+		Token tok = _previous;
 		string name = PREV_TOKEN_STR;
 		vector<ExprNode*> args;
 		
@@ -604,7 +621,7 @@ ExprNode* Parser::primary()
 		} while(match(TOKEN_COMMA));
 		consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
 		
-		return new CallNode(name, args);
+		return new CallNode(tok, name, args);
 	}
 
 	error_at_current("Expected expression.");
@@ -613,19 +630,18 @@ ExprNode* Parser::primary()
 
 // ======================= misc. =======================
 
-Status Parser::parse(string infile, AST* astree)
+Status Parser::parse(string infile, const char* source, AST* astree)
 {
 	// printTokensFromSrc(tools::readf(infile).c_str());
 	_astree = astree;
 
 	// set members
-	string* src = new string(tools::readf(infile));
-	_scanner = Scanner(src->c_str());
+	_scanner = Scanner(source);
 
 	_scope_stack = vector<Scope>();
 	_current_scope = (Scope){0, 0, vector<string>(), map<string, int>()};
 
-	_error_dispatcher = ErrorDispatcher(src->c_str(), infile.c_str());
+	_error_dispatcher = ErrorDispatcher(source, infile.c_str());
 
 	advance();
 	while (!match(TOKEN_EOF))

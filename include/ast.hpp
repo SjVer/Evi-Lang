@@ -40,7 +40,6 @@ class Visitor
 	VISIT(LoopNode);
 	VISIT(ReturnNode);
 	VISIT(BlockNode);
-	
 		VISIT(LogicalNode);
 		VISIT(BinaryNode);
 		VISIT(UnaryNode);
@@ -54,7 +53,9 @@ class Visitor
 // astnode class (visited by visitor)
 class ASTNode
 {
-	public: 
+	public:
+	ASTNode(Token token): _token(token) {}
+	Token _token;
 	virtual void accept(Visitor* v) = 0;
 };
 
@@ -64,17 +65,21 @@ typedef vector<StmtNode*> AST;
 // =================================================
 
 #define ACCEPT void accept(Visitor *v) { v->visit(this); }
-#define VIRTUAL_ACCEPT virtual void accept(Visitor *v) = 0;
+#define VIRTUAL_NODE_DECLARATION(name, base) \
+	class name : public base \
+	{ public: name(Token token): base(token) {} virtual void accept(Visitor *v) = 0; }
 
-class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
+VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 
 	class FuncDeclNode: public StmtNode
 	{
 		public:
 
 		// body = nullptr if only declaration
-		FuncDeclNode(string identifier, EviType ret_type, vector<EviType> params, StmtNode* body):
-			_identifier(identifier), _ret_type(ret_type), _params(params), _body(body) {}
+		FuncDeclNode(Token token, string identifier, EviType ret_type,
+					 vector<EviType> params, StmtNode* body):
+			StmtNode(token), _identifier(identifier), 
+			_ret_type(ret_type), _params(params), _body(body) {}
 		ACCEPT
 
 		string _identifier;
@@ -88,8 +93,8 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 		public:
 
 		// expr = nullptr if only declaration
-		VarDeclNode(string identifier, EviType type, ExprNode* expr):
-			_identifier(identifier), _type(type), _expr(expr) {}
+		VarDeclNode(Token token, string identifier, EviType type, ExprNode* expr):
+			StmtNode(token), _identifier(identifier), _type(type), _expr(expr) {}
 		ACCEPT
 
 		string _identifier;
@@ -101,8 +106,8 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 	{
 		public:
 
-		AssignNode(string ident, ExprNode* expr):
-			_ident(ident), _expr(expr) {}
+		AssignNode(Token token, string ident, ExprNode* expr):
+			StmtNode(token), _ident(ident), _expr(expr) {}
 		ACCEPT
 
 		string _ident;
@@ -113,8 +118,9 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 	{
 		public:
 
-		IfNode(ExprNode* cond, StmtNode* if_, StmtNode* else_):
-			_cond(cond), _if(if_), _else(else_) {}
+		IfNode(Token token, ExprNode* cond, StmtNode* if_, StmtNode* else_):
+			StmtNode(token), _cond(cond), 
+			_if(if_), _else(else_) {}
 		ACCEPT
 
 		ExprNode* _cond;
@@ -126,9 +132,10 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 	{
 		public:
 
-		LoopNode(StmtNode* first, ExprNode* second,
+		LoopNode(Token token,
+				 StmtNode* first, ExprNode* second,
 				 StmtNode* third, StmtNode* body):
-			_first(first), _second(second),
+			StmtNode(token), _first(first), _second(second),
 			_third(third), _body(body) {}
 		ACCEPT
 
@@ -142,7 +149,8 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 	{
 		public:
 
-		ReturnNode(ExprNode* expr): _expr(expr) {}
+		ReturnNode(Token token, ExprNode* expr):
+			StmtNode(token), _expr(expr) {}
 		ACCEPT
 
 		ExprNode* _expr;
@@ -155,23 +163,24 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 		// if a block is "secret" it's basically
 		// just a collection of statements that belong
 		// to the same context rather than a new one
-		BlockNode(AST statements, bool secret = false):
-			 _statements(statements), _secret(secret) {}
+		BlockNode(Token token, AST statements, bool secret = false):
+			 StmtNode(token), _statements(statements), _secret(secret) {}
 		ACCEPT
 
 		AST _statements;
 		bool _secret;
 	};
 
-	class ExprNode: public StmtNode { public: VIRTUAL_ACCEPT };
+	VIRTUAL_NODE_DECLARATION(ExprNode, StmtNode);
 
 		class LogicalNode: public ExprNode
 		{
 			public:
 
-			LogicalNode(TokenType optype, ExprNode* left, 
+			LogicalNode(Token token, TokenType optype, ExprNode* left, 
 						ExprNode* right, ExprNode* middle = nullptr):
-				_optype(optype), _left(left), _right(right), _middle(middle) {}
+				ExprNode(token), _optype(optype), _left(left), 
+				_right(right), _middle(middle) {}
 			ACCEPT
 
 			TokenType _optype;
@@ -184,8 +193,8 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 		{
 			public:
 
-			BinaryNode(TokenType optype, ExprNode* left, ExprNode* right):
-				_optype(optype), _left(left), _right(right) {}
+			BinaryNode(Token token, TokenType optype, ExprNode* left, ExprNode* right):
+				ExprNode(token), _optype(optype), _left(left), _right(right) {}
 			ACCEPT
 
 			TokenType _optype;
@@ -197,8 +206,8 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 		{
 			public:
 
-			UnaryNode(TokenType optype, ExprNode* expr):
-				_optype(optype), _expr(expr) {}
+			UnaryNode(Token token, TokenType optype, ExprNode* expr):
+				ExprNode(token), _optype(optype), _expr(expr) {}
 			ACCEPT
 
 			TokenType _optype;
@@ -209,23 +218,24 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 		{
 			public:
 
-			GroupingNode(ExprNode* expr): _expr(expr) {}
+			GroupingNode(Token token, ExprNode* expr): 
+				ExprNode(token), _expr(expr) {}
 			ACCEPT
 
 			ExprNode* _expr;
 		};
 
-		class PrimaryNode: public ExprNode { public: VIRTUAL_ACCEPT };
+		VIRTUAL_NODE_DECLARATION(PrimaryNode, ExprNode);
 		
 			class LiteralNode: public PrimaryNode
 			{
 				public:
 
-				LiteralNode(string token, TokenType tokentype):
-					_token(token), _tokentype(tokentype) {}
+				LiteralNode(Token token, string tokenstr, TokenType tokentype):
+					PrimaryNode(token), _tokenstr(tokenstr), _tokentype(tokentype) {}
 				ACCEPT
 
-				string _token;
+				string _tokenstr;
 				TokenType _tokentype;
 			};
 
@@ -233,8 +243,8 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 			{
 				public:
 
-				ReferenceNode(string var, int par, TokenType type):
-					_variable(var), _parameter(par), _type(type) {}
+				ReferenceNode(Token token, string var, int par, TokenType type):
+					PrimaryNode(token), _variable(var), _parameter(par), _type(type) {}
 				ACCEPT
 
 				string _variable;
@@ -246,8 +256,8 @@ class StmtNode: public ASTNode { public: VIRTUAL_ACCEPT };
 			{
 				public:
 
-				CallNode(string ident, vector<ExprNode*> arguments):
-					_ident(ident), _arguments(arguments) {}
+				CallNode(Token token, string ident, vector<ExprNode*> arguments):
+					PrimaryNode(token), _ident(ident), _arguments(arguments) {}
 				ACCEPT
 
 				string _ident;

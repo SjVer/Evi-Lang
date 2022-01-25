@@ -16,7 +16,7 @@ class Parser
 {
 public:
 	Parser(): _scope_stack() {}
-	Status parse(string infile, AST* astree);
+	Status parse(string infile, const char* source, AST* astree);
 
 private:
 

@@ -115,7 +115,7 @@ valgrind: debug $(APP)
 git:
 	git add --all
 # 	git status
-	git commit -m 'upload'
+	git commit -m `test $(msg) && echo $(msg) || echo upload`
 	git push origin main
 
 newfile:

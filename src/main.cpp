@@ -2,6 +2,7 @@
 #include <argp.h>
 #include "common.hpp"
 #include "parser.hpp"
+#include "typechecker.hpp"
 
 #ifdef DEBUG
 #include "debug.hpp"
@@ -99,26 +100,33 @@ int main(int argc, char **argv)
 	// ===================================
 
 	AST astree;
+	const char* source = strdup(tools::readf(arguments.args[0]).c_str());
 
 	// parse program
 	Parser parser;
-	Status parser_status = parser.parse(arguments.args[0], &astree);
-	if(parser_status != STATUS_SUCCESS) return parser_status; // unnessecary, parser exits itself
+	Status parser_status = parser.parse(arguments.args[0], source, &astree);
+	// unnessecary, parser exits itself
+	if(parser_status != STATUS_SUCCESS) { delete source; return parser_status; }
 
-	#ifdef DEBUG
+	
 	// generate visualization
+	#ifdef DEBUG
 	ASTVisualizer().visualize(string(arguments.args[0]) + ".svg", &astree);
 	#endif
 
-	// // type check
-	// TypeChecker checker;
-	// Status checker_status = checker.check(&astree);
-	// if(checker_status != STATUS_SUCCESS) return checker_status;
+	
+	// type check
+	TypeChecker checker;
+	Status checker_status = checker.check(arguments.args[0], &astree);
+	if(checker_status != STATUS_SUCCESS) { delete source; return checker_status; }
+
 
 	// // codegen
 	// CodeGenerator codegen;
 	// Status codegen_status = codegen.generate(arguments.outfile, &astree);
-	// if(codegen_status != STATUS_SUCCESS) return codegen_status;
+	// if(codegen_status != STATUS_SUCCESS) { delete source; return codegen_status; };
 
+
+	delete source;
 	return STATUS_SUCCESS;
 }

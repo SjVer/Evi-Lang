@@ -1,6 +1,4 @@
 @main i32 ()
 {
-	print(1);
-	print(2);
-	print(3);
+	%x i8 1 + 2.0 + "3";
 }
