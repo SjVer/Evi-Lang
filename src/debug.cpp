@@ -30,8 +30,8 @@ void ASTVisualizer::visualize(string path, AST* astree)
 	DEBUG_PRINT_MSG("Generating AST image...");
 	int status = system(tools::fstr("echo '%s' | dot -Tsvg > %s", _stream.str().c_str(), path.c_str()).c_str());
 	if(status) cout << _stream.str() << endl;
-	else system(tools::fstr("eog %s", path.c_str()).c_str());
-	remove(path.c_str());
+	// else system(tools::fstr("eog %s", path.c_str()).c_str());
+	// remove(path.c_str());
 }
 
 // =========================================

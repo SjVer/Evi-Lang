@@ -177,6 +177,7 @@ StmtNode* Parser::function_declaration()
 	// get name
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '@'.");
 	string name = PREV_TOKEN_STR;
+	Token nametok = _previous;
 
 	// get type
 	consume(TOKEN_TYPE, tools::fstr("Expected type after '@%s'.", name.c_str()));
@@ -195,7 +196,7 @@ StmtNode* Parser::function_declaration()
 	} while (check(TOKEN_TYPE));
 
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
-	add_function(&tok, params.size());
+	add_function(&nametok, params.size());
 
 	// get body?
 	if(match(TOKEN_SEMICOLON))

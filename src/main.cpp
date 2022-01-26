@@ -102,10 +102,11 @@ int main(int argc, char **argv)
 	AST astree;
 	const char* source = strdup(tools::readf(arguments.args[0]).c_str());
 
+	init_builtin_evi_types();
+
 	// parse program
 	Parser parser;
 	Status parser_status = parser.parse(arguments.args[0], source, &astree);
-	// unnessecary, parser exits itself
 	if(parser_status != STATUS_SUCCESS) { delete source; return parser_status; }
 
 	
@@ -117,7 +118,7 @@ int main(int argc, char **argv)
 	
 	// type check
 	TypeChecker checker;
-	Status checker_status = checker.check(arguments.args[0], &astree);
+	Status checker_status = checker.check(arguments.args[0], source, &astree);
 	if(checker_status != STATUS_SUCCESS) { delete source; return checker_status; }
 
 

@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue Jan 25 08:27:21 2022
+# Make data base, printed on Wed Jan 26 09:45:27 2022
 
 # Variables
 
@@ -95,7 +95,7 @@ GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
 GJS_DEBUG_OUTPUT = stderr
 # environment
-SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1576,unix/Xeon-L5410:/tmp/.ICE-unix/1576
+SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1579,unix/Xeon-L5410:/tmp/.ICE-unix/1579
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -119,7 +119,7 @@ XDG_SESSION_DESKTOP = cinnamon
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2208
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2079
 # automatic
 %F = $(notdir $%)
 # environment
@@ -141,7 +141,7 @@ HEADERDIR = include
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1648
+SSH_AGENT_PID = 1651
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = X-Cinnamon
 # environment
@@ -191,7 +191,7 @@ BINDIR = bin
 # makefile (from 'Makefile', line 6)
 CC = clang++
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-49f6837f-a382-41e7-a61a-1df3202c39dc.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-b48f8dae-70f5-46b2-b65d-47a914dfd447.sock
 # environment
 XDG_SESSION_ID = c2
 # environment
@@ -276,6 +276,7 @@ OBJCOUNT_NOPAD = $(shell v=`echo $(OBJ) | wc -w`; echo `seq 1 $$(expr $$v)`)
 SUFFIXES := 
 # makefile (from 'Makefile', line 10)
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
+ 
 # environment
 CHROME_DESKTOP = code-url-handler.desktop
 # default
@@ -289,9 +290,8 @@ LC_ADDRESS = nl_NL.UTF-8
 # environment
 LANG = C
 # environment
-VSCODE_PID = 2208
+VSCODE_PID = 2079
 # variable set hash-table stats:
- 
 # Load=140/1024=14%, Rehash=0, Collisions=43/210=20%
 
 # Pattern-specific Variable Values
@@ -300,10 +300,10 @@ VSCODE_PID = 2208
 
 # Directories
 
-# . (device 2053, inode 2490466): 15 files, no impossibilities.
-# src (device 2053, inode 3038540): 9 files, no impossibilities.
+# . (device 2053, inode 2490466): 14 files, no impossibilities.
+# src (device 2053, inode 3038540): 11 files, no impossibilities.
 
-# 24 files, no impossibilities in 2 directories.
+# 25 files, no impossibilities in 2 directories.
 
 # Implicit Rules
 
@@ -344,6 +344,27 @@ bin/obj/tools.o:
 #  Modification time never checked.
 #  File has not been updated.
 
+bin/obj/typechecker.o: src/typechecker.cpp | makedirs
+#  Implicit rule search has been done.
+#  Implicit/static pattern stem: 'typechecker'
+#  Last modified 2022-01-26 09:42:48.666519441
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/8=0%
+#  recipe to execute (from 'Makefile', line 61):
+	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
+	@$(CC) $(CXXFLAGS) $(INC_PHC_FLAG) -I $(HEADERDIR) -o $@ -c $<
+	@printf "\b\b done!\n"
+	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
+
+# Not a target:
+src/typechecker.cpp:
+#  Implicit rule search has been done.
+#  Last modified 2022-01-26 09:44:55.669216557
+#  File has been updated.
+#  Successfully updated.
+
 remake: clean bin/evi
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
@@ -365,7 +386,7 @@ git:
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 116):
 	git add --all
-	git commit -m 'upload'
+	git commit -m `test "$(msg)" && echo "$(msg)" || echo upload`
 	git push origin main
 
 # Not a target:
@@ -391,16 +412,15 @@ printdebug:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-24 16:20:55.676263713
+#  Last modified 2022-01-25 21:37:23.550245921
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
-src/scanner.cpp:
-#  Implicit rule search has been done.
-#  Last modified 2022-01-24 14:58:52.874874885
-#  File has been updated.
-#  Successfully updated.
+bin/obj/error.o:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
 
 # makefile (from 'Makefile', line 107)
 debug: CXXFLAGS += $(DEBUGDEFS)
@@ -509,23 +529,15 @@ pch:
 	@$(CC) $(PHCFLAGS)
 	@printf "\b\b done!\n"
 
-bin/obj/scanner.o: src/scanner.cpp | makedirs
-#  Implicit rule search has been done.
-#  Implicit/static pattern stem: 'scanner'
-#  Last modified 2022-01-24 20:32:00.91472702
-#  File has been updated.
-#  Needs to be updated (-q is set).
-# variable set hash-table stats:
-# Load=0/32=0%, Rehash=0, Collisions=0/8=0%
-#  recipe to execute (from 'Makefile', line 61):
-	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
-	@$(CC) $(CXXFLAGS) $(INC_PHC_FLAG) -I $(HEADERDIR) -o $@ -c $<
-	@printf "\b\b done!\n"
-	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
-
-bin/evi: bin/obj/scanner.o bin/obj/types.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o bin/obj/codegen.o | makedirs
+# Not a target:
+bin/obj/scanner.o:
 #  Implicit rule search has not been done.
-#  Last modified 2022-01-24 21:24:47.010041042
+#  Modification time never checked.
+#  File has not been updated.
+
+bin/evi: bin/obj/typechecker.o bin/obj/scanner.o bin/obj/types.o bin/obj/error.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o bin/obj/codegen.o | makedirs
+#  Implicit rule search has not been done.
+#  Last modified 2022-01-26 09:42:49.878545067
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -544,6 +556,7 @@ valgrind: debug bin/evi
 	@valgrind $(args) bin/evi test/test.evi -o bin/test.ll
 
 newfile:
+ 
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -553,19 +566,19 @@ newfile:
 	touch $(HEADERDIR)/$(name).hpp
 
 # files hash-table stats:
-# Load=28/1024=3%, Rehash=0, Collisions=4/94=4%
+# Load=30/1024=3%, Rehash=0, Collisions=7/98=7%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 53 / storage = 498 B / avg = 9 B
-# current buf: size = 8162 B / used = 498 B / count = 53 / avg = 9 B
+# strcache buffers: 1 (0) / strings = 56 / storage = 562 B / avg = 10 B
+# current buf: size = 8162 B / used = 562 B / count = 56 / avg = 10 B
 
-# strcache performance: lookups = 122 / hit rate = 56%
+# strcache performance: lookups = 125 / hit rate = 55%
 # hash-table stats:
-# Load=53/8192=1%, Rehash=0, Collisions=2/122=2%
-# Finished Make data base on Tue Jan 25 08:27:21 2022
+# Load=56/8192=1%, Rehash=0, Collisions=2/125=2%
+# Finished Make data base on Wed Jan 26 09:45:27 2022
 
  

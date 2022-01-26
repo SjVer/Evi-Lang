@@ -5,10 +5,12 @@
 #include "error.hpp"
 #include "ast.hpp"
 
+#include <stack>
+
 class TypeChecker: public Visitor
 {
 	public:
-	Status check(string path, AST* astree);
+	Status check(string path, const char* source, AST* astree);
 
 	#define VISIT(_node) void visit(_node* node)
 	VISIT(FuncDeclNode);
@@ -29,7 +31,18 @@ class TypeChecker: public Visitor
 
 	private:
 	string _infile;
-	ErrorDispatcher _dispatcher;
+	ErrorDispatcher _error_dispatcher;
+
+	void error_at(Token *token, string message);
+	void warning_at(Token *token, string message);
+
+	// bc the visitor methods return void we instead
+	// just use a stack for the stuff
+	stack<LexicalType> _type_stack;
+	void push(LexicalType type);
+	LexicalType pop();
+
+	LexicalType resolve_types(LexicalType left, LexicalType right);
 };
 
 #endif

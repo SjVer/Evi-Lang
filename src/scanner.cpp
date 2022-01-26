@@ -8,11 +8,10 @@
 #include <string>
 #include <vector>
 
-Scanner::Scanner() { init_builtin_evi_types(); }
+Scanner::Scanner() {}
 
 Scanner::Scanner(const char *source)
 {
-	init_builtin_evi_types();
 	_src_start = source;
 	_start = source;
 	_current = source;

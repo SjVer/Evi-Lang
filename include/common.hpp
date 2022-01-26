@@ -77,6 +77,7 @@ typedef enum
 	STATUS_SUCCESS = 0,
 	STATUS_CLI_ERROR = 64,
 	STATUS_PARSE_ERROR = 65,
+	STATUS_TYPE_ERROR = 65,
 } Status;
 
 #endif
