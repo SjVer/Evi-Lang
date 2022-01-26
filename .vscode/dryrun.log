@@ -1,4 +1,4 @@
-make --dry-run --always-make --keep-going --print-directory
+make --dry-run --keep-going --print-directory
 make: Entering directory '/home/sjoerd/Coding/Languages/Evi-Lang'
 mkdir -p bin
 mkdir -p bin/obj
@@ -6,30 +6,7 @@ mkdir -p bin/obj
 printf "[01/9] compiling typechecker.cpp into typechecker.o..."
 clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/typechecker.o -c src/typechecker.cpp
 printf "\b\b done!\n"
-printf "[02/9] compiling scanner.cpp into scanner.o..."
-clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/scanner.o -c src/scanner.cpp
-printf "\b\b done!\n"
-printf "[03/9] compiling types.cpp into types.o..."
-clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/types.o -c src/types.cpp
-printf "\b\b done!\n"
-printf "[04/9] compiling error.cpp into error.o..."
-clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/error.o -c src/error.cpp
-printf "\b\b done!\n"
-printf "[05/9] compiling parser.cpp into parser.o..."
-clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/parser.o -c src/parser.cpp
-printf "\b\b done!\n"
-printf "[06/9] compiling tools.cpp into tools.o..."
-clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/tools.o -c src/tools.cpp
-printf "\b\b done!\n"
-printf "[07/9] compiling main.cpp into main.o..."
-clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/main.o -c src/main.cpp
-printf "\b\b done!\n"
-printf "[08/9] compiling debug.cpp into debug.o..."
-clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/debug.o -c src/debug.cpp
-printf "\b\b done!\n"
-printf "[09/9] compiling codegen.cpp into codegen.o..."
-clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -include-pch include/phc.h.gch -I include -o bin/obj/codegen.o -c src/codegen.cpp
-printf "\b\b done!\n"
+ 
 printf "[final] compiling final product evi..."
 clang++ -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -DCOMPILER=\"clang++\" `llvm-config-12 --cxxflags` -o bin/evi bin/obj/typechecker.o bin/obj/scanner.o bin/obj/types.o bin/obj/error.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o bin/obj/codegen.o `llvm-config-12 --cxxflags --ldflags --system-libs --libs`
 printf "\b\b done!\n"

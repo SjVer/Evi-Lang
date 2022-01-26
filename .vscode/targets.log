@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Wed Jan 26 09:45:27 2022
+# Make data base, printed on Wed Jan 26 11:35:21 2022
 
 # Variables
 
@@ -174,6 +174,7 @@ GNOME_DESKTOP_SESSION_ID = this-is-deprecated
 ^D = $(patsubst %/,%,$(dir $^))
 # makefile (from 'Makefile', line 42)
 MKDIR = mkdir
+ 
 # environment
 XDG_VTNR = 7
 # makefile (from 'Makefile', line 32)
@@ -276,7 +277,6 @@ OBJCOUNT_NOPAD = $(shell v=`echo $(OBJ) | wc -w`; echo `seq 1 $$(expr $$v)`)
 SUFFIXES := 
 # makefile (from 'Makefile', line 10)
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
- 
 # environment
 CHROME_DESKTOP = code-url-handler.desktop
 # default
@@ -347,7 +347,7 @@ bin/obj/tools.o:
 bin/obj/typechecker.o: src/typechecker.cpp | makedirs
 #  Implicit rule search has been done.
 #  Implicit/static pattern stem: 'typechecker'
-#  Last modified 2022-01-26 09:42:48.666519441
+#  Last modified 2022-01-26 10:13:27.426506747
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -361,7 +361,7 @@ bin/obj/typechecker.o: src/typechecker.cpp | makedirs
 # Not a target:
 src/typechecker.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-26 09:44:55.669216557
+#  Last modified 2022-01-26 10:49:03.833435595
 #  File has been updated.
 #  Successfully updated.
 
@@ -386,7 +386,7 @@ git:
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 116):
 	git add --all
-	git commit -m `test "$(msg)" && echo "$(msg)" || echo upload`
+	git commit -m $$(test "$(msg)" && echo '$(msg)' || echo upload)
 	git push origin main
 
 # Not a target:
@@ -412,7 +412,7 @@ printdebug:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-25 21:37:23.550245921
+#  Last modified 2022-01-26 11:35:16.934364269
 #  File has been updated.
 #  Successfully updated.
 
@@ -480,6 +480,7 @@ makedirs:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
+ 
 
 # Not a target:
 bin/obj/codegen.o:
@@ -537,7 +538,7 @@ bin/obj/scanner.o:
 
 bin/evi: bin/obj/typechecker.o bin/obj/scanner.o bin/obj/types.o bin/obj/error.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o bin/obj/codegen.o | makedirs
 #  Implicit rule search has not been done.
-#  Last modified 2022-01-26 09:42:49.878545067
+#  Last modified 2022-01-26 10:15:53.437711956
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -556,7 +557,6 @@ valgrind: debug bin/evi
 	@valgrind $(args) bin/evi test/test.evi -o bin/test.ll
 
 newfile:
- 
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -579,6 +579,6 @@ newfile:
 # strcache performance: lookups = 125 / hit rate = 55%
 # hash-table stats:
 # Load=56/8192=1%, Rehash=0, Collisions=2/125=2%
-# Finished Make data base on Wed Jan 26 09:45:27 2022
+# Finished Make data base on Wed Jan 26 11:35:21 2022
 
  
