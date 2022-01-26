@@ -86,10 +86,13 @@ VISIT(VarDeclNode)
 {
 	if(node->_is_global)
 	{
-		_top_module->getOrInsertGlobal(node->_identifier, node->_type._llvm_type);
+		_top_module->getOrInsertGlobal(node->_identifier, node->_type.llvm_type);
 		llvm::GlobalVariable *global_var = _top_module->getNamedGlobal(node->_identifier);
 		global_var->setLinkage(llvm::GlobalValue::CommonLinkage);
-		global_var->setAlignment(llvm::MaybeAlign(node->_type._alignment));
+		global_var->setAlignment(llvm::MaybeAlign(node->_type.alignment));
+
+		llvm::Constant* init = llvm::Constant::getNullValue(node->_type.llvm_type);
+		global_var->setInitializer(init);
 	
 		// set initializer?
 		if (node->_expr)
@@ -97,7 +100,8 @@ VISIT(VarDeclNode)
 			_builder.SetInsertPoint(_global_init_func_block);
 
 			node->_expr->accept(this);
-			_builder.CreateStore(pop(), global_var);
+			llvm::Value* val = _builder.CreateBitCast(pop(), node->_type.llvm_type);
+			_builder.CreateStore(val, global_var);
 			
 			_builder.CreateRetVoid();
 		}
@@ -151,8 +155,8 @@ VISIT(LiteralNode)
 	{
 		case TOKEN_INTEGER:
 		{
-			llvm::Constant* constant = llvm::ConstantInt::get(
-				_builder.getInt128Ty(), llvm::APInt(node->_value.int_value, 128));
+			llvm::Constant* constant = llvm::ConstantInt::getSigned(
+				llvm::Type::getInt32Ty(__context), node->_value.int_value);
 			
 			push(constant);
 			break;

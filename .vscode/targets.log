@@ -5,9 +5,8 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
-# Make data base, printed on Wed Jan 26 20:30:27 2022
+# Make data base, printed on Wed Jan 26 20:46:54 2022
 
 # Variables
 
@@ -107,7 +106,6 @@ VSCODE_CRASH_REPORTER_START_OPTIONS = {"companyName":"Microsoft","productName":"
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 # environment
 M2 = /usr/local/maven/bin
- 
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -120,7 +118,6 @@ GITTOKEN = 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
 XDG_SESSION_DESKTOP = cinnamon
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
- 
 # environment
 GIO_LAUNCHED_DESKTOP_FILE_PID = 2159
 # automatic
@@ -149,6 +146,7 @@ SSH_AGENT_PID = 1607
 ORIGINAL_XDG_CURRENT_DESKTOP = X-Cinnamon
 # environment
 GTK_MODULES = gail:atk-bridge
+ 
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/services/extensions/node/extensionHostProcess
 # environment
@@ -243,7 +241,6 @@ LLVMVERSION = 12
 +D = $(patsubst %/,%,$(dir $+))
 # environment
 GDK_BACKEND = x11
- 
 # environment
 LC_PAPER = nl_NL.UTF-8
 # environment
@@ -366,7 +363,6 @@ src/typechecker.cpp:
 #  Implicit rule search has been done.
 #  Last modified 2022-01-26 17:30:34.498585472
 #  File has been updated.
- 
 #  Successfully updated.
 
 remake: clean bin/evi
@@ -380,16 +376,15 @@ test-debug: debug bin/evi
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 90):
+#  recipe to execute (from 'Makefile', line 92):
 	@printf "============ Running \"valgrind $(APP) test/test.evi -o bin/test.ll\" ============\n\n"
 	@valgrind $(APP) test/test.evi -o bin/test.ll $(args)
 
- 
 git:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 118):
+#  recipe to execute (from 'Makefile', line 120):
 	git add --all
 	git commit -m $$(test "$(msg)" && echo '$(msg)' || echo upload)
 	git push origin main
@@ -411,13 +406,13 @@ printdebug:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 106):
+#  recipe to execute (from 'Makefile', line 108):
 	@echo "debug mode set!"
 
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-26 20:01:29.925513186
+#  Last modified 2022-01-26 20:43:49.678795828
 #  File has been updated.
 #  Successfully updated.
 
@@ -427,10 +422,11 @@ bin/obj/error.o:
 #  Modification time never checked.
 #  File has not been updated.
 
-# makefile (from 'Makefile', line 109)
+# makefile (from 'Makefile', line 111)
 debug: CXXFLAGS += $(DEBUGDEFS)
 debug: printdebug all
 #  Implicit rule search has not been done.
+ 
 #  Modification time never checked.
 #  File has not been updated.
 # variable set hash-table stats:
@@ -444,6 +440,8 @@ test: bin/evi
 #  recipe to execute (from 'Makefile', line 83):
 	@printf "============ Running \"$(APP) test/test.evi -o bin/test.ll\" ============\n\n"
 	@$(APP) test/test.evi -o bin/test.ll
+	@echo ==========================================================================
+	@cat bin/test.ll
 	@printf "============ Running \"llc-$(LLVMVERSION) bin/test.ll\" ============\n\n"
 	@llc-$(LLVMVERSION) bin/test.ll
 
@@ -478,7 +476,7 @@ makedirs:
 # ? := 
 # variable set hash-table stats:
 # Load=8/32=25%, Rehash=0, Collisions=1/16=6%
-#  recipe to execute (from 'Makefile', line 98):
+#  recipe to execute (from 'Makefile', line 100):
 	@$(MKDIR) -p $(BINDIR)
 	@$(MKDIR) -p $(OBJDIR)
 
@@ -525,11 +523,11 @@ routine: bin/evi run clean
 .MAIN: bin/evi
 #  Implicit rule search has not been done.
 #  Modification time never checked.
+ 
 #  File has not been updated.
 
 pch:
 #  Implicit rule search has not been done.
- 
 #  Modification time never checked.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 68):
@@ -545,7 +543,7 @@ bin/obj/scanner.o:
 
 bin/evi: bin/obj/typechecker.o bin/obj/scanner.o bin/obj/types.o bin/obj/error.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o bin/obj/codegen.o | makedirs
 #  Implicit rule search has not been done.
-#  Last modified 2022-01-26 20:00:28.01604423
+#  Last modified 2022-01-26 20:40:14.730066193
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -560,14 +558,14 @@ valgrind: debug bin/evi
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 115):
+#  recipe to execute (from 'Makefile', line 117):
 	@valgrind $(args) bin/evi test/test.evi -o bin/test.ll
 
 newfile:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 124):
+#  recipe to execute (from 'Makefile', line 126):
 	@test $(name) || ( echo "basename not given! ('make newfile name=BASENAME')"; false )
 	touch $(SRCDIR)/$(name).cpp
 	touch $(HEADERDIR)/$(name).hpp
@@ -585,7 +583,8 @@ newfile:
 
 # strcache performance: lookups = 125 / hit rate = 55%
 # hash-table stats:
+ 
 # Load=56/8192=1%, Rehash=0, Collisions=2/125=2%
-# Finished Make data base on Wed Jan 26 20:30:27 2022
+# Finished Make data base on Wed Jan 26 20:46:54 2022
 
  

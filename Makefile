@@ -82,6 +82,8 @@ clean:
 test: $(APP)
 	@printf "============ Running \"$(APP) test/test.evi -o bin/test.ll\" ============\n\n"
 	@$(APP) test/test.evi -o bin/test.ll
+	@echo ==========================================================================
+	@cat bin/test.ll
 	@printf "============ Running \"llc-$(LLVMVERSION) bin/test.ll\" ============\n\n"
 	@llc-$(LLVMVERSION) bin/test.ll
 
