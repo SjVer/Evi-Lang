@@ -100,7 +100,7 @@ VISIT(VarDeclNode)
 			_builder.SetInsertPoint(_global_init_func_block);
 
 			node->_expr->accept(this);
-			llvm::Value* val = _builder.CreateBitCast(pop(), node->_type.llvm_type);
+			llvm::Value* val = _builder.CreateBitCast(pop(), node->_type.llvm_type, "casttmp");
 			_builder.CreateStore(val, global_var);
 			
 			_builder.CreateRetVoid();

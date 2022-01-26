@@ -26,10 +26,10 @@ extern const char* lexical_type_strings[__TYPE_NONE];
 
 typedef struct
 {
-	llvm::Type* _llvm_type;
-	LexicalType _lexical_type;
-	string _name;
-	int _alignment;
+	llvm::Type* llvm_type;
+	LexicalType lexical_type;
+	string name;
+	int alignment;
 } EviType;
 
 #define EVI_INT_TYPE(name, bitsnum) \
