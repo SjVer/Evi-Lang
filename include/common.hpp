@@ -71,6 +71,8 @@ More info at %s.\nBuild: %s %s on %s (%s)."
 #define DEBUG_PRINT_F_MSG(format, ...) {}
 #endif
 
+#define LLVM_MODULE_TOP_NAME "top"
+
 // status enum
 typedef enum
 {
@@ -78,6 +80,7 @@ typedef enum
 	STATUS_CLI_ERROR = 64,
 	STATUS_PARSE_ERROR = 65,
 	STATUS_TYPE_ERROR = 65,
+	STATUS_CODEGEN_ERROR = 65
 } Status;
 
 #endif

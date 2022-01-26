@@ -3,6 +3,7 @@
 #include "common.hpp"
 #include "parser.hpp"
 #include "typechecker.hpp"
+#include "codegen.hpp"
 
 #ifdef DEBUG
 #include "debug.hpp"
@@ -107,7 +108,7 @@ int main(int argc, char **argv)
 	// parse program
 	Parser parser;
 	Status parser_status = parser.parse(arguments.args[0], source, &astree);
-	if(parser_status != STATUS_SUCCESS) { delete source; return parser_status; }
+	if(parser_status != STATUS_SUCCESS) { free((void*)source); return parser_status; }
 
 	
 	// generate visualization
@@ -119,15 +120,15 @@ int main(int argc, char **argv)
 	// type check
 	TypeChecker checker;
 	Status checker_status = checker.check(arguments.args[0], source, &astree);
-	if(checker_status != STATUS_SUCCESS) { delete source; return checker_status; }
+	if(checker_status != STATUS_SUCCESS) { free((void*)source); return checker_status; }
 
 
-	// // codegen
-	// CodeGenerator codegen;
-	// Status codegen_status = codegen.generate(arguments.outfile, &astree);
-	// if(codegen_status != STATUS_SUCCESS) { delete source; return codegen_status; };
+	// codegen
+	CodeGenerator codegen;
+	Status codegen_status = codegen.generate(arguments.outfile, source, &astree);
+	if(codegen_status != STATUS_SUCCESS) { free((void*)source); return codegen_status; };
 
 
-	delete source;
+	free((void*)source);
 	return STATUS_SUCCESS;
 }

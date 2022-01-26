@@ -64,7 +64,7 @@ VISIT(FuncDeclNode)
 
 VISIT(VarDeclNode)
 {
-	string namelabel = tools::fstr("%% %s", node->_identifier.c_str());
+	string namelabel = tools::fstr("%% %.*s", node->_token.length, node->_token.start);
 	int thisnode = ADD_NODE(namelabel.c_str());
 	
 	CONNECT_NODES(thisnode, ADD_NODE(node->_type._name.c_str()));
@@ -157,7 +157,7 @@ VISIT(BlockNode)
 VISIT(LogicalNode)
 {
 	int thisnode;
-	switch(node->_optype)
+	switch(node->_token.type)
 	{
 		case TOKEN_PIPE_PIPE: thisnode = ADD_NODE("||"); break;
 		case TOKEN_AND_AND:   thisnode = ADD_NODE("&&"); break;
@@ -236,14 +236,39 @@ VISIT(GroupingNode)
 
 VISIT(LiteralNode)
 {
-	ADD_NODE(tools::unescstr(node->_tokenstr, true, false).c_str());
+	switch(node->_token.type)
+	{
+		case TOKEN_INTEGER: 	ADD_NODE(tools::fstr("%d", node->_value.int_value).c_str()); break;
+		case TOKEN_FLOAT:   	ADD_NODE(tools::fstr("%g", node->_value.float_value).c_str()); break;
+		case TOKEN_CHARACTER:
+		{
+			const char* charstr = tools::unescchr(node->_value.char_value);
+			bool escstr = charstr[0] == '\\' ? (charstr++, true) : false;
+
+			_stream << tools::fstr("\tnode%d [label=<&#39;%s%s&#39;>]\n", 
+				_nodecount, escstr ? "&#92;" : "", charstr);
+			_nodecount++;
+			break;
+		}
+		case TOKEN_STRING:
+		{
+			string str = tools::replacestr(node->_value.string_value, "\\", "&#92;");
+			str = tools::replacestr(str, "'", "&#39;");
+
+			_stream << tools::fstr("\tnode%d [label=<&quot;%s&quot;>]\n", 
+				_nodecount, str.c_str());
+			_nodecount++;
+			break;
+		}
+		default: assert(false);
+	}
 }
 
 VISIT(ReferenceNode)
 {
-	if(node->_type == TOKEN_VARIABLE_REF)
+	if(node->_token.type == TOKEN_VARIABLE_REF)
 		ADD_NODE(tools::fstr("$ %s", node->_variable.c_str()).c_str());
-	else if(node->_type == TOKEN_PARAMETER_REF)
+	else if(node->_token.type == TOKEN_PARAMETER_REF)
 		ADD_NODE(tools::fstr("$ %d", node->_parameter).c_str());
 	else assert(false);
 }

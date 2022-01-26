@@ -2,7 +2,7 @@
 #define EVI_AST_H
 
 #include "common.hpp"
-#include "phc.h"
+#include "pch.h"
 #include "types.hpp"
 #include "scanner.hpp"
 
@@ -93,25 +93,29 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 		public:
 
 		// expr = nullptr if only declaration
-		VarDeclNode(Token token, string identifier, EviType type, ExprNode* expr):
-			StmtNode(token), _identifier(identifier), _type(type), _expr(expr) {}
+		VarDeclNode(Token token, string identifier,
+					EviType type, ExprNode* expr, bool is_global):
+			StmtNode(token), _identifier(identifier),
+			_type(type), _expr(expr), _is_global(is_global) {}
 		ACCEPT
 
 		string _identifier;
 		EviType _type;
 		ExprNode* _expr;
+		bool _is_global;
 	};
 
 	class AssignNode: public StmtNode
 	{
 		public:
 
-		AssignNode(Token token, string ident, ExprNode* expr):
-			StmtNode(token), _ident(ident), _expr(expr) {}
+		AssignNode(Token token, string ident, ExprNode* expr, LexicalType expected_type):
+			StmtNode(token), _ident(ident), _expr(expr), _expected_type(expected_type) {}
 		ACCEPT
 
 		string _ident;
 		ExprNode* _expr;
+		LexicalType _expected_type;
 	};
 
 	class IfNode: public StmtNode
@@ -149,11 +153,12 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 	{
 		public:
 
-		ReturnNode(Token token, ExprNode* expr):
-			StmtNode(token), _expr(expr) {}
+		ReturnNode(Token token, ExprNode* expr, LexicalType expected_type):
+			StmtNode(token), _expr(expr), _expected_type(expected_type) {}
 		ACCEPT
 
 		ExprNode* _expr;
+		LexicalType _expected_type;
 	};
 
 	class BlockNode: public StmtNode
@@ -177,13 +182,12 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 		{
 			public:
 
-			LogicalNode(Token token, TokenType optype, ExprNode* left, 
+			LogicalNode(Token token, ExprNode* left, 
 						ExprNode* right, ExprNode* middle = nullptr):
-				ExprNode(token), _optype(optype), _left(left), 
+				ExprNode(token), _left(left), 
 				_right(right), _middle(middle) {}
 			ACCEPT
 
-			TokenType _optype;
 			ExprNode* _left;
 			ExprNode* _right;
 			ExprNode* _middle;
@@ -231,38 +235,50 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 			{
 				public:
 
-				LiteralNode(Token token, string tokenstr, TokenType tokentype):
-					PrimaryNode(token), _tokenstr(tokenstr), _tokentype(tokentype) {}
+				LiteralNode(Token token, long value): PrimaryNode(token) { _value.int_value = value; }
+				LiteralNode(Token token, double value): PrimaryNode(token) { _value.float_value = value; }
+				LiteralNode(Token token, char value): PrimaryNode(token) { _value.char_value = value; }
+				LiteralNode(Token token, string value): PrimaryNode(token) { _value.string_value = value; }
 				ACCEPT
 
-				string _tokenstr;
-				TokenType _tokentype;
+				union _Value
+				{
+					long int_value;
+					double float_value;
+					char char_value;
+					string string_value;
+					_Value() {}
+					~_Value() {}
+				} _value;
 			};
 
 			class ReferenceNode: public PrimaryNode
 			{
 				public:
 
-				ReferenceNode(Token token, string var, int par, TokenType type):
+				ReferenceNode(Token token, string var, int par, LexicalType type):
 					PrimaryNode(token), _variable(var), _parameter(par), _type(type) {}
 				ACCEPT
 
 				string _variable;
 				int _parameter;
-				TokenType _type;
+				LexicalType _type;
 			};
 
 			class CallNode: public PrimaryNode
 			{
 				public:
 
-				CallNode(Token token, string ident, vector<ExprNode*> arguments):
-					PrimaryNode(token), _ident(ident), _arguments(arguments) {}
+				CallNode(Token token, string ident, vector<ExprNode*> arguments,
+						 LexicalType ret_t_type, vector<LexicalType> expected_arg_types):
+					PrimaryNode(token), _ident(ident), _arguments(arguments),
+					_ret_type(ret_t_type), _expected_arg_types(expected_arg_types) {}
 				ACCEPT
 
 				string _ident;
 				vector<ExprNode*> _arguments;
-
+				LexicalType _ret_type;
+				vector<LexicalType> _expected_arg_types;
 			};
 
 

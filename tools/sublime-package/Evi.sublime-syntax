@@ -230,7 +230,8 @@ contexts:
           pop: true
 
   escaped-char:
-    - match: \\(?:\\|[abefnrtv\'"?]|[0-3][0-9]{0,2}|[4-7][0-9]?|x[a-fA-F0-9]+|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8})
+    # - match: \\(?:\\|[abefnrtv\'"?]|[0-3][0-9]{0,2}|[4-7][0-9]?|x[a-fA-F0-9]+|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8})
+    - match: \\(?:a|b|e|f|n|r|t|v|\\|\'|\")
       scope: constant.character.escape.c
     - match: \\.
       scope: invalid.illegal.unknown-escape.c

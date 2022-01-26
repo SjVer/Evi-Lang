@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <string>
+#include <algorithm>
 #include <sstream>
 
 using namespace std;
@@ -10,6 +11,25 @@ using namespace std;
 // ==============================
 
 // ========= string ops =========
+
+// replace substring
+string tools::replacestr(string source, string oldstring, string newstring)
+{
+    // https://stackoverflow.com/a/7724536
+    string retval;
+    string::const_iterator end     = source.end();
+    string::const_iterator current = source.begin();
+    string::const_iterator next    = search( current, end, oldstring.begin(), oldstring.end() );
+    while (next != end)
+    {
+        retval.append(current, next);
+        retval.append(newstring);
+        current = next + oldstring.size();
+        next = search( current, end, oldstring.begin(), oldstring.end() );
+    }
+    retval.append(current, next);
+    return retval;
+}
 
 // format the given strign
 string tools::fstr(string format, ...)
@@ -34,6 +54,46 @@ string tools::fstr(string format, ...)
     va_end(args);
 
     return string(buffer);
+}
+
+// e.g. turns 'n' into an actual newline (returns -1 if invalid)
+char tools::escchr(char ogchar)
+{
+    switch(ogchar)
+    {
+        case 'a': return '\a';
+        case 'b': return '\b';
+        case 'e': return '\e';
+        case 'f': return '\f';
+        case 'n': return '\n';
+        case 'r': return '\r';
+        case 't': return '\t';
+        case 'v': return '\v';
+        case '\\': return '\\';
+        case '\'': return '\'';
+        case '\"': return '\"';
+        default: return -1;
+    }
+}
+
+// turns e.g. a newline into "\\n"
+const char* tools::unescchr(char escchar)
+{
+    switch(escchar)
+    {
+        case '\a': return "\\a";
+        case '\b': return "\\b";
+        case '\e': return "\\e";
+        case '\f': return "\\f";
+        case '\n': return "\\n";
+        case '\r': return "\\r";
+        case '\t': return "\\t";
+        case '\v': return "\\v";
+        case '\\': return "\\\\";
+        case '\'': return "\\\'";
+        case '\"': return "\\\"";
+        default: return new char[2]{escchar, '\0'};
+    }
 }
 
 // turn shit like '\n' into '\\n'

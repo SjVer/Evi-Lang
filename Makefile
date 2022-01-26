@@ -26,7 +26,7 @@ OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
 APP = $(BINDIR)/$(APPNAME)
 DEP = $(OBJ:$(OBJDIR)/%.o=%.d)
 
-PHC = $(HEADERDIR)/phc.h
+PHC = $(HEADERDIR)/pch.h
 PHCFLAGS = $(CXXFLAGS) -x c++-header $(PHC)
 # INC_PHC_FLAG = -include $(PHC)
 INC_PHC_FLAG = -include-pch $(PHC).gch
@@ -82,6 +82,8 @@ clean:
 test: $(APP)
 	@printf "============ Running \"$(APP) test/test.evi -o bin/test.ll\" ============\n\n"
 	@$(APP) test/test.evi -o bin/test.ll
+	@printf "============ Running \"llc-$(LLVMVERSION) bin/test.ll\" ============\n\n"
+	@llc-$(LLVMVERSION) bin/test.ll
 
 .PHONY: test-debug
 test-debug: debug $(APP)

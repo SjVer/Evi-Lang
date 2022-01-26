@@ -6,7 +6,7 @@
 #include "error.hpp"
 #include "common.hpp"
 
-#include "phc.h"
+#include "pch.h"
 
 using namespace std;
 
@@ -24,10 +24,16 @@ private:
 
 	typedef struct
 	{
+		LexicalType ret_type;
+		vector<LexicalType> params;
+	} FuncProperties;
+
+	typedef struct
+	{
 		int depth;
-		int param_count;
-		vector<string> symbols;
-		map<string, int> functions;
+		map<string, LexicalType> variables;
+		FuncProperties func_props;
+		map<string, FuncProperties> functions;
 	} Scope;
 
 	// methods
@@ -43,10 +49,12 @@ private:
 	bool match(TokenType type);
 	bool is_at_end();
 
+	LexicalType get_variable_type(string name);
+	FuncProperties get_function_props(string name);
 	bool check_variable(string name);
 	bool check_function(string name);
-	void add_variable(Token* identtoken);
-	void add_function(Token* identtoken, int arity);
+	void add_variable(Token* identtoken, LexicalType type);
+	void add_function(Token* identtoken, FuncProperties properties);
 	void scope_up();
 	void scope_down();
 	void synchronize();

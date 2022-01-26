@@ -113,11 +113,18 @@ Token Scanner::string()
 
 Token Scanner::character()
 {
-	while (peek() != '\'' && !isAtEnd())
-		advance();
+	if(peek() == '\'') return errorToken("Invalid character of length 0.");
+	
+	bool esc = peek() == '\\' ? (advance(), true) : false;
 
-	if (isAtEnd())
-		return errorToken("Unterminated character.");
+	if (isAtEnd()) return errorToken("Unterminated character.");
+	
+	char ch = advance();
+
+	if(esc) ch = tools::escchr(ch);
+	if(ch == -1) return errorToken("Invalid escape character.");
+	
+	if (peek() != '\'') return errorToken("Unterminated character.");
 
 	advance();
 	return makeToken(TOKEN_CHARACTER);

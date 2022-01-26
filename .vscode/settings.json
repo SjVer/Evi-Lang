@@ -21,6 +21,19 @@
         "limits": "cpp",
         "new": "cpp",
         "stdexcept": "cpp",
-        "streambuf": "cpp"
-    }
+        "streambuf": "cpp",
+        "typeinfo": "cpp",
+        "Evi.sublime-syntax": "yaml"
+    },
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/sjoerd/Coding/Languages/Evi-Lang",
+            "binaryPath": "bin/evi",
+            "binaryArgs": [
+                "test/test.evi",
+                "-o",
+                "bin/test.ll"
+            ]
+        }
+    ]
 }

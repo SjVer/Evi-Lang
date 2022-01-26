@@ -1,4 +1,7 @@
+%myglobal i8 15;
+
 @main i32 ()
 {
-	%x i8 2 + 'a';
+	%x i8;
+	=x 123;
 }
