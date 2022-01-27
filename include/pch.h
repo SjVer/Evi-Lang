@@ -7,10 +7,11 @@
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Transforms/Utils/ModuleUtils.h"
-#include "llvm/LineEditor/LineEditor.h"
-// #include "llvm/ExecutionEngine/GenericValue.h"
-// #include "llvm/ExecutionEngine/ExecutionEngine.h"
+// #include "llvm/LineEditor/LineEditor.h"
 #include "llvm/Support/raw_os_ostream.h"
+
+#include "llvm/IR/Verifier.h"
+#include <llvm/IR/NoFolder.h>
 
 #include <string>
 #include <cassert>

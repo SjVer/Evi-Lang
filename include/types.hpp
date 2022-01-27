@@ -30,10 +30,12 @@ typedef struct
 	LexicalType lexical_type;
 	string name;
 	int alignment;
+	bool issigned;
 } EviType;
 
-#define EVI_INT_TYPE(name, bitsnum) \
-	((EviType){llvm::IntegerType::get(__context, bitsnum), TYPE_INTEGER, name, 4})
+#define EVI_INT_TYPE(name, bitsnum, issigned) \
+	((EviType){llvm::IntegerType::get(__context, bitsnum), \
+									  TYPE_INTEGER, name, 4, issigned})
 
 // ================================
 
@@ -58,11 +60,25 @@ static void init_builtin_evi_types()
 	lexical_type_strings[TYPE_CHARACTER] = "character";
 	lexical_type_strings[TYPE_STRING] = "string";
 
-	ADD_EVI_TYPE(string("i1"),  EVI_INT_TYPE("i1", 1));
-	ADD_EVI_TYPE(string("i4"),  EVI_INT_TYPE("i4", 4));
-	ADD_EVI_TYPE(string("i8"),  EVI_INT_TYPE("i8", 8));
-	ADD_EVI_TYPE(string("i16"), EVI_INT_TYPE("i16", 16));
-	ADD_EVI_TYPE(string("i32"), EVI_INT_TYPE("i32", 32));
+
+	// ======================= Integers =======================
+	ADD_EVI_TYPE("i1",  EVI_INT_TYPE("i1",  1,  true));
+
+	ADD_EVI_TYPE("i4",  EVI_INT_TYPE("i4",  4,  true));
+	ADD_EVI_TYPE("ui4", EVI_INT_TYPE("ui4", 4,  false));
+
+	ADD_EVI_TYPE("i8",  EVI_INT_TYPE("i8",  8,  true));
+	ADD_EVI_TYPE("ui8", EVI_INT_TYPE("ui8", 8,  false));
+
+	ADD_EVI_TYPE("i16", EVI_INT_TYPE("i16", 16, true));
+	ADD_EVI_TYPE("ui16",EVI_INT_TYPE("ui16",16, false));
+
+	ADD_EVI_TYPE("i32", EVI_INT_TYPE("i32", 32, true));
+	ADD_EVI_TYPE("ui32",EVI_INT_TYPE("ui32",32, false));
+
+	// ======================== Floats ========================
+	ADD_EVI_TYPE("flt", ((EviType){llvm::Type::getFloatTy(__context), TYPE_FLOAT, "flt", 4, true}));
+	ADD_EVI_TYPE("dbl", ((EviType){llvm::Type::getDoubleTy(__context), TYPE_FLOAT, "dbl", 4, true}));
 }
 
 #endif

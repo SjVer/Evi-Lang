@@ -80,12 +80,22 @@ clean:
 
 .PHONY: test
 test: $(APP)
-	@printf "============ Running \"$(APP) test/test.evi -o bin/test.ll\" ============\n\n"
+	@printf "============= Running \"$(APP)\" =============\n\n"
 	@$(APP) test/test.evi -o bin/test.ll
-	@echo ==========================================================================
+	
+	@echo =============================================
 	@cat bin/test.ll
-	@printf "============ Running \"llc-$(LLVMVERSION) bin/test.ll\" ============\n\n"
-	@llc-$(LLVMVERSION) bin/test.ll
+	
+	@printf "============= Running \"llc-$(LLVMVERSION)\" =============\n\n"
+	@llc-$(LLVMVERSION) -filetype=obj bin/test.ll -o bin/test.o
+	
+	@printf "============= Running \"$(CC)\" ============\n\n"
+	@$(CC) bin/test.o -o bin/test
+
+	@printf "============= Running \"bin/test\" ===========\n\n"
+	@bin/test
+	@printf "=============== Exited with $$? ==============\n"
+	@rm bin/test.ll bin/test.o bin/test
 
 .PHONY: test-debug
 test-debug: debug $(APP)
@@ -111,6 +121,8 @@ printdebug:
 debug: CXXFLAGS += $(DEBUGDEFS)
 debug: printdebug
 debug: all
+
+no-fold: CXXFLAGS += -D DEBUG_NO_FOLD
 
 .PHONY: valgrind
 valgrind: debug $(APP)

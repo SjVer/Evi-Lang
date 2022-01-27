@@ -238,11 +238,11 @@ VISIT(LiteralNode)
 {
 	switch(node->_token.type)
 	{
-		case TOKEN_INTEGER: 	ADD_NODE(tools::fstr("%d", node->_value.int_value).c_str()); break;
-		case TOKEN_FLOAT:   	ADD_NODE(tools::fstr("%g", node->_value.float_value).c_str()); break;
+		case TOKEN_INTEGER: 	ADD_NODE(tools::fstr("%d", node->_int_value).c_str()); break;
+		case TOKEN_FLOAT:   	ADD_NODE(tools::fstr("%g", node->_float_value).c_str()); break;
 		case TOKEN_CHARACTER:
 		{
-			const char* charstr = tools::unescchr(node->_value.char_value);
+			const char* charstr = tools::unescchr(node->_char_value);
 			bool escstr = charstr[0] == '\\' ? (charstr++, true) : false;
 
 			_stream << tools::fstr("\tnode%d [label=<&#39;%s%s&#39;>]\n", 
@@ -252,7 +252,7 @@ VISIT(LiteralNode)
 		}
 		case TOKEN_STRING:
 		{
-			string str = tools::replacestr(node->_value.string_value, "\\", "&#92;");
+			string str = tools::replacestr(node->_string_value, "\\", "&#92;");
 			str = tools::replacestr(str, "'", "&#39;");
 
 			_stream << tools::fstr("\tnode%d [label=<&quot;%s&quot;>]\n", 

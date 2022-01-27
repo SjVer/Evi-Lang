@@ -11,8 +11,9 @@
 class CodeGenerator: public Visitor
 {
 	public:
-	CodeGenerator(): _builder(__context) {}
-	Status generate(string path, const char* source, AST* astree);
+	CodeGenerator();
+	Status generate(string infile, string outfile, 
+					const char* source, AST* astree);
 
 	#define VISIT(_node) void visit(_node* node)
 	VISIT(FuncDeclNode);
@@ -32,10 +33,25 @@ class CodeGenerator: public Visitor
 	#undef VISIT
 
 	private:
+
+
 	string _outfile;
 	ErrorDispatcher _error_dispatcher;
 
+	#ifdef DEBUG_NO_FOLD
+	unique_ptr<llvm::IRBuilder<llvm::NoFolder>> _builder;
+	#else
+	unique_ptr<llvm::IRBuilder<>> _builder;
+	#endif
+	
+	unique_ptr<llvm::Module> _top_module;
+	llvm::BasicBlock* _global_init_func_block;
+
 	stack<llvm::Value*> _value_stack;
+	map<string, llvm::Function*> _functions;
+	map<string, pair<llvm::AllocaInst*, EviType>> _named_values;
+	map<string, EviType> _named_globals;
+
 
 	void error_at(Token *token, string message);
 	void warning_at(Token *token, string message);
@@ -43,12 +59,12 @@ class CodeGenerator: public Visitor
 	void push(llvm::Value* value);
 	llvm::Value* pop();
 
-	// llvm-specific
-
-	llvm::IRBuilder<> _builder;
-	unique_ptr<llvm::Module> _top_module;
-	// shared_ptr<llvm::Module> _current_module;
-	llvm::BasicBlock* _global_init_func_block;
+	llvm::AllocaInst* create_entry_block_alloca(
+		llvm::Function *function, llvm::Argument& arg);
+	llvm::Value* create_cast(llvm::Value* srcval, bool srcsigned, 
+							 llvm::Type* desttype, bool destsigned);
+	llvm::Type* lexical_type_to_llvm(LexicalType type);
+	llvm::Type* lexical_type_to_llvm(TokenType type);
 };
 
 #endif

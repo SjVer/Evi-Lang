@@ -56,6 +56,7 @@ class ASTNode
 	public:
 	ASTNode(Token token): _token(token) {}
 	Token _token;
+	LexicalType _cast_to;
 	virtual void accept(Visitor* v) = 0;
 };
 
@@ -235,21 +236,16 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 			{
 				public:
 
-				LiteralNode(Token token, long value): PrimaryNode(token) { _value.int_value = value; }
-				LiteralNode(Token token, double value): PrimaryNode(token) { _value.float_value = value; }
-				LiteralNode(Token token, char value): PrimaryNode(token) { _value.char_value = value; }
-				LiteralNode(Token token, string value): PrimaryNode(token) { _value.string_value = value; }
+				LiteralNode(Token token, long value): PrimaryNode(token) { _int_value = value; }
+				LiteralNode(Token token, double value): PrimaryNode(token) { _float_value = value; }
+				LiteralNode(Token token, char value): PrimaryNode(token) { _char_value = value; }
+				LiteralNode(Token token, string value): PrimaryNode(token) { _string_value = value; }
 				ACCEPT
 
-				union _Value
-				{
-					long int_value;
-					double float_value;
-					char char_value;
-					string string_value;
-					_Value() {}
-					~_Value() {}
-				} _value;
+				long _int_value;
+				double _float_value;
+				char _char_value;
+				string _string_value;
 			};
 
 			class ReferenceNode: public PrimaryNode

@@ -35,5 +35,6 @@
                 "bin/test.ll"
             ]
         }
-    ]
+    ],
+    "C_Cpp.errorSquiggles": "Enabled"
 }

@@ -43,6 +43,7 @@ class TypeChecker: public Visitor
 	LexicalType pop();
 
 	LexicalType resolve_types(LexicalType left, LexicalType right);
+	bool can_cast_types(LexicalType from, LexicalType to);
 };
 
 #endif

@@ -19,7 +19,8 @@ variables:
 
   # types
   inttype: 'i1|(?:u)?i(?:(?:16|32|64)|(?:4|8))'
-  type: '{{inttype}}'
+  flttype: 'flt|dbl'
+  type: '{{inttype}}|{{flttype}}'
 
 contexts:
   # The prototype context is prepended to all contexts but those setting

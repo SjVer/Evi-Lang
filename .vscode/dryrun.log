@@ -1,12 +1,6 @@
-make test --dry-run --keep-going --print-directory
+make --dry-run --keep-going --print-directory
 make: Entering directory '/home/sjoerd/Coding/Languages/Evi-Lang'
 mkdir -p bin
 mkdir -p bin/obj
-printf "============ Running \"bin/evi test/test.evi -o bin/test.ll\" ============\n\n"
-bin/evi test/test.evi -o bin/test.ll
-echo ==========================================================================
-cat bin/test.ll
-printf "============ Running \"llc-12 bin/test.ll\" ============\n\n"
-llc-12 bin/test.ll
 make: Leaving directory '/home/sjoerd/Coding/Languages/Evi-Lang'
  

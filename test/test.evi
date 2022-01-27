@@ -1,7 +1,10 @@
-%myglobal i8 15;
+\ %g flt 15;
 
 @main i32 ()
 {
-	%x i8;
-	=x 123;
+	%x i8 15;
+
+	@f flt (flt);\ { =x $x + 1; }
+	
+	=x 30 + 2.0;
 }

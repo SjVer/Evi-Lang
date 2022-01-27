@@ -214,12 +214,12 @@ StmtNode* Parser::function_declaration()
 		consume(TOKEN_TYPE, "Expected parameter.");
 		EviType type = get_prev_as_type();
 		eviparams.push_back(type);
-		lexparams.push_back(type._lexical_type);
+		lexparams.push_back(type.lexical_type);
 
 	} while (check(TOKEN_TYPE));
 
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
-	add_function(&nametok, {ret_type._lexical_type, lexparams});
+	add_function(&nametok, {ret_type.lexical_type, lexparams});
 
 	// get body?
 	if(match(TOKEN_SEMICOLON))
@@ -232,7 +232,7 @@ StmtNode* Parser::function_declaration()
 	{
 		// definition
 		scope_up();
-		_current_scope.func_props = FuncProperties{ret_type._lexical_type, lexparams};
+		_current_scope.func_props = FuncProperties{ret_type.lexical_type, lexparams};
 		
 		StmtNode* body = statement();
 
@@ -265,7 +265,7 @@ StmtNode* Parser::variable_declaration()
 	EviType type = GET_EVI_TYPE(typestr);
 	
 	// add to locals for parser to use
-	for(Token& tok : nametokens) add_variable(&tok, type._lexical_type);
+	for(Token& tok : nametokens) add_variable(&tok, type.lexical_type);
 
 	vector<VarDeclNode*> decls;
 	// get initializers(s)?

@@ -86,6 +86,41 @@ LexicalType TypeChecker::resolve_types(LexicalType left, LexicalType right)
 	}
 }
 
+bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
+{
+	switch(from)
+	{
+		case TYPE_INTEGER: switch(to)
+		{
+			case TYPE_INTEGER: return true;
+			case TYPE_FLOAT: return true;
+			case TYPE_CHARACTER: return true;
+			default: return false;
+		}
+		case TYPE_FLOAT: switch(to)
+		{
+			case TYPE_INTEGER: return true;
+			case TYPE_FLOAT: return true;
+			case TYPE_CHARACTER: return true;
+			default: return false;
+		}
+		case TYPE_CHARACTER: switch(to)
+		{
+			case TYPE_INTEGER: return true;
+			case TYPE_FLOAT: return true;
+			case TYPE_CHARACTER: return true;
+			default: return false;
+		}
+		case TYPE_STRING: switch(to)
+		{
+			case TYPE_STRING: return true;
+			default: return false;
+		}
+		
+		case __TYPE_NONE: return false;
+	}
+}
+
 // =========================================
 #define VISIT(_node) void TypeChecker::visit(_node* node)
 
@@ -115,17 +150,20 @@ VISIT(FuncDeclNode)
 
 VISIT(VarDeclNode)
 {
-	LexicalType vartype = node->_type._lexical_type;
+	LexicalType vartype = node->_type.lexical_type;
 
 	if(node->_expr)
 	{
 		node->_expr->accept(this);
 		LexicalType exprtype = pop();
-
-		if(resolve_types(vartype, exprtype) != vartype) 
+		LexicalType result = resolve_types(vartype, exprtype);
+		
+		if(!can_cast_types(result, vartype))
 			ERROR_AT(&node->_token, "Cannot initialize variable of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			GET_LEX_TYPE_STR(vartype), GET_LEX_TYPE_STR(exprtype));
+
+		node->_cast_to = vartype;
 	}
 	
 	push(__TYPE_NONE);
@@ -137,9 +175,11 @@ VISIT(AssignNode)
 	LexicalType exprtype = pop();
 	LexicalType vartype = node->_expected_type;
 
-	if(resolve_types(vartype, exprtype) != vartype) 
-		ERROR_AT(&node->_token, "Cannot assign expression of type " COLOR_BOLD \
-		"'%s'" COLOR_NONE " to variable with type " COLOR_BOLD "'%s'" COLOR_NONE ".",
+	LexicalType result = resolve_types(vartype, exprtype);
+
+	if(!can_cast_types(result, vartype)) 
+		ERROR_AT(&node->_token, "Cannot implicitly convert expression of type " COLOR_BOLD \
+		"'%s'" COLOR_NONE " to variable's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 		GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(vartype));
 
 	push(__TYPE_NONE);
@@ -173,11 +213,14 @@ VISIT(ReturnNode)
 	LexicalType exprtype = pop();
 	LexicalType functype = node->_expected_type;
 
-	if(resolve_types(functype, exprtype) != functype) 
-		ERROR_AT(&node->_token, "Cannot return type " COLOR_BOLD \
-		"'%s'" COLOR_NONE " from function with return type " COLOR_BOLD "'%s'" COLOR_NONE ".",
+	LexicalType result = resolve_types(functype, exprtype);
+
+	if(!can_cast_types(result, functype)) 
+		ERROR_AT(&node->_token, "Cannot implicitly convert return type " COLOR_BOLD \
+		"'%s'" COLOR_NONE " to function's return type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 		GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(functype));
 	
+	node->_cast_to = functype;
 	push(__TYPE_NONE);
 }
 
@@ -198,19 +241,28 @@ VISIT(LogicalNode)
 	// _left && _right
 	// _left ? _middle : _right
 
-	ExprNode* leftnode = node->_token.type == TOKEN_QUESTION ? node->_middle : node->_left;
+	if(node->_token.type == TOKEN_QUESTION)
+	{
+		node->_middle->accept(this);
+		node->_right->accept(this);
+		
+		LexicalType right = pop();
+		LexicalType left = pop();
+		LexicalType result = resolve_types(left, right);
 
-	leftnode->accept(this);
-	node->_right->accept(this);
-	
-	LexicalType right = pop();
-	LexicalType left = pop();
-	LexicalType result = resolve_types(left, right);
+		if(result == __TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
+		else if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
+		else if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
+		
+		node->_left->_cast_to = result;
+		node->_right->_cast_to = result;
 
-	if(result == __TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
-	else if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
-	else if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
-	push(result);
+		push(result);
+	}
+	else
+	{
+		push(TYPE_INTEGER);
+	}
 }
 
 VISIT(BinaryNode)
@@ -222,9 +274,17 @@ VISIT(BinaryNode)
 	LexicalType left = pop();
 	LexicalType result = resolve_types(left, right);
 
-	if(result == __TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
+	if(result == __TYPE_NONE) 
+	{
+		if(right != left) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
+		else ERROR_AT(&node->_token, "Cannot peform binary operation on expressions of type " \
+			 COLOR_BOLD "'%s'" COLOR_NONE ".", GET_LEX_TYPE_STR(right));
+	}
 	else if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
 	else if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
+	
+	node->_left->_cast_to = result;
+	node->_right->_cast_to = result;
 	push(result);
 }
 
@@ -236,17 +296,27 @@ VISIT(UnaryNode)
 	switch(type)
 	{
 		case TYPE_INTEGER:
+			node->_expr->_cast_to = TYPE_INTEGER;
 			push(TYPE_INTEGER);
 			break;
 
 		case TYPE_CHARACTER:
 			CONVERSION_WARNING_AT(&node->_token, TYPE_CHARACTER, TYPE_INTEGER);
-			push(TYPE_INTEGER);
+			node->_expr->_cast_to = node->_optype == TOKEN_BANG ? TYPE_INTEGER : TYPE_CHARACTER;
+			push(node->_optype == TOKEN_BANG ? TYPE_INTEGER : TYPE_CHARACTER);
 			break;
 
-		case TYPE_FLOAT: case TYPE_STRING:
-			ERROR_AT(&node->_token, "Cannot apply not-operator to expression of type " \
-					 COLOR_BOLD "'%s'" COLOR_NONE ".", GET_LEX_TYPE_STR(type));
+		case TYPE_FLOAT:
+			if(node->_optype != TOKEN_BANG)
+			{
+				node->_expr->_cast_to = TYPE_FLOAT;
+				push(TYPE_FLOAT);
+				break;
+			}
+
+		case TYPE_STRING:
+			ERROR_AT(&node->_token, "Cannot apply '%.*s'-operator to expression of type " \
+					 COLOR_BOLD "'%s'" COLOR_NONE ".", getTokenStr(node->_optype), GET_LEX_TYPE_STR(type));
 			break;
 
 		default: assert(false);
@@ -265,10 +335,10 @@ VISIT(LiteralNode)
 {
 	switch(node->_token.type)
 	{
-		case TOKEN_INTEGER: 	push(TYPE_INTEGER); break;
-		case TOKEN_FLOAT: 		push(TYPE_FLOAT); break;
-		case TOKEN_CHARACTER: 	push(TYPE_CHARACTER); break;
-		case TOKEN_STRING: 		push(TYPE_STRING); break;
+		case TOKEN_INTEGER: 	node->_cast_to = TYPE_INTEGER;   push(TYPE_INTEGER); break;
+		case TOKEN_FLOAT: 		node->_cast_to = TYPE_FLOAT; 	 push(TYPE_FLOAT); break;
+		case TOKEN_CHARACTER: 	node->_cast_to = TYPE_CHARACTER; push(TYPE_CHARACTER); break;
+		case TOKEN_STRING: 		node->_cast_to = TYPE_STRING; 	 push(TYPE_STRING); break;
 		default: assert(false);
 	}
 }
@@ -286,9 +356,12 @@ VISIT(CallNode)
 		LexicalType exprtype = pop();
 		LexicalType argtype = node->_expected_arg_types[i];
 
-		if(resolve_types(argtype, exprtype) != argtype) 
-			ERROR_AT(&node->_token, "Argument of type " COLOR_BOLD \
-			"'%s'" COLOR_NONE " does not match parameter of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
+		LexicalType result = resolve_types(argtype, exprtype);
+		node->_arguments[i]->_cast_to = argtype;
+
+		if(!can_cast_types(result, argtype)) 
+			ERROR_AT(&node->_token, "Cannot implicitly convert argument of type " COLOR_BOLD \
+			"'%s'" COLOR_NONE " to parameter's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(argtype));
 	}
 

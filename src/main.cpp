@@ -124,8 +124,8 @@ int main(int argc, char **argv)
 
 
 	// codegen
-	CodeGenerator codegen;
-	Status codegen_status = codegen.generate(arguments.outfile, source, &astree);
+	CodeGenerator* codegen = new CodeGenerator();
+	Status codegen_status = codegen->generate(arguments.args[0], arguments.outfile, source, &astree);
 	if(codegen_status != STATUS_SUCCESS) { free((void*)source); return codegen_status; };
 
 
