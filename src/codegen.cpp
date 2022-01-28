@@ -411,6 +411,21 @@ VISIT(BinaryNode)
 
 VISIT(UnaryNode)
 {
+	node->_expr->accept(this);
+	llvm::Type* casttype = lexical_type_to_llvm(node->_expr->_cast_to);
+	llvm::Value* value = create_cast(pop(), false, casttype, false);
+
+	switch(node->_optype)
+	{
+		case TOKEN_MINUS: switch(node->_cast_to)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateNeg(value, "inegtmp")); break;
+				default: assert(false);
+			} 
+			break;
+		
+		default: assert(false);
+	}
 }
 
 VISIT(GroupingNode)

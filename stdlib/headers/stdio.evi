@@ -31,3 +31,4 @@
 \? @param 0 the character to print out
 \? @ret the printed character cast to an i8 or EOF if printc failed
 @printc i8 (i8);
+

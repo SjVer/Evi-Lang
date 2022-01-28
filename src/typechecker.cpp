@@ -163,7 +163,7 @@ VISIT(VarDeclNode)
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			GET_LEX_TYPE_STR(vartype), GET_LEX_TYPE_STR(exprtype));
 
-		node->_cast_to = vartype;
+		node->_expr->_cast_to = vartype;
 	}
 	
 	push(__TYPE_NONE);
@@ -321,8 +321,6 @@ VISIT(UnaryNode)
 
 		default: assert(false);
 	}
-
-	assert(false);
 }
 
 VISIT(GroupingNode)
