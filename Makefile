@@ -19,6 +19,9 @@ HEADERDIR = include
 BINDIR = bin
 OBJDIR = $(BINDIR)/obj
 
+STDLIB_DIR = stdlib
+export LLVMVERSION BINDIR STDLIB_DIR
+
 ############## Do not change anything from here downwards! #############
 SRC = $(wildcard $(SRCDIR)/*$(EXT))
 # HEADERS = $(wildcard $(HEADERDIR)/*.h) $(wildcard $(HEADERDIR)/*.hpp)
@@ -47,7 +50,7 @@ DELOBJ = $(OBJ)
 ########################################################################
 
 .MAIN: $(APP)
-all: $(APP)
+all: $(APP) stdlib
 
 # Builds the app
 $(APP): $(OBJ) | makedirs
@@ -69,8 +72,16 @@ pch:
 	@$(CC) $(PHCFLAGS)
 	@printf "\b\b done!\n"
 
+.PHONY: stdlib
+stdlib: makedirs
+	@$(MAKE) --no-print-directory -f $(STDLIB_DIR)/Makefile stdlib
+
+.PHONY: clean-stdlib
+clean-stdlib:
+	@$(MAKE) --no-print-directory -f $(STDLIB_DIR)/Makefile clean
 
 ################### Cleaning rules for Unix-based OS ###################
+
 # Cleans complete project
 .PHONY: clean
 clean:
@@ -90,7 +101,7 @@ test: $(APP)
 	@llc-$(LLVMVERSION) -filetype=obj bin/test.ll -o bin/test.o
 	
 	@printf "============= Running \"$(CC)\" ============\n\n"
-	@$(CC) bin/test.o -o bin/test
+	@$(CC) bin/test.o -o bin/test -L$(BINDIR) -levi
 
 	@printf "============= Running \"bin/test\" ===========\n\n"
 	@bin/test

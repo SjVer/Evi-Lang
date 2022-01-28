@@ -5,9 +5,8 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
-# Make data base, printed on Thu Jan 27 18:25:58 2022
+# Make data base, printed on Fri Jan 28 16:32:59 2022
 
 # Variables
 
@@ -19,11 +18,12 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 DESKTOP_SESSION = cinnamon
 # default
 .SHELLFLAGS := -c
-# makefile (from 'Makefile', line 25)
+ 
+# makefile (from 'Makefile', line 28)
 OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
 # environment
 XDG_SESSION_CLASS = user
-# makefile (from 'Makefile', line 23)
+# makefile (from 'Makefile', line 26)
 SRC = $(wildcard $(SRCDIR)/*$(EXT))
 # environment
 XDG_SESSION_TYPE = x11
@@ -45,7 +45,7 @@ MAKE_VERSION := 4.2.1
 CURDIR := /home/sjoerd/Coding/Languages/Evi-Lang
 # makefile
 SHELL = /bin/sh
-# makefile (from 'Makefile', line 41)
+# makefile (from 'Makefile', line 44)
 RM = rm
 # environment
 GDM_LANG = en_US
@@ -89,14 +89,14 @@ XDG_SESSION_PATH = /org/freedesktop/DisplayManager/Session0
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
 PATH = /home/sjoerd/.local/bin:/usr/local/maven/bin:/home/sjoerd/.local/bin:/usr/local/maven/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/sjoerd/Apps/cmdline-tools/bin:/home/sjoerd/.local/bin
-# makefile (from 'Makefile', line 34)
+# makefile (from 'Makefile', line 37)
 DEBUGDEFS = -DDEBUG -ggdb
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
 GJS_DEBUG_OUTPUT = stderr
 # environment
-SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1626,unix/Xeon-L5410:/tmp/.ICE-unix/1626
+SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1598,unix/Xeon-L5410:/tmp/.ICE-unix/1598
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -120,7 +120,7 @@ XDG_SESSION_DESKTOP = cinnamon
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2094
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2129
 # automatic
 %F = $(notdir $%)
 # environment
@@ -142,7 +142,7 @@ HEADERDIR = include
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1698
+SSH_AGENT_PID = 1670
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = X-Cinnamon
 # environment
@@ -153,7 +153,7 @@ VSCODE_AMD_ENTRYPOINT = vs/workbench/services/extensions/node/extensionHostProce
 HOME = /home/sjoerd
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
-# makefile (from 'Makefile', line 30)
+# makefile (from 'Makefile', line 33)
 PHCFLAGS = $(CXXFLAGS) -x c++-header $(PHC)
 # environment
 VSCODE_CODE_CACHE_PATH = /home/sjoerd/.config/Code/CachedData/899d46d82c4c95423fb7e10e68eba52050e30ba3
@@ -161,7 +161,7 @@ VSCODE_CODE_CACHE_PATH = /home/sjoerd/.config/Code/CachedData/899d46d82c4c95423f
 LOGNAME = sjoerd
 # environment
 APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
-# makefile (from 'Makefile', line 43)
+# makefile (from 'Makefile', line 46)
 DELOBJ = $(OBJ)
 # automatic
 +F = $(notdir $+)
@@ -172,13 +172,12 @@ VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # environment
 GNOME_DESKTOP_SESSION_ID = this-is-deprecated
 # automatic
- 
 ^D = $(patsubst %/,%,$(dir $^))
-# makefile (from 'Makefile', line 42)
+# makefile (from 'Makefile', line 45)
 MKDIR = mkdir
 # environment
 XDG_VTNR = 7
-# makefile (from 'Makefile', line 32)
+# makefile (from 'Makefile', line 35)
 INC_PHC_FLAG = -include-pch $(PHC).gch
 # environment
 MAKELEVEL := 0
@@ -193,7 +192,7 @@ BINDIR = bin
 # makefile (from 'Makefile', line 6)
 CC = clang++
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-d5be80ee-336d-41af-893f-9adb6bd32887.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-345542f7-7bb8-42e2-8c39-066200c6cc44.sock
 # environment
 XDG_SESSION_ID = c2
 # environment
@@ -204,15 +203,15 @@ LC_MONETARY = nl_NL.UTF-8
 .DEFAULT_GOAL := all
 # environment
 XDG_CURRENT_DESKTOP = X-Cinnamon
-# makefile (from 'Makefile', line 29)
+# makefile (from 'Makefile', line 32)
 PHC = $(HEADERDIR)/pch.h
 # automatic
 %D = $(patsubst %/,%,$(dir $%))
 # environment
 LC_TELEPHONE = nl_NL.UTF-8
-# makefile (from 'Makefile', line 37)
+# makefile (from 'Makefile', line 40)
 OBJCOUNT = $(foreach v,$(OBJCOUNT_NOPAD),$(shell printf '%02d' $(v)))
-# makefile (from 'Makefile', line 26)
+# makefile (from 'Makefile', line 29)
 APP = $(BINDIR)/$(APPNAME)
 # default
 MAKE_COMMAND := make
@@ -240,6 +239,8 @@ BREAKPAD_DUMP_LOCATION = /home/sjoerd/.config/Code/exthost Crash Reports
 LLVMVERSION = 12
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
+# makefile (from 'Makefile', line 22)
+STDLIB_DIR = stdlib
 # environment
 GDK_BACKEND = x11
 # environment
@@ -254,7 +255,7 @@ QT_ACCESSIBILITY = 1
 DEFAULTS_PATH = /usr/share/gconf/cinnamon.default.path
 # default
 MAKEFILES := 
-# makefile (from 'Makefile', line 27)
+# makefile (from 'Makefile', line 30)
 DEP = $(OBJ:$(OBJDIR)/%.o=%.d)
 # environment
 LC_NUMERIC = nl_NL.UTF-8
@@ -272,10 +273,11 @@ LC_ALL = C
 GJS_DEBUG_TOPICS = JS ERROR;JS LOG
 # automatic
 ^F = $(notdir $^)
-# makefile (from 'Makefile', line 36)
+# makefile (from 'Makefile', line 39)
 OBJCOUNT_NOPAD = $(shell v=`echo $(OBJ) | wc -w`; echo `seq 1 $$(expr $$v)`)
 # default
 SUFFIXES := 
+ 
 # makefile (from 'Makefile', line 10)
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
 # environment
@@ -290,11 +292,10 @@ LC_IDENTIFICATION = nl_NL.UTF-8
 LC_ADDRESS = nl_NL.UTF-8
 # environment
 LANG = C
- 
 # environment
-VSCODE_PID = 2094
+VSCODE_PID = 2129
 # variable set hash-table stats:
-# Load=140/1024=14%, Rehash=0, Collisions=43/211=20%
+# Load=141/1024=14%, Rehash=0, Collisions=43/215=20%
 
 # Pattern-specific Variable Values
 
@@ -302,15 +303,15 @@ VSCODE_PID = 2094
 
 # Directories
 
-# . (device 2053, inode 2490466): 14 files, no impossibilities.
+# . (device 2053, inode 2490466): 15 files, no impossibilities.
 # src (device 2053, inode 3038540): 11 files, no impossibilities.
 
-# 25 files, no impossibilities in 2 directories.
+# 26 files, no impossibilities in 2 directories.
 
 # Implicit Rules
 
 bin/obj/%.o: src/%.cpp | makedirs
-#  recipe to execute (from 'Makefile', line 61):
+#  recipe to execute (from 'Makefile', line 64):
 	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
 	@$(CC) $(CXXFLAGS) $(INC_PHC_FLAG) -I $(HEADERDIR) -o $@ -c $<
 	@printf "\b\b done!\n"
@@ -320,13 +321,21 @@ bin/obj/%.o: src/%.cpp | makedirs
 
 # Files
 
+clean-stdlib:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 81):
+	@$(MAKE) --no-print-directory -f $(STDLIB_DIR)/Makefile clean
+
 # Not a target:
 bin/obj/parser.o:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
 
-all: bin/evi
+all: bin/evi stdlib
 #  Command line target.
 #  Implicit rule search has been done.
 #  File does not exist.
@@ -335,13 +344,21 @@ all: bin/evi
 # variable set hash-table stats:
 # Load=0/32=0%, Rehash=0, Collisions=0/8=0%
 
+stdlib: makedirs
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 77):
+	@$(MAKE) --no-print-directory -f $(STDLIB_DIR)/Makefile stdlib
+
 # Not a target:
 bin/obj/tools.o:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
 
-.PHONY: clean test test-debug routine makedirs remake printdebug valgrind
+.PHONY: stdlib clean-stdlib clean test test-debug routine makedirs remake printdebug valgrind
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -349,12 +366,12 @@ bin/obj/tools.o:
 bin/obj/typechecker.o: src/typechecker.cpp | makedirs
 #  Implicit rule search has been done.
 #  Implicit/static pattern stem: 'typechecker'
-#  Last modified 2022-01-27 17:52:31.999020827
+#  Last modified 2022-01-28 16:31:18.313953489
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
 # Load=0/32=0%, Rehash=0, Collisions=0/8=0%
-#  recipe to execute (from 'Makefile', line 61):
+#  recipe to execute (from 'Makefile', line 64):
 	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
 	@$(CC) $(CXXFLAGS) $(INC_PHC_FLAG) -I $(HEADERDIR) -o $@ -c $<
 	@printf "\b\b done!\n"
@@ -363,7 +380,7 @@ bin/obj/typechecker.o: src/typechecker.cpp | makedirs
 # Not a target:
 src/typechecker.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-27 17:52:26.798887282
+#  Last modified 2022-01-28 11:12:12.926249843
 #  File has been updated.
 #  Successfully updated.
 
@@ -374,12 +391,12 @@ remake: clean bin/evi
 #  File has not been updated.
 
 test-debug: debug bin/evi
+ 
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
- 
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 102):
+#  recipe to execute (from 'Makefile', line 113):
 	@printf "============ Running \"valgrind $(APP) test/test.evi -o bin/test.ll\" ============\n\n"
 	@valgrind $(APP) test/test.evi -o bin/test.ll $(args)
 
@@ -387,7 +404,7 @@ git:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 132):
+#  recipe to execute (from 'Makefile', line 143):
 	git add --all
 	git commit -m $$(test "$(msg)" && echo '$(msg)' || echo upload)
 	git push origin main
@@ -409,13 +426,13 @@ printdebug:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 118):
+#  recipe to execute (from 'Makefile', line 129):
 	@echo "debug mode set!"
 
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-27 18:25:54.080092482
+#  Last modified 2022-01-28 16:32:57.764192611
 #  File has been updated.
 #  Successfully updated.
 
@@ -425,7 +442,7 @@ bin/obj/error.o:
 #  Modification time never checked.
 #  File has not been updated.
 
-# makefile (from 'Makefile', line 121)
+# makefile (from 'Makefile', line 132)
 debug: CXXFLAGS += $(DEBUGDEFS)
 debug: printdebug all
 #  Implicit rule search has not been done.
@@ -439,7 +456,7 @@ test: bin/evi
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 83):
+#  recipe to execute (from 'Makefile', line 94):
 	@printf "============= Running \"$(APP)\" =============\n\n"
 	@$(APP) test/test.evi -o bin/test.ll
 	
@@ -450,7 +467,7 @@ test: bin/evi
 	@llc-$(LLVMVERSION) -filetype=obj bin/test.ll -o bin/test.o
 	
 	@printf "============= Running \"$(CC)\" ============\n\n"
-	@$(CC) bin/test.o -o bin/test
+	@$(CC) bin/test.o -o bin/test -L$(BINDIR) -levi
 	@printf "============= Running \"bin/test\" ===========\n\n"
 	@bin/test
 	@printf "=============== Exited with $$? ==============\n"
@@ -473,7 +490,6 @@ makedirs:
 # @ := makedirs
 # automatic
 # % := 
- 
 # automatic
 # * := 
 # automatic
@@ -488,7 +504,7 @@ makedirs:
 # ? := 
 # variable set hash-table stats:
 # Load=8/32=25%, Rehash=0, Collisions=1/16=6%
-#  recipe to execute (from 'Makefile', line 110):
+#  recipe to execute (from 'Makefile', line 121):
 	@$(MKDIR) -p $(BINDIR)
 	@$(MKDIR) -p $(OBJDIR)
 
@@ -498,7 +514,7 @@ makedirs:
 #  Modification time never checked.
 #  File has not been updated.
 
-# makefile (from 'Makefile', line 125)
+# makefile (from 'Makefile', line 136)
 no-fold: CXXFLAGS += -D DEBUG_NO_FOLD
 # Not a target:
 no-fold:
@@ -525,7 +541,7 @@ clean:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 77):
+#  recipe to execute (from 'Makefile', line 88):
 	@# $(RM) $(DELOBJ) $(DEP) $(APP)
 	@$(RM) -rf $(OBJDIR)
 	@$(RM) -rf $(BINDIR)
@@ -548,10 +564,11 @@ routine: bin/evi run clean
 #  File has not been updated.
 
 pch:
+ 
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 68):
+#  recipe to execute (from 'Makefile', line 71):
 	@printf "[pch] compiling $(PHC)..."
 	@$(CC) $(PHCFLAGS)
 	@printf "\b\b done!\n"
@@ -564,14 +581,13 @@ bin/obj/scanner.o:
 
 bin/evi: bin/obj/typechecker.o bin/obj/scanner.o bin/obj/types.o bin/obj/error.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o bin/obj/codegen.o | makedirs
 #  Implicit rule search has not been done.
-#  Last modified 2022-01-27 18:23:53.405136305
+#  Last modified 2022-01-28 16:31:40.226446762
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
 # Load=0/32=0%, Rehash=0, Collisions=0/8=0%
-#  recipe to execute (from 'Makefile', line 54):
+#  recipe to execute (from 'Makefile', line 57):
 	@printf "[final] compiling final product $(notdir $@)..."
- 
 	@$(CC) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 	@printf "\b\b done!\n"
 
@@ -580,32 +596,32 @@ valgrind: debug bin/evi
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 129):
+#  recipe to execute (from 'Makefile', line 140):
 	@valgrind $(args) bin/evi test/test.evi -o bin/test.ll
 
 newfile:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 138):
+#  recipe to execute (from 'Makefile', line 149):
 	@test $(name) || ( echo "basename not given! ('make newfile name=BASENAME')"; false )
 	touch $(SRCDIR)/$(name).cpp
 	touch $(HEADERDIR)/$(name).hpp
 
 # files hash-table stats:
-# Load=31/1024=3%, Rehash=0, Collisions=7/100=7%
+# Load=33/1024=3%, Rehash=0, Collisions=7/110=6%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 57 / storage = 570 B / avg = 10 B
-# current buf: size = 8162 B / used = 570 B / count = 57 / avg = 10 B
+# strcache buffers: 1 (0) / strings = 59 / storage = 590 B / avg = 10 B
+# current buf: size = 8162 B / used = 590 B / count = 59 / avg = 10 B
 
-# strcache performance: lookups = 127 / hit rate = 55%
+# strcache performance: lookups = 140 / hit rate = 57%
 # hash-table stats:
-# Load=57/8192=1%, Rehash=0, Collisions=2/127=2%
-# Finished Make data base on Thu Jan 27 18:25:58 2022
+# Load=59/8192=1%, Rehash=0, Collisions=2/140=1%
+# Finished Make data base on Fri Jan 28 16:32:59 2022
 
  

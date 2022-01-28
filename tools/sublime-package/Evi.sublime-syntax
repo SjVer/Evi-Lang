@@ -18,9 +18,8 @@ variables:
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
   # types
-  inttype: 'i1|(?:u)?i(?:(?:16|32|64)|(?:4|8))'
-  flttype: 'flt|dbl'
-  type: '{{inttype}}|{{flttype}}'
+  inttype: 'i1|(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))'
+  type: '{{inttype}}|flt|dbl|bln|nll|chr'
 
 contexts:
   # The prototype context is prepended to all contexts but those setting
@@ -220,6 +219,14 @@ contexts:
       push:
         - meta_scope: comment.line.evi
         - match: ':\\'
+          pop: true
+
+    - match: '\\\?'
+      scope: punctuation.definition.comment.documentation.evi
+      push:
+        # This is an anonymous context push for brevity.
+        - meta_scope: comment.line.documentation.evi
+        - match: $\n?
           pop: true
 
     - match: '\\'

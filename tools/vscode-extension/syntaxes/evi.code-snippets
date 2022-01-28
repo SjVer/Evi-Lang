@@ -1,0 +1,14 @@
+{
+	"include":
+	{
+		"scope": "evi",
+		"prefix": ["#apply", "inc"],
+		"body": "#apply \"$1\""
+	},
+	"flag":
+	{
+		"scope": "evi",
+		"prefix": ["#flag", "flag"],
+		"body": "#flag $1"
+	}
+}

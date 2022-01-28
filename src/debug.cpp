@@ -90,7 +90,7 @@ VISIT(IfNode)
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_cond->accept(this);
 	CONNECT_NODES(thisnode, _nodecount);
-	node->_if->accept(this);
+	node->_then->accept(this);
 	if(node->_else)
 	{
 		CONNECT_NODES(thisnode, _nodecount);

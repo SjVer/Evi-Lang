@@ -82,6 +82,10 @@
 					"end": ":\\\\"
 				},
 				{
+					"name": "comment.line.documentation.evi",
+					"match": "\\\\\\?.*$"
+				},
+				{
 					"name": "comment.line.evi",
 					"match": "\\\\.*$"
 				}
@@ -210,8 +214,31 @@
 				{ "include": "#pre-directives" },
 				{ "include": "#comments" },
 
+				{ "include": "#separators" },
+				{ "include": "#keywords" },
 				{ "include": "#blocks" },
 				{ "include": "#expressions" }
+			]
+		},
+		"keywords":
+		{
+			"patterns": [
+				{
+					"name": "keyword.control.flow.return.evi",
+					"match": "\\~"
+				},
+				{
+					"name": "keyword.control.flow.if.evi",
+					"match": "\\?\\?"
+				},
+				{
+					"name": "keyword.control.flow.else.evi",
+					"match": "::"
+				},
+				{
+					"name": "keyword.control.flow.loop.evi",
+					"match": "\\!\\!"
+				}
 			]
 		},
 		"blocks": {
@@ -285,15 +312,25 @@
 
 		"variables": 
 		{
-			"name": "meta.variable.evi",
 			"patterns": [
 				{
 					"name": "variable.name.evi",
 					"match": "(\\$)([A-z_]+[0-z_]*)"
 				},
 				{
-					"name": "variable.name.evi",
-					"match": "(\\$)([A-z_]+[0-z_]*)"
+					"name": "variable.parameter.evi",
+					"match": "(\\$)([0-0]+)"
+				},
+				{
+					"begin": "([A-z_]+[0-z_]*)\\s*\\(",
+					"beginCaptures": {
+						"1": { "name": "entity.name.function.evi"}
+					},
+					"contentName": "meta.call.arguments.evi",
+					
+					"patterns": [{ "include": "#expressions" }],
+
+					"end": "\\)"
 				}
 			]
 		},
@@ -402,7 +439,23 @@
 			"patterns": [
 				{
 					"name": "storage.type.integer.evi",
-					"match": "i1|(?:u)?i(?:(?:16|32|64)|(?:4|8))"
+					"match": "i1|(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))"
+				},
+				{
+					"name": "storage.type.floating-point.evi",
+					"match": "flt|dbl"
+				},
+				{
+					"name": "storage.type.boolean.evi",
+					"match": "bln"
+				},
+				{
+					"name": "storage.type.null.evi",
+					"match": "nll"
+				},
+				{
+					"name": "storage.type.character.evi",
+					"match": "chr"
 				}
 			]
 		},

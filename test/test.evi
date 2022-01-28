@@ -1,10 +1,22 @@
-\ %g flt 15;
+#apply "std-io"
+
+@printc i8 (chr);
 
 @main i32 ()
 {
-	%x i8 15;
+	printc('H');
+	printc('e');
+	printc('l');
+	printc('l');
+	printc('o');
+	printc(' ');
+	printc('W');
+	printc('o');
+	printc('r');
+	printc('l');
+	printc('d');
+	printc('!');
+	printc('\n');
 
-	@f flt (flt);\ { =x $x + 1; }
-	
-	=x 30 + 2.0;
+	~ 0;
 }

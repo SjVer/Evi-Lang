@@ -178,14 +178,15 @@ void Parser::scope_down()
 
 StmtNode* Parser::declaration()
 {
-	// declaration		: func_decl
-	//					| var_decl
+	// declaration		: var_decl
 	//					| statement
 
-	if(match(TOKEN_MODULO))  return variable_declaration();
-	else if(match(TOKEN_AT)) return function_declaration();
+	// if(match(TOKEN_AT)) return function_declaration();
+	if(match(TOKEN_AT)) error("Function declaration is not allowed here.");
+	else if(match(TOKEN_MODULO))  return variable_declaration();
 	else return statement();
 
+	return nullptr;
 }
 
 StmtNode* Parser::function_declaration()

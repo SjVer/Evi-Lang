@@ -190,7 +190,7 @@ VISIT(IfNode)
 	node->_cond->accept(this);
 	pop();
 
-	node->_if->accept(this);
+	node->_then->accept(this);
 	pop();
 
 	if(node->_else)
@@ -220,7 +220,7 @@ VISIT(ReturnNode)
 		"'%s'" COLOR_NONE " to function's return type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 		GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(functype));
 	
-	node->_cast_to = functype;
+	node->_expr->_cast_to = functype;
 	push(__TYPE_NONE);
 }
 

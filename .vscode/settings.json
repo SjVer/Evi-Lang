@@ -23,7 +23,9 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp",
-        "Evi.sublime-syntax": "yaml"
+        "Evi.sublime-syntax": "yaml",
+        "sstream": "cpp",
+        "cstdio": "cpp"
     },
     "makefile.launchConfigurations": [
         {

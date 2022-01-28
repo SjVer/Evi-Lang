@@ -1,8 +1,7 @@
 program			: (func_decl | var_decl)*
 
 
-declaration		: func_decl
-				| var_decl
+declaration		: var_decl
 				| statement
 
 func_decl		: "@" IDENT TYPE "(" TYPE* ")" (statement | ";")

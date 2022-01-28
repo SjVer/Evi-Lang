@@ -1,7 +1,29 @@
 #include "codegen.hpp"
 
 // CodeGenerator::CodeGenerator(): _builder(__context) {}
-CodeGenerator::CodeGenerator() {}
+CodeGenerator::CodeGenerator()
+{
+	_llvm_errstream = new llvm::raw_os_ostream(_errstream);
+
+	// target machine stuff
+	llvm::InitializeAllTargetInfos();
+	llvm::InitializeAllTargets();
+	llvm::InitializeAllTargetMCs();
+	llvm::InitializeAllAsmParsers();
+	llvm::InitializeAllAsmPrinters();
+
+	_target_triple = llvm::sys::getDefaultTargetTriple();
+	string cpu = "generic";
+	string features = "";
+
+	string error;
+	const llvm::Target* target = llvm::TargetRegistry::lookupTarget(_target_triple, error);
+	if (!target) { cerr << error; exit(STATUS_CODEGEN_ERROR); }
+
+	llvm::TargetOptions opt;
+	auto rm = llvm::Optional<llvm::Reloc::Model>();
+	_target_machine = target->createTargetMachine(_target_triple, cpu, features, opt, rm);
+}
 
 Status CodeGenerator::generate(string infile, string outfile, const char* source, AST* astree)
 {
@@ -18,10 +40,12 @@ Status CodeGenerator::generate(string infile, string outfile, const char* source
 		#endif
 		_top_module = make_unique<llvm::Module>("top", __context);
 		_top_module->setSourceFileName(infile);
+		_top_module->setDataLayout(_target_machine->createDataLayout());
+		_top_module->setTargetTriple(_target_triple);
 
-		_value_stack = stack<llvm::Value*>();
-		_named_values = map<string, pair<llvm::AllocaInst*, EviType>>();
-		_named_globals = map<string, EviType>();
+		_value_stack = new stack<llvm::Value*>();
+		// _ret_val_stack = new stack<pair<llvm::Value*, llvm::Type*>>();
+		_ret_type_stack = new stack<llvm::Type*>();
 	}
 
 	// walk the tree
@@ -36,7 +60,23 @@ Status CodeGenerator::generate(string infile, string outfile, const char* source
 		{
 			_builder->SetInsertPoint(_global_init_func_block);
 			_builder->CreateRetVoid();
+
+			// if(llvm::verifyFunction(*_global_init_func_block->getParent(), _errstream))
+			// {
+			// 	cerr << endl;
+			// 	_error_dispatcher.dispatch_error("Code Generation Error",
+			// 	"LLVM verification of globals initialization function failed.");
+			// 	exit(STATUS_CODEGEN_ERROR);
+			// }
 		}
+
+		// verify module
+		// if(llvm::verifyModule(*_top_module, _errstream))
+		// {
+		// 	cerr << endl;
+		// 	_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed.");
+		// 	// exit(STATUS_CODEGEN_ERROR);
+		// }
 
 		ofstream std_file_stream(_outfile);
 		llvm::raw_os_ostream file_stream(std_file_stream);
@@ -74,30 +114,30 @@ void CodeGenerator::warning_at(Token *token, string message)
 void CodeGenerator::push(llvm::Value* value)
 {
 	//
-	_value_stack.push(value);
+	_value_stack->push(value);
 }
 
 llvm::Value* CodeGenerator::pop()
 {
-	assert(!_value_stack.empty());
-	llvm::Value* value = _value_stack.top();
-	_value_stack.pop();
+	assert(!_value_stack->empty());
+	llvm::Value* value = _value_stack->top();
+	_value_stack->pop();
 	return value;
 }
 
 // =========================================
 
-llvm::AllocaInst* CodeGenerator::create_entry_block_alloca(llvm::Function *function, llvm::Argument& arg)
+llvm::AllocaInst* CodeGenerator::create_entry_block_alloca(llvm::Function *function, llvm::Value* value)
 {
 	llvm::IRBuilder<> TmpB(&function->getEntryBlock(), function->getEntryBlock().begin());
-	return TmpB.CreateAlloca(arg.getType(), 0, arg.getName().str());
+	return TmpB.CreateAlloca(value->getType(), 0, value->getName());
 }
 
 llvm::Value* CodeGenerator::create_cast(llvm::Value* srcval, bool srcsigned, llvm::Type* desttype, bool destsigned)
 {
 	llvm::Instruction::CastOps cop = llvm::CastInst::getCastOpcode(
 		srcval, srcsigned, desttype, destsigned);
-	return _builder->CreateCast(cop, srcval, desttype);
+	return _builder->CreateCast(cop, srcval, desttype, "casttmp");
 }
 
 llvm::Type* CodeGenerator::lexical_type_to_llvm(LexicalType type)
@@ -128,6 +168,8 @@ llvm::Type* CodeGenerator::lexical_type_to_llvm(TokenType type)
 
 #define VISIT(_node) void CodeGenerator::visit(_node* node)
 #define ERROR_AT(token, format, ...) error_at(token, tools::fstr(format, __VA_ARGS__))
+#define SCOPE_UP() map<string, pair<llvm::Value*, EviType>> oldbindings = _named_values
+#define SCOPE_DOWN() _named_values = oldbindings
 
 // === Statements ===
 
@@ -146,30 +188,42 @@ VISIT(FuncDeclNode)
 	{
 		llvm::BasicBlock *block = llvm::BasicBlock::Create(__context, "entry", func);
 		_builder->SetInsertPoint(block);
-		
+
 		// alloc each parameter
 		for (int i = 0; i < params.size(); i++) {
 			llvm::Argument* arg = func->getArg(i);
 
-			// Create an alloca for this variable.
-			llvm::AllocaInst* alloca = create_entry_block_alloca(func, *arg);
+			// // Create an alloca for this variable.
+			llvm::AllocaInst* alloca = create_entry_block_alloca(func, arg);
 
-			// Store the initial value into the alloca.
+			// // Store the initial value into the alloca.
 			_builder->CreateStore(arg, alloca);
 
 			// Add arguments to variable symbol table.
-			DEBUG_PRINT_F_MSG("argname %d: '%s'", i, arg->getName().str().c_str());
 			_named_values[arg->getName().str()].first = alloca;
 			_named_values[arg->getName().str()].second = node->_params[i];
 		}
 
+		SCOPE_UP();
+		_ret_type_stack->push(node->_ret_type.llvm_type);
 		node->_body->accept(this);
-		// _builder->CreateRet(pop());
+		SCOPE_DOWN();
 
-		// temp:
-		_builder->CreateRet(llvm::Constant::getNullValue(node->_ret_type.llvm_type));
+		// finish off function
+		_ret_type_stack->pop();
+		llvm::Constant* nullret = llvm::Constant::getNullValue(node->_ret_type.llvm_type);
+		_builder->CreateRet(nullret);
 
-		llvm::verifyFunction(*func);
+		// verify function
+		// if(llvm::verifyFunction(*func, new llvm::raw_os_ostream(cerr)))
+		// {
+		// 	_error_dispatcher.dispatch_error("Code Generation Error", 
+		// 	tools::fstr("LLVM verification of function \"%s\" failed.", func->getName().str().c_str()).c_str());
+		//			
+		// 	cerr << _errstream.str() << endl;
+		//	
+		// 	// exit(STATUS_CODEGEN_ERROR);
+		// }
 	}
 }
 
@@ -204,7 +258,8 @@ VISIT(VarDeclNode)
 			// _builder->CreateAlignedStore(val, global_var, llvm::MaybeAlign(node->_type.alignment));
 		}
 		
-		_named_globals[node->_identifier] = node->_type;
+		_named_values[node->_identifier].first = global_var;
+		_named_values[node->_identifier].second = node->_type;
 	}
 	else // local
 	{
@@ -246,6 +301,44 @@ VISIT(AssignNode)
 
 VISIT(IfNode)
 {
+	node->_cond->accept(this);
+	llvm::Value* cond = pop();
+	
+	// create comparison
+	switch(node->_cond->_cast_to)
+	{
+		case TYPE_INTEGER:
+		case TYPE_CHARACTER:
+			cond = _builder->CreateICmpNE(cond, llvm::ConstantInt::getFalse(__context), "ifcond");
+			break;
+		case TYPE_FLOAT:
+			cond = _builder->CreateFCmpONE(cond, llvm::ConstantFP::get(__context, llvm::APFloat(0.0)), "ifcond");
+			break;
+		default: assert(false);
+	}
+
+	llvm::Function* func = _builder->GetInsertBlock()->getParent();
+
+	llvm::BasicBlock* thenblock = llvm::BasicBlock::Create(__context, "then", func);
+	llvm::BasicBlock* elseblock = llvm::BasicBlock::Create(__context, "else", func	);
+	llvm::BasicBlock* endblock = llvm::BasicBlock::Create(__context, "ifcont");
+	_builder->CreateCondBr(cond, thenblock, elseblock);
+
+	// Emit then block
+	_builder->SetInsertPoint(thenblock);
+	node->_then->accept(this);
+	_builder->CreateBr(endblock);
+	thenblock = _builder->GetInsertBlock(); // update thenblock since it changes
+
+	// Emit else block
+	_builder->SetInsertPoint(elseblock);
+	if(node->_else) node->_else->accept(this);
+	_builder->CreateBr(endblock);
+	elseblock = _builder->GetInsertBlock(); // update elseblock since it changes
+
+	// Emit end block.
+	func->getBasicBlockList().push_back(endblock);
+	_builder->SetInsertPoint(endblock);
 }
 
 VISIT(LoopNode)
@@ -254,11 +347,18 @@ VISIT(LoopNode)
 
 VISIT(ReturnNode)
 {
+	// TEMPORARY
+	node->_expr->accept(this);
+	llvm::Type* casttype = _ret_type_stack->top();
+	// _builder->CreateStore(create_cast(pop(), false, casttype, false), _ret_val_stack->top().first);
+	_builder->CreateRet(create_cast(pop(), false, casttype, false));
 }
 
 VISIT(BlockNode)
 {
+	SCOPE_UP();
 	for(StmtNode*& stmt : node->_statements) stmt->accept(this);
+	SCOPE_DOWN();
 }
 
 // === Expressions ===
@@ -357,6 +457,19 @@ VISIT(ReferenceNode)
 
 VISIT(CallNode)
 {
+	llvm::Function* callee = _top_module->getFunction(node->_ident);
+	assert(callee);
+
+	vector<llvm::Value*> args;
+	for(int i = 0; i < node->_arguments.size(); i++)
+	{
+		node->_arguments[i]->accept(this);
+		llvm::Type* casttype = callee->getArg(i)->getType();
+		
+		args.push_back(create_cast(pop(), false, casttype, false));
+	}
+
+	push(_builder->CreateCall(callee, args, "calltmp"));
 }
 
 #undef VISIT

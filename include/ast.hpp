@@ -123,13 +123,13 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 	{
 		public:
 
-		IfNode(Token token, ExprNode* cond, StmtNode* if_, StmtNode* else_):
+		IfNode(Token token, ExprNode* cond, StmtNode* then, StmtNode* else_):
 			StmtNode(token), _cond(cond), 
-			_if(if_), _else(else_) {}
+			_then(then), _else(else_) {}
 		ACCEPT
 
 		ExprNode* _cond;
-		StmtNode* _if;
+		StmtNode* _then;
 		StmtNode* _else;
 	};
 
@@ -276,7 +276,6 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 				LexicalType _ret_type;
 				vector<LexicalType> _expected_arg_types;
 			};
-
 
 #undef ACCEPT
 #endif

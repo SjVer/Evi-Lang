@@ -14,12 +14,18 @@
             "id": "evi",
             "aliases": ["Evi", "evi"],
             "extensions": [".evi"],
-            "configuration": "./language-configuration.json"
+            "configuration": "./syntaxes/language-configuration.json"
         }],
         "grammars": [{
             "language": "evi",
             "scopeName": "source.evi",
             "path": "./syntaxes/evi.tmLanguage.json"
-        }]
+        }],
+        "snippets": [
+            {
+                "language": "evi",
+                "path": "./syntaxes/evi.code-snippets"
+            }
+        ]
     }
 }

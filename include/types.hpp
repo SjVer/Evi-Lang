@@ -79,6 +79,11 @@ static void init_builtin_evi_types()
 	// ======================== Floats ========================
 	ADD_EVI_TYPE("flt", ((EviType){llvm::Type::getFloatTy(__context), TYPE_FLOAT, "flt", 4, true}));
 	ADD_EVI_TYPE("dbl", ((EviType){llvm::Type::getDoubleTy(__context), TYPE_FLOAT, "dbl", 4, true}));
+
+	// ======================== Others ========================
+	ADD_EVI_TYPE("bln", EVI_INT_TYPE("bln", 1, false));
+	ADD_EVI_TYPE("chr", EVI_INT_TYPE("chr", 8, false));
+	ADD_EVI_TYPE("nll", ((EviType){llvm::Type::getVoidTy(__context), __TYPE_NONE, "nll"}));
 }
 
 #endif

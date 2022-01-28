@@ -37,6 +37,8 @@ class CodeGenerator: public Visitor
 
 	string _outfile;
 	ErrorDispatcher _error_dispatcher;
+	stringstream _errstream;
+	llvm::raw_os_ostream* _llvm_errstream;
 
 	#ifdef DEBUG_NO_FOLD
 	unique_ptr<llvm::IRBuilder<llvm::NoFolder>> _builder;
@@ -44,13 +46,17 @@ class CodeGenerator: public Visitor
 	unique_ptr<llvm::IRBuilder<>> _builder;
 	#endif
 	
+	llvm::TargetMachine* _target_machine;
+	string _target_triple;
+	
 	unique_ptr<llvm::Module> _top_module;
 	llvm::BasicBlock* _global_init_func_block;
 
-	stack<llvm::Value*> _value_stack;
+	stack<llvm::Value*>* _value_stack;
+	// stack<pair<llvm::Value*, llvm::Type*>>* _ret_val_stack;
+	stack<llvm::Type*>* _ret_type_stack;
 	map<string, llvm::Function*> _functions;
-	map<string, pair<llvm::AllocaInst*, EviType>> _named_values;
-	map<string, EviType> _named_globals;
+	map<string, pair<llvm::Value*, EviType>> _named_values;
 
 
 	void error_at(Token *token, string message);
@@ -60,7 +66,7 @@ class CodeGenerator: public Visitor
 	llvm::Value* pop();
 
 	llvm::AllocaInst* create_entry_block_alloca(
-		llvm::Function *function, llvm::Argument& arg);
+		llvm::Function *function, llvm::Value* value);
 	llvm::Value* create_cast(llvm::Value* srcval, bool srcsigned, 
 							 llvm::Type* desttype, bool destsigned);
 	llvm::Type* lexical_type_to_llvm(LexicalType type);

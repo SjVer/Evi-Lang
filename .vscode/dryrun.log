@@ -2,5 +2,13 @@ make --dry-run --keep-going --print-directory
 make: Entering directory '/home/sjoerd/Coding/Languages/Evi-Lang'
 mkdir -p bin
 mkdir -p bin/obj
+ 
+make --no-print-directory -f stdlib/Makefile stdlib
+ 
+mkdir -p bin/obj/stdlib
+ 
+ar -rc -c bin/libevi.a bin/obj/stdlib/std-io.o
+echo "[stdlib] standard library compiled!"
+ 
 make: Leaving directory '/home/sjoerd/Coding/Languages/Evi-Lang'
  
