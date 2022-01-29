@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Jan 28 16:32:59 2022
+# Make data base, printed on Sat Jan 29 16:35:36 2022
 
 # Variables
 
@@ -18,7 +18,6 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 DESKTOP_SESSION = cinnamon
 # default
 .SHELLFLAGS := -c
- 
 # makefile (from 'Makefile', line 28)
 OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
 # environment
@@ -96,7 +95,7 @@ GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
 GJS_DEBUG_OUTPUT = stderr
 # environment
-SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1598,unix/Xeon-L5410:/tmp/.ICE-unix/1598
+SESSION_MANAGER = local/Xeon-L5410:@/tmp/.ICE-unix/1594,unix/Xeon-L5410:/tmp/.ICE-unix/1594
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -120,7 +119,7 @@ XDG_SESSION_DESKTOP = cinnamon
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2129
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2117
 # automatic
 %F = $(notdir $%)
 # environment
@@ -142,7 +141,7 @@ HEADERDIR = include
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1670
+SSH_AGENT_PID = 1666
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = X-Cinnamon
 # environment
@@ -192,7 +191,7 @@ BINDIR = bin
 # makefile (from 'Makefile', line 6)
 CC = clang++
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-345542f7-7bb8-42e2-8c39-066200c6cc44.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-3cd73f95-2086-4491-9694-caa12d56a1fa.sock
 # environment
 XDG_SESSION_ID = c2
 # environment
@@ -293,7 +292,7 @@ LC_ADDRESS = nl_NL.UTF-8
 # environment
 LANG = C
 # environment
-VSCODE_PID = 2129
+VSCODE_PID = 2117
 # variable set hash-table stats:
 # Load=141/1024=14%, Rehash=0, Collisions=43/215=20%
 
@@ -366,7 +365,7 @@ bin/obj/tools.o:
 bin/obj/typechecker.o: src/typechecker.cpp | makedirs
 #  Implicit rule search has been done.
 #  Implicit/static pattern stem: 'typechecker'
-#  Last modified 2022-01-28 16:31:18.313953489
+#  Last modified 2022-01-29 16:33:01.527738738
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -380,7 +379,7 @@ bin/obj/typechecker.o: src/typechecker.cpp | makedirs
 # Not a target:
 src/typechecker.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-01-28 11:12:12.926249843
+#  Last modified 2022-01-29 16:32:15.607153829
 #  File has been updated.
 #  Successfully updated.
 
@@ -391,7 +390,6 @@ remake: clean bin/evi
 #  File has not been updated.
 
 test-debug: debug bin/evi
- 
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
@@ -564,7 +562,6 @@ routine: bin/evi run clean
 #  File has not been updated.
 
 pch:
- 
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -578,10 +575,11 @@ bin/obj/scanner.o:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
+ 
 
 bin/evi: bin/obj/typechecker.o bin/obj/scanner.o bin/obj/types.o bin/obj/error.o bin/obj/parser.o bin/obj/tools.o bin/obj/main.o bin/obj/debug.o bin/obj/codegen.o | makedirs
 #  Implicit rule search has not been done.
-#  Last modified 2022-01-28 16:31:40.226446762
+#  Last modified 2022-01-29 16:34:18.120807816
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -622,6 +620,6 @@ newfile:
 # strcache performance: lookups = 140 / hit rate = 57%
 # hash-table stats:
 # Load=59/8192=1%, Rehash=0, Collisions=2/140=1%
-# Finished Make data base on Fri Jan 28 16:32:59 2022
+# Finished Make data base on Sat Jan 29 16:35:36 2022
 
  

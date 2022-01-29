@@ -279,7 +279,6 @@ StmtNode* Parser::variable_declaration()
 	else
 	{
 		// definitions
-		
 		for(int i = 0; i < nametokens.size(); i++)
 		{
 			ExprNode* expr = expression();
@@ -350,13 +349,24 @@ StmtNode* Parser::if_statement()
 
 StmtNode* Parser::loop_statement()
 {
-	// loop		: "!!" "(" expression ")" statement
-	//			| "!!" "(" declaration ";" expression ";" declaration? ")" statement
+	// loop		: "!!" "(" (declaration | ";") expression ";" (declaration | ";") ")" statement
+	Token tok = _previous;
 
-	// 1st version: while-loop
-	// 2nd version: for-loop
+	scope_up();
+	consume(TOKEN_LEFT_PAREN, "Expected '(' after '!!'.");
 
-	return nullptr;
+	StmtNode* init = match(TOKEN_SEMICOLON) ? nullptr : declaration(); 
+
+	ExprNode* cond = expression();
+	consume(TOKEN_SEMICOLON, "Expect ';' after condition.");
+
+	StmtNode* incr = match(TOKEN_SEMICOLON) ? nullptr : declaration(); 
+	consume(TOKEN_RIGHT_PAREN, "Expect ')' after incrementor statement.");
+
+	StmtNode* body = statement();
+
+	scope_down();
+	return new LoopNode(tok, init, cond, incr, body);
 }
 
 StmtNode* Parser::return_statement()
@@ -391,7 +401,7 @@ StmtNode* Parser::expression_statement()
 {
 	ExprNode* expr = expression();
 	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
-	return (StmtNode*)expr;	
+	return expr;	
 }
 
 // ===================== expressions ===================

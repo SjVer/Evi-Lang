@@ -58,7 +58,6 @@ class CodeGenerator: public Visitor
 	map<string, llvm::Function*> _functions;
 	map<string, pair<llvm::Value*, EviType>> _named_values;
 
-
 	void error_at(Token *token, string message);
 	void warning_at(Token *token, string message);
 
@@ -67,6 +66,7 @@ class CodeGenerator: public Visitor
 
 	llvm::AllocaInst* create_entry_block_alloca(
 		llvm::Function *function, llvm::Value* value);
+	llvm::Value* to_bool(llvm::Value* value);
 	llvm::Value* create_cast(llvm::Value* srcval, bool srcsigned, 
 							 llvm::Type* desttype, bool destsigned);
 	llvm::Type* lexical_type_to_llvm(LexicalType type);

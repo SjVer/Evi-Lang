@@ -51,7 +51,7 @@ LexicalType TypeChecker::pop()
 
 // check if right is compatible with left and return
 // "compromise" decided by left
-// returns __TYPE_NONE if invalid
+// returns TYPE_NONE if invalid
 LexicalType TypeChecker::resolve_types(LexicalType left, LexicalType right)
 {
 	switch(left)
@@ -61,28 +61,34 @@ LexicalType TypeChecker::resolve_types(LexicalType left, LexicalType right)
 			case TYPE_INTEGER: return TYPE_INTEGER;
 			case TYPE_FLOAT: return TYPE_FLOAT;
 			case TYPE_CHARACTER: return TYPE_INTEGER;
-			default: return __TYPE_NONE;
+			default: return TYPE_NONE;
 		}
 		case TYPE_FLOAT: switch(right)
 		{
 			case TYPE_INTEGER: return TYPE_FLOAT;
 			case TYPE_FLOAT: return TYPE_FLOAT;
 			case TYPE_CHARACTER: return TYPE_FLOAT;
-			default: return __TYPE_NONE;
+			default: return TYPE_NONE;
 		}
 		case TYPE_CHARACTER: switch(right)
 		{
 			case TYPE_INTEGER: return TYPE_INTEGER;
 			case TYPE_FLOAT: return TYPE_FLOAT;
 			case TYPE_CHARACTER: return TYPE_CHARACTER;
-			default: return __TYPE_NONE;
+			default: return TYPE_NONE;
 		}
 		case TYPE_STRING: switch(right)
 		{
-			default: return __TYPE_NONE;
+			case TYPE_STRING: return TYPE_STRING;
+			default: return TYPE_NONE;
+		}
+		case TYPE_VOID: switch(right)
+		{
+			case TYPE_VOID: return TYPE_VOID;
+			default: return TYPE_NONE;
 		}
 		
-		case __TYPE_NONE: return __TYPE_NONE;
+		case TYPE_NONE: return TYPE_NONE;
 	}
 }
 
@@ -92,32 +98,42 @@ bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
 	{
 		case TYPE_INTEGER: switch(to)
 		{
-			case TYPE_INTEGER: return true;
-			case TYPE_FLOAT: return true;
-			case TYPE_CHARACTER: return true;
+			case TYPE_INTEGER:
+			case TYPE_FLOAT:
+			case TYPE_CHARACTER: 
+				return true;
 			default: return false;
 		}
 		case TYPE_FLOAT: switch(to)
 		{
-			case TYPE_INTEGER: return true;
-			case TYPE_FLOAT: return true;
-			case TYPE_CHARACTER: return true;
+			case TYPE_INTEGER:
+			case TYPE_FLOAT:
+			case TYPE_CHARACTER:
+				return true;
 			default: return false;
 		}
 		case TYPE_CHARACTER: switch(to)
 		{
-			case TYPE_INTEGER: return true;
-			case TYPE_FLOAT: return true;
-			case TYPE_CHARACTER: return true;
+			case TYPE_INTEGER:
+			case TYPE_FLOAT:
+			case TYPE_CHARACTER:
+				return true;
 			default: return false;
 		}
 		case TYPE_STRING: switch(to)
 		{
-			case TYPE_STRING: return true;
+			case TYPE_STRING:
+				return true;
+			default: return false;
+		}
+		case TYPE_VOID: switch(to)
+		{
+			case TYPE_VOID:
+				return true;
 			default: return false;
 		}
 		
-		case __TYPE_NONE: return false;
+		case TYPE_NONE: return false;
 	}
 }
 
@@ -145,7 +161,7 @@ VISIT(FuncDeclNode)
 		pop();
 	}
 	
-	push(__TYPE_NONE);
+	push(TYPE_NONE);
 }
 
 VISIT(VarDeclNode)
@@ -166,7 +182,7 @@ VISIT(VarDeclNode)
 		node->_expr->_cast_to = vartype;
 	}
 	
-	push(__TYPE_NONE);
+	push(TYPE_NONE);
 }
 
 VISIT(AssignNode)
@@ -182,7 +198,7 @@ VISIT(AssignNode)
 		"'%s'" COLOR_NONE " to variable's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 		GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(vartype));
 
-	push(__TYPE_NONE);
+	push(TYPE_NONE);
 }
 
 VISIT(IfNode)
@@ -199,29 +215,51 @@ VISIT(IfNode)
 		pop();
 	}
 
-	push(__TYPE_NONE);
+	push(TYPE_NONE);
 }
 
 VISIT(LoopNode)
 {
-	assert(false);
+	if(node->_init)
+	{
+		node->_init->accept(this);
+		pop();
+	}
+
+	node->_cond->accept(this);
+	pop();
+
+	if(node->_incr)
+	{
+		node->_incr->accept(this);
+		pop();
+	}
+
+	node->_body->accept(this);
+	pop();
+
+	push(TYPE_NONE);
 }
 
 VISIT(ReturnNode)
 {
-	node->_expr->accept(this);
-	LexicalType exprtype = pop();
-	LexicalType functype = node->_expected_type;
+	if(node->_expr)
+	{
+		node->_expr->accept(this);
+		LexicalType exprtype = pop();
+		LexicalType functype = node->_expected_type;
 
-	LexicalType result = resolve_types(functype, exprtype);
+		LexicalType result = resolve_types(functype, exprtype);
 
-	if(!can_cast_types(result, functype)) 
-		ERROR_AT(&node->_token, "Cannot implicitly convert return type " COLOR_BOLD \
-		"'%s'" COLOR_NONE " to function's return type " COLOR_BOLD "'%s'" COLOR_NONE ".",
-		GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(functype));
-	
-	node->_expr->_cast_to = functype;
-	push(__TYPE_NONE);
+		if(!can_cast_types(result, functype)) 
+			ERROR_AT(&node->_token, "Cannot implicitly convert return type " COLOR_BOLD \
+			"'%s'" COLOR_NONE " to function's return type " COLOR_BOLD "'%s'" COLOR_NONE ".",
+			GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(functype));
+		
+		node->_expr->_cast_to = functype;
+	}
+
+	push(TYPE_NONE);
 }
 
 VISIT(BlockNode)
@@ -231,7 +269,7 @@ VISIT(BlockNode)
 		subnode->accept(this);
 		pop();
 	}
-	push(__TYPE_NONE);
+	push(TYPE_NONE);
 }
 
 // === Expressions ===
@@ -250,7 +288,7 @@ VISIT(LogicalNode)
 		LexicalType left = pop();
 		LexicalType result = resolve_types(left, right);
 
-		if(result == __TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
+		if(result == TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
 		else if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
 		else if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
 		
@@ -274,7 +312,7 @@ VISIT(BinaryNode)
 	LexicalType left = pop();
 	LexicalType result = resolve_types(left, right);
 
-	if(result == __TYPE_NONE) 
+	if(result == TYPE_NONE) 
 	{
 		if(right != left) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
 		else ERROR_AT(&node->_token, "Cannot peform binary operation on expressions of type " \
@@ -285,6 +323,7 @@ VISIT(BinaryNode)
 	
 	node->_left->_cast_to = result;
 	node->_right->_cast_to = result;
+	node->_cast_to = result; // in case nothing else sets it
 	push(result);
 }
 
@@ -301,7 +340,7 @@ VISIT(UnaryNode)
 			break;
 
 		case TYPE_CHARACTER:
-			CONVERSION_WARNING_AT(&node->_token, TYPE_CHARACTER, TYPE_INTEGER);
+			if(node->_optype == TOKEN_BANG) CONVERSION_WARNING_AT(&node->_token, TYPE_CHARACTER, TYPE_INTEGER);
 			node->_expr->_cast_to = node->_optype == TOKEN_BANG ? TYPE_INTEGER : TYPE_CHARACTER;
 			push(node->_optype == TOKEN_BANG ? TYPE_INTEGER : TYPE_CHARACTER);
 			break;

@@ -18,7 +18,7 @@ variables:
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
   # types
-  inttype: 'i1|(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))'
+  inttype: '(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1'
   type: '{{inttype}}|flt|dbl|bln|nll|chr'
 
 contexts:

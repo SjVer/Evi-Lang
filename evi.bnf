@@ -17,8 +17,7 @@ statement		: assignment
 
 assignment		: "=" IDENT expression ";"
 if_stmt			: "??" "(" expression ")" statement ("::" statement)?
-loop			: "!!" "(" expression ")" statement
-				| "!!" "(" declaration ";" expression ";" declaration? ")" statement
+loop			: "!!" "(" declaration? expression ";" declaration? ")" statement
 return 			: "~" expression? ";"
 block			: "{" declaration* "}"
 

@@ -1,6 +1,9 @@
 #apply "std-io"
 #flag DEBUG
 
+@printc i8 (chr);
+@printi i8 (i32);
+
 @fib i32 () {
 	%i, n i32;
 
@@ -11,15 +14,18 @@
 	%tn i32 $t1 + $t2;
 
 	\ get no. of terms from user
-	=n nextint("Enter the number of terms: ");
-
+	=n 5;
+	\ =n nextint("Enter the number of terms: ");
 
 	\ print the first two terms t1 and t2
-	printf("Fibonacci Series: %d, %d, ", $t1, $t2);
+	printi($t1); printc('\n');
+	printi($t2); printc('\n');
+	\ printf("Fibonacci Series: %d, %d, ", $t1, $t2);
 
 	\ print 3rd to nth terms
-  	(=i 3, <= $i $n, ++$i) {
-	    printf("%d, ", $tn);
+  	!!(=i 3; $i <= $n; =i ++$i;) {
+	    printi($tn); printc('\n');
+	    \ printf("%d, ", $tn);
 	    =t1 $t2;
 	    =t2 $tn;
 	    =tn $t1 + $t2;

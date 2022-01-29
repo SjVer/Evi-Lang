@@ -32,3 +32,8 @@
 \? @ret the printed character cast to an i8 or EOF if printc failed
 @printc i8 (i8);
 
+\? writes an integer to stdout
+\? @param 0 the integer to print out
+\? @ret the amount of printed characters or a negative number if printi failed
+@printi i8 (i32);
+

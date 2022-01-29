@@ -138,15 +138,15 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 		public:
 
 		LoopNode(Token token,
-				 StmtNode* first, ExprNode* second,
-				 StmtNode* third, StmtNode* body):
-			StmtNode(token), _first(first), _second(second),
-			_third(third), _body(body) {}
+				 StmtNode* init, ExprNode* cond,
+				 StmtNode* incr, StmtNode* body):
+			StmtNode(token), _init(init), _cond(cond),
+			_incr(incr), _body(body) {}
 		ACCEPT
 
-		StmtNode* _first;
-		ExprNode* _second;
-		StmtNode* _third;
+		StmtNode* _init;
+		ExprNode* _cond;
+		StmtNode* _incr;
 		StmtNode* _body;
 	};
 

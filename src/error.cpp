@@ -95,7 +95,9 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 
 void ErrorDispatcher::__dispatch(bool at, Token* t, const char* c, const char* p, const char* m)
 {
-    fprintf(stderr, "[%s:%c] %s%s" COLOR_NONE, _infile, at ? t->line + '0' : '\b', c, p);
+    fprintf(stderr, "[%s:%d%s] %s%s" COLOR_NONE, _infile, 
+		at ? t->line : 0,
+		at ? "" : "\b\b", c, p);
 
     if (at && t->type == TOKEN_EOF) 
 		fprintf(stderr, " at end");

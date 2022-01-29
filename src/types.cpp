@@ -1,6 +1,6 @@
 #include "types.hpp"
 
-const char* lexical_type_strings[__TYPE_NONE];
+const char* lexical_type_strings[TYPE_NONE];
 
 map<string, EviType> __evi_types;
 llvm::LLVMContext __context;

@@ -71,11 +71,11 @@ Status CodeGenerator::generate(string infile, string outfile, const char* source
 		}
 
 		// verify module
-		// if(llvm::verifyModule(*_top_module, _errstream))
+		// if(llvm::verifyModule(*_top_module, _llvm_errstream))
 		// {
 		// 	cerr << endl;
 		// 	_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed.");
-		// 	// exit(STATUS_CODEGEN_ERROR);
+		// 	exit(STATUS_CODEGEN_ERROR);
 		// }
 
 		ofstream std_file_stream(_outfile);
@@ -131,6 +131,18 @@ llvm::AllocaInst* CodeGenerator::create_entry_block_alloca(llvm::Function *funct
 {
 	llvm::IRBuilder<> TmpB(&function->getEntryBlock(), function->getEntryBlock().begin());
 	return TmpB.CreateAlloca(value->getType(), 0, value->getName());
+}
+
+llvm::Value* CodeGenerator::to_bool(llvm::Value* value)
+{
+	llvm::Type* type = value->getType();
+
+	if(type->isIntegerTy())
+		return _builder->CreateICmpNE(value, llvm::ConstantInt::get(type, 0), "itobtmp");
+	if(type->isFloatTy() || type->isDoubleTy())	
+		return _builder->CreateFCmpONE(value, llvm::ConstantFP::get(__context, llvm::APFloat(0.0)), "ftobtmp");
+
+	assert(false);
 }
 
 llvm::Value* CodeGenerator::create_cast(llvm::Value* srcval, bool srcsigned, llvm::Type* desttype, bool destsigned)
@@ -189,6 +201,8 @@ VISIT(FuncDeclNode)
 		llvm::BasicBlock *block = llvm::BasicBlock::Create(__context, "entry", func);
 		_builder->SetInsertPoint(block);
 
+		SCOPE_UP();
+
 		// alloc each parameter
 		for (int i = 0; i < params.size(); i++) {
 			llvm::Argument* arg = func->getArg(i);
@@ -204,15 +218,18 @@ VISIT(FuncDeclNode)
 			_named_values[arg->getName().str()].second = node->_params[i];
 		}
 
-		SCOPE_UP();
 		_ret_type_stack->push(node->_ret_type.llvm_type);
 		node->_body->accept(this);
 		SCOPE_DOWN();
 
 		// finish off function
 		_ret_type_stack->pop();
-		llvm::Constant* nullret = llvm::Constant::getNullValue(node->_ret_type.llvm_type);
-		_builder->CreateRet(nullret);
+		if(node->_ret_type.lexical_type != TYPE_VOID)
+		{
+			llvm::Constant* nullret = llvm::Constant::getNullValue(node->_ret_type.llvm_type);
+			_builder->CreateRet(nullret);
+		}
+		else _builder->CreateRetVoid();
 
 		// verify function
 		// if(llvm::verifyFunction(*func, new llvm::raw_os_ostream(cerr)))
@@ -302,20 +319,9 @@ VISIT(AssignNode)
 VISIT(IfNode)
 {
 	node->_cond->accept(this);
-	llvm::Value* cond = pop();
 	
 	// create comparison
-	switch(node->_cond->_cast_to)
-	{
-		case TYPE_INTEGER:
-		case TYPE_CHARACTER:
-			cond = _builder->CreateICmpNE(cond, llvm::ConstantInt::getFalse(__context), "ifcond");
-			break;
-		case TYPE_FLOAT:
-			cond = _builder->CreateFCmpONE(cond, llvm::ConstantFP::get(__context, llvm::APFloat(0.0)), "ifcond");
-			break;
-		default: assert(false);
-	}
+	llvm::Value* cond = to_bool(pop());
 
 	llvm::Function* func = _builder->GetInsertBlock()->getParent();
 
@@ -343,22 +349,80 @@ VISIT(IfNode)
 
 VISIT(LoopNode)
 {
+	/*
+		; for(int i = 0; i < 10; i++) ...
+
+		entry:
+			...
+			alloca i 
+			store 0 to i
+			br cond
+
+		cond:
+			cmpless i 10
+			brcond end loop
+		
+		loop:
+			...
+			store i + 1 to i
+			br cond
+
+		end:
+			...
+	*/
+
+	llvm::Function* func = _builder->GetInsertBlock()->getParent();
+	// llvm::BasicBlock* preheaderblock = _builder->GetInsertBlock();
+	llvm::BasicBlock* condblock = llvm::BasicBlock::Create(__context, "loopcond", func);
+	llvm::BasicBlock* loopblock = llvm::BasicBlock::Create(__context, "loopbody", func);
+	llvm::BasicBlock* endblock = llvm::BasicBlock::Create(__context, "loopcont", func);
+
+	SCOPE_UP();
+
+	// first do initializer
+	if(node->_init) node->_init->accept(this);
+	_builder->CreateBr(condblock);
+
+	// then do condition
+	_builder->SetInsertPoint(condblock);
+	node->_cond->accept(this);
+	_builder->CreateCondBr(to_bool(pop()), loopblock, endblock);
+	condblock = _builder->GetInsertBlock(); // update condblock
+
+	// finally do loop body and incrementor
+	_builder->SetInsertPoint(loopblock);
+	node->_body->accept(this);
+	if(node->_incr) node->_incr->accept(this);
+	_builder->CreateBr(condblock);
+	loopblock = _builder->GetInsertBlock(); // update loopblock
+
+	// patch up
+	_builder->SetInsertPoint(endblock);
+	endblock->moveAfter(loopblock);
+	SCOPE_DOWN();
+	
 }
 
 VISIT(ReturnNode)
 {
-	// TEMPORARY
-	node->_expr->accept(this);
-	llvm::Type* casttype = _ret_type_stack->top();
-	// _builder->CreateStore(create_cast(pop(), false, casttype, false), _ret_val_stack->top().first);
-	_builder->CreateRet(create_cast(pop(), false, casttype, false));
+	if(node->_expr)
+	{
+		node->_expr->accept(this);
+		llvm::Type* casttype = _ret_type_stack->top();
+		_builder->CreateRet(create_cast(pop(), false, casttype, false));
+	}
+	else _builder->CreateRetVoid();
 }
 
 VISIT(BlockNode)
 {
-	SCOPE_UP();
-	for(StmtNode*& stmt : node->_statements) stmt->accept(this);
-	SCOPE_DOWN();
+	if(!node->_secret)
+	{
+		SCOPE_UP();
+		for(StmtNode*& stmt : node->_statements) stmt->accept(this);
+		SCOPE_DOWN();
+	}
+	else for(StmtNode*& stmt : node->_statements) stmt->accept(this);
 }
 
 // === Expressions ===
@@ -380,11 +444,47 @@ VISIT(BinaryNode)
 
 	switch(node->_optype)
 	{
+		// case TOKEN_PIPE:
+		// case TOKEN_CARET:
+		// case TOKEN_AND:
+
+		// case TOKEN_EQUAL_EQUAL:
+		// case TOKEN_SLASH_EQUAL:
+
+		// case TOKEN_GREATER_EQUAL:
+		case TOKEN_LESS_EQUAL: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateICmpSLE(left, right, "iletmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateFCmpOLE(left, right,"fletmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateICmpULE(left, right, "cletmp")); break;
+				default: assert(false);
+			}
+			break;
+		case TOKEN_GREATER: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateICmpSGT(left, right, "igttmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateFCmpOGT(left, right,"fgttmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateICmpUGT(left, right, "cgttmp")); break;
+				default: assert(false);
+			}
+			break;
+		case TOKEN_LESS: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateICmpSLT(left, right, "ilttmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateFCmpOLT(left, right,"flttmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateICmpULT(left, right, "clttmp")); break;
+				default: assert(false);
+			}
+			break;
+
+		// case TOKEN_GREATER_GREATER:
+		// case TOKEN_LESS_LESS:
+
 		case TOKEN_PLUS: switch(resulttype)
 			{
 				case TYPE_INTEGER:   push(_builder->CreateAdd(left, right, "iaddtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFAdd(left, right,"faddtmp")); break;
-				case TYPE_CHARACTER: push(_builder->CreateAdd(left, right, "iaddtmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateAdd(left, right, "caddtmp")); break;
 				default: assert(false);
 			} 
 			break;
@@ -392,7 +492,7 @@ VISIT(BinaryNode)
 			{
 				case TYPE_INTEGER:   push(_builder->CreateSub(left, right, "isubmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFSub(left, right,"fsubmp")); break;
-				case TYPE_CHARACTER: push(_builder->CreateSub(left, right, "isubmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateSub(left, right, "csubmp")); break;
 				default: assert(false);
 			} 
 			break;
@@ -400,7 +500,15 @@ VISIT(BinaryNode)
 			{
 				case TYPE_INTEGER:   push(_builder->CreateMul(left, right, "imultmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFMul(left, right,"fmultmp")); break;
-				case TYPE_CHARACTER: push(_builder->CreateMul(left, right, "imultmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateMul(left, right, "cmultmp")); break;
+				default: assert(false);
+			} 
+			break;
+		case TOKEN_SLASH: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateSDiv(left, right, "idivtmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateFDiv(left, right,"fdivtmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateUDiv(left, right, "cdivtmp")); break;
 				default: assert(false);
 			} 
 			break;
@@ -417,9 +525,16 @@ VISIT(UnaryNode)
 
 	switch(node->_optype)
 	{
-		case TOKEN_MINUS: switch(node->_cast_to)
+		case TOKEN_MINUS: switch(node->_expr->_cast_to)
 			{
 				case TYPE_INTEGER:   push(_builder->CreateNeg(value, "inegtmp")); break;
+				default: assert(false);
+			} 
+			break;
+		case TOKEN_PLUS_PLUS: switch(node->_expr->_cast_to)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "iinctmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "cinctmp")); break;
 				default: assert(false);
 			} 
 			break;
@@ -463,9 +578,8 @@ VISIT(ReferenceNode)
 {
 	llvm::Value* var = _named_values[node->_variable].first;
 	EviType type = _named_values[node->_variable].second;
-	
-	llvm::LoadInst* load = _builder->CreateLoad(type.llvm_type, var, "loadtmp");
 
+	llvm::LoadInst* load = _builder->CreateLoad(type.llvm_type, var, "loadtmp");
 	llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
 	push(create_cast(load, type.issigned, casttype, false));
 }

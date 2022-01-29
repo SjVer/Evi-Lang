@@ -64,7 +64,7 @@ VISIT(FuncDeclNode)
 
 VISIT(VarDeclNode)
 {
-	string namelabel = tools::fstr("%% %.*s", node->_token.length, node->_token.start);
+	string namelabel = tools::fstr("%% %s", node->_identifier.c_str());
 	int thisnode = ADD_NODE(namelabel.c_str());
 	
 	CONNECT_NODES(thisnode, ADD_NODE(node->_type.name.c_str()));
@@ -105,19 +105,19 @@ VISIT(LoopNode)
 	_stream << tools::fstr("\tnode%d [label=\"\", shape=\"none\", width=0, height=0]\n", anchor);
 	CONNECT_NODES(thisnode, anchor);
 
-	if(node->_first)
+	if(node->_init)
 	{
 		CONNECT_NODES_LABELED(anchor, _nodecount, "init");
-		node->_first->accept(this);
+		node->_init->accept(this);
 	}
 
 	CONNECT_NODES_LABELED(anchor, _nodecount, "cond");
-	node->_second->accept(this);
+	node->_cond->accept(this);
 
-	if(node->_third) // must be for-loop
+	if(node->_incr) // must be for-loop
 	{
 		CONNECT_NODES_LABELED(anchor, _nodecount, "incr");
-		node->_third->accept(this);
+		node->_incr->accept(this);
 	}
 
 	CONNECT_NODES(thisnode, _nodecount);

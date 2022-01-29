@@ -314,7 +314,7 @@
 <g id="node20" class="node">
 <title>node19</title>
 <polygon fill="none" stroke="black" points="414,-125 360,-125 360,-104 414,-104 414,-125"/>
-<text text-anchor="middle" x="387" y="-111.4" font-family="Courier,monospace" font-size="12.00">1</text>
+<text text-anchor="middle" x="387" y="-111.4" font-family="Courier,monospace" font-size="12.00">0</text>
 </g>
 <!-- node17&#45;&gt;node19 -->
 <g id="edge19" class="edge">
@@ -369,7 +369,7 @@
 <g id="node27" class="node">
 <title>node26</title>
 <polygon fill="none" stroke="black" points="558,-187 504,-187 504,-166 558,-166 558,-187"/>
-<text text-anchor="middle" x="531" y="-173.4" font-family="Courier,monospace" font-size="12.00">10</text>
+<text text-anchor="middle" x="531" y="-173.4" font-family="Courier,monospace" font-size="12.00">5</text>
 </g>
 <!-- node25&#45;&gt;node26 -->
 <g id="edge26" class="edge">
