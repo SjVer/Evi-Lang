@@ -444,14 +444,56 @@ VISIT(BinaryNode)
 
 	switch(node->_optype)
 	{
-		// case TOKEN_PIPE:
-		// case TOKEN_CARET:
-		// case TOKEN_AND:
+		case TOKEN_PIPE: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateOr(left, right, "ibotmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateOr(left, right,"fbotmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateOr(left, right, "cbotmp")); break;
+				default: assert(false);
+			}
+			break;
+		case TOKEN_CARET: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateXor(left, right, "ibxtmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateXor(left, right,"fbxtmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateXor(left, right, "cbxtmp")); break;
+				default: assert(false);
+			}
+			break;
+		case TOKEN_AND: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateAnd(left, right, "ibatmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateAnd(left, right,"fbatmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateAnd(left, right, "cbatmp")); break;
+				default: assert(false);
+			}
+			break;
 
-		// case TOKEN_EQUAL_EQUAL:
-		// case TOKEN_SLASH_EQUAL:
+		case TOKEN_EQUAL_EQUAL: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateICmpEQ(left, right, "ieqtmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateFCmpOEQ(left, right,"feqtmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateICmpEQ(left, right, "ceqtmp")); break;
+				default: assert(false);
+			}
+			break;
+		case TOKEN_SLASH_EQUAL: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateICmpNE(left, right, "inetmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateFCmpONE(left, right,"fnetmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateICmpNE(left, right, "cnetmp")); break;
+				default: assert(false);
+			}
+			break;
 
-		// case TOKEN_GREATER_EQUAL:
+		case TOKEN_GREATER_EQUAL: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateICmpSGE(left, right, "igetmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateFCmpOGE(left, right,"fgetmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateICmpUGE(left, right, "cgetmp")); break;
+				default: assert(false);
+			}
+			break;
 		case TOKEN_LESS_EQUAL: switch(resulttype)
 			{
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLE(left, right, "iletmp")); break;
