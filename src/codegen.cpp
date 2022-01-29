@@ -519,8 +519,22 @@ VISIT(BinaryNode)
 			}
 			break;
 
-		// case TOKEN_GREATER_GREATER:
-		// case TOKEN_LESS_LESS:
+		case TOKEN_GREATER_GREATER: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateLShr(left, right, "isrtmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateLShr(left, right,"fsrtmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateLShr(left, right, "csrtmp")); break;
+				default: assert(false);
+			}
+			break;
+		case TOKEN_LESS_LESS: switch(resulttype)
+			{
+				case TYPE_INTEGER:   push(_builder->CreateShl(left, right, "isltmp")); break;
+				case TYPE_FLOAT:     push(_builder->CreateShl(left, right,"fsltmp")); break;
+				case TYPE_CHARACTER: push(_builder->CreateShl(left, right, "csltmp")); break;
+				default: assert(false);
+			}
+			break;
 
 		case TOKEN_PLUS: switch(resulttype)
 			{

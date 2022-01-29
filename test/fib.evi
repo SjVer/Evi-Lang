@@ -8,13 +8,13 @@
 	%i, n i32;
 
 	\ initialize first and second terms
-	%t1, t2 i32 0, 0;
+	%t1, t2 i32 0, 1;
 
 	\ initialize the next term (3rd term)
 	%tn i32 $t1 + $t2;
 
 	\ get no. of terms from user
-	=n 5;
+	=n 10;
 	\ =n nextint("Enter the number of terms: ");
 
 	\ print the first two terms t1 and t2
