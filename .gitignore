@@ -2,3 +2,4 @@ bin/
 ./.vscode/
 **/*.phc
 **/*.gch
+**/*.svg

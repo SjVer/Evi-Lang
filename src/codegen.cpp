@@ -216,8 +216,8 @@ VISIT(FuncDeclNode)
 			_builder->CreateStore(arg, alloca);
 
 			// Add arguments to variable symbol table.
-			_named_values[arg->getName().str()].first = alloca;
-			_named_values[arg->getName().str()].second = node->_params[i];
+			_named_values[tools::fstr("%d", i)].first = alloca;
+			_named_values[tools::fstr("%d", i)].second = node->_params[i];
 		}
 
 		_ret_type_stack->push(node->_ret_type.llvm_type);
@@ -432,13 +432,48 @@ VISIT(BlockNode)
 
 VISIT(LogicalNode)
 {
+	llvm::Function* func = _builder->GetInsertBlock()->getParent();
+
 	if(node->_token.type == TOKEN_QUESTION) // ternary
 	{
-		assert(false);
+		llvm::BasicBlock* ifblock = llvm::BasicBlock::Create(__context, "ternif", func);
+		llvm::BasicBlock* elseblock = llvm::BasicBlock::Create(__context, "ternelse", func);
+		llvm::BasicBlock* endblock = llvm::BasicBlock::Create(__context, "terncont", func);
+
+		// first eval condition
+		node->_left->accept(this);
+		llvm::Value* cond = to_bool(pop());
+		_builder->CreateCondBr(cond, ifblock, elseblock);
+
+		// if block
+		_builder->SetInsertPoint(ifblock);
+		node->_middle->accept(this);
+		llvm::Value* ifval = create_cast(pop(), false, lexical_type_to_llvm(node->_middle->_cast_to), false);
+		_builder->CreateBr(endblock);
+		ifblock = _builder->GetInsertBlock(); // update ifblock
+
+		// else block
+		endblock->moveAfter(ifblock);
+		_builder->SetInsertPoint(elseblock);
+		node->_right->accept(this);
+		llvm::Value* elseval = create_cast(pop(), false, lexical_type_to_llvm(node->_right->_cast_to), false);
+		_builder->CreateBr(endblock);
+		elseblock = _builder->GetInsertBlock(); // update elseblock
+
+		// patch up
+		_builder->SetInsertPoint(endblock);
+		endblock->moveAfter(elseblock);
+
+		// decide on result
+		llvm::PHINode* phi = _builder->CreatePHI(lexical_type_to_llvm(node->_middle->_cast_to), 2, "ternres");
+		phi->addIncoming(ifval, ifblock);
+		phi->addIncoming(elseval, elseblock);
+
+		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
+		push(phi);
 	}
 	else if(node->_token.type == TOKEN_AND_AND) // and
 	{
-		llvm::Function* func = _builder->GetInsertBlock()->getParent();
 		llvm::BasicBlock* start = _builder->GetInsertBlock();
 		llvm::BasicBlock* andtwo = llvm::BasicBlock::Create(__context, "andtwo", func);
 		llvm::BasicBlock* andcont = llvm::BasicBlock::Create(__context, "andcont", func);
@@ -464,6 +499,7 @@ VISIT(LogicalNode)
 		phi->addIncoming(_builder->getFalse(), start);
 		phi->addIncoming(result, andtwo);
 
+		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
 		push(phi);
 	}
 	else if(node->_token.type == TOKEN_PIPE_PIPE) // or
@@ -494,6 +530,7 @@ VISIT(LogicalNode)
 		phi->addIncoming(_builder->getTrue(), start);
 		phi->addIncoming(result, ortwo);
 
+		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
 		push(phi);
 	}
 	else assert(false);
@@ -699,8 +736,19 @@ VISIT(LiteralNode)
 
 VISIT(ReferenceNode)
 {
-	llvm::Value* var = _named_values[node->_variable].first;
-	EviType type = _named_values[node->_variable].second;
+	llvm::Value* var = nullptr;
+	EviType type;
+
+	if(node->_token.type == TOKEN_VARIABLE_REF)
+	{
+		var = _named_values[node->_variable].first;
+		type = _named_values[node->_variable].second;
+	}
+	else if(node->_token.type == TOKEN_PARAMETER_REF)
+	{
+		var = _named_values[tools::fstr("%d", node->_parameter)].first;
+		type = _named_values[tools::fstr("%d", node->_parameter)].second;
+	}
 
 	llvm::LoadInst* load = _builder->CreateLoad(type.llvm_type, var, "loadtmp");
 	llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);

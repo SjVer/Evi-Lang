@@ -105,7 +105,7 @@ test: $(APP)
 
 	@printf "============= Running \"bin/test\" ===========\n\n"
 	@bin/test
-	@printf "=============== Exited with $$? ==============\n"
+	@printf "\n\n=============== Exited with $$? ==============\n"
 	@rm bin/test.ll bin/test.o bin/test
 
 .PHONY: test-debug

@@ -30,10 +30,13 @@
 \? writes a character to stdout
 \? @param 0 the character to print out
 \? @ret the printed character cast to an i8 or EOF if printc failed
-@printc i8 (i8);
+@printc i8 (chr);
 
 \? writes an integer to stdout
 \? @param 0 the integer to print out
 \? @ret the amount of printed characters or a negative number if printi failed
-@printi i8 (i32);
+@printi i8 (i64);
 
+\? tries to read an integer from stdin (without detecting invalid input)
+\? @ret the scanned integer
+@scani i64 ();

@@ -112,7 +112,7 @@ bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
 			case TYPE_INTEGER:
 			case TYPE_FLOAT:
 			case TYPE_BOOL:
-			case TYPE_CHARACTER: 
+			case TYPE_CHARACTER:
 				return true;
 			default: return false;
 		}
@@ -145,8 +145,8 @@ bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
 		}
 		case TYPE_STRING: switch(to)
 		{
-			case TYPE_BOOL:
-			case TYPE_INTEGER:
+			// case TYPE_BOOL:
+			// case TYPE_INTEGER:
 			case TYPE_STRING:
 				return true;
 			default: return false;
@@ -306,18 +306,23 @@ VISIT(LogicalNode)
 
 	if(node->_token.type == TOKEN_QUESTION)
 	{
+		node->_left->accept(this);
+		LexicalType cond = pop();
+		if(!can_cast_types(cond, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, cond, TYPE_BOOL);
+		node->_left->_cast_to = TYPE_BOOL;
+
+
 		node->_middle->accept(this);
 		node->_right->accept(this);
-		
 		LexicalType right = pop();
 		LexicalType left = pop();
 		LexicalType result = resolve_types(left, right);
 
 		if(result == TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
-		else if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
+		else if(left != result) CONVERSION_WARNING_AT(&node->_middle->_token, left, result);
 		else if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
 		
-		node->_left->_cast_to = result;
+		node->_middle->_cast_to = result;
 		node->_right->_cast_to = result;
 
 		push(result);
@@ -332,10 +337,10 @@ VISIT(LogicalNode)
 
 		// if(result == TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
 		if(!can_cast_types(left, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, left, TYPE_BOOL);
-		else if(!can_cast_types(right, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, right, TYPE_BOOL);
+		if(!can_cast_types(right, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, right, TYPE_BOOL);
 
 		if(left != TYPE_BOOL) CONVERSION_WARNING_AT(&node->_left->_token, left, TYPE_BOOL);
-		else if(right != TYPE_BOOL) CONVERSION_WARNING_AT(&node->_right->_token, right, TYPE_BOOL);
+		if(right != TYPE_BOOL) CONVERSION_WARNING_AT(&node->_right->_token, right, TYPE_BOOL);
 		
 		node->_left->_cast_to = TYPE_BOOL;
 		node->_right->_cast_to = TYPE_BOOL;
@@ -351,21 +356,49 @@ VISIT(BinaryNode)
 
 	LexicalType right = pop();
 	LexicalType left = pop();
-	LexicalType result = resolve_types(left, right);
 
-	if(result == TYPE_NONE) 
+	if(node->_optype == TOKEN_AND
+	|| node->_optype == TOKEN_PIPE
+	|| node->_optype == TOKEN_CARET) // binary op requires ints
 	{
-		if(right != left) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
-		else ERROR_AT(&node->_token, "Cannot peform binary operation on expressions of type " \
-			 COLOR_BOLD "'%s'" COLOR_NONE ".", GET_LEX_TYPE_STR(right));
+		if(!can_cast_types(left, TYPE_INTEGER))
+		{
+			ERROR_AT(&node->_left->_token, "Cannot implicitly convert expression of type " COLOR_BOLD "'%s'" COLOR_NONE
+			" to type " COLOR_BOLD "'integer'" COLOR_NONE " required by binary operator '%.*s'.",
+			GET_LEX_TYPE_STR(left), node->_token.length, node->_token.start);
+		}
+		if(!can_cast_types(right, TYPE_INTEGER))
+		{
+			ERROR_AT(&node->_right->_token, "Cannot implicitly convert expression of type " COLOR_BOLD "'%s'" COLOR_NONE
+			" to type " COLOR_BOLD "'integer'" COLOR_NONE " required by binary operator '%.*s'.",
+			GET_LEX_TYPE_STR(right), node->_token.length, node->_token.start);
+		}
+		if(left != TYPE_INTEGER) CONVERSION_WARNING_AT(&node->_left->_token, left, TYPE_INTEGER);
+		if(right != TYPE_INTEGER) CONVERSION_WARNING_AT(&node->_right->_token, right, TYPE_INTEGER);
+
+		node->_left->_cast_to = TYPE_INTEGER;
+		node->_right->_cast_to = TYPE_INTEGER;
+		node->_cast_to = TYPE_INTEGER; // in case nothing else sets it
+		push(TYPE_INTEGER);
 	}
-	else if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
-	else if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
-	
-	node->_left->_cast_to = result;
-	node->_right->_cast_to = result;
-	node->_cast_to = result; // in case nothing else sets it
-	push(result);
+	else
+	{
+		LexicalType result = resolve_types(left, right);
+
+		if(result == TYPE_NONE) 
+		{
+			if(right != left) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
+			else ERROR_AT(&node->_token, "Cannot peform binary operation on expressions of type " \
+				COLOR_BOLD "'%s'" COLOR_NONE ".", GET_LEX_TYPE_STR(right));
+		}
+		if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
+		if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
+		
+		node->_left->_cast_to = result;
+		node->_right->_cast_to = result;
+		node->_cast_to = result; // in case nothing else sets it
+		push(result);
+	}
 }
 
 VISIT(UnaryNode)
