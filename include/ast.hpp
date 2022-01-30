@@ -154,12 +154,12 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 	{
 		public:
 
-		ReturnNode(Token token, ExprNode* expr, LexicalType expected_type):
+		ReturnNode(Token token, ExprNode* expr, EviType expected_type):
 			StmtNode(token), _expr(expr), _expected_type(expected_type) {}
 		ACCEPT
 
 		ExprNode* _expr;
-		LexicalType _expected_type;
+		EviType _expected_type;
 	};
 
 	class BlockNode: public StmtNode

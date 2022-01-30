@@ -1,22 +1,18 @@
 #apply "std-io"
 
-@printi i8 (i64);
-@printc i8 (chr);
-@scani i64 ();
+\ @printi i8 (i64);
+\ @printc i8 (chr);
+\ @scani i64 ();
 
-@mod i64 (i64 i64)
+@f i32 ();
+
+@main i64 ()
 {
-	%rounded i64 $0 / $1;
-	~ $0 - $rounded * $1;
+	~ f();
 }
 
-@main i32 ()
+@f i32 ()
 {
-	%a i64 scani();
-	%b i64 scani();
-
-	printi(mod($a, $b));
-	printc('\n');
-
 	~ 0;
 }
+

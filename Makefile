@@ -72,7 +72,6 @@ pch:
 	@$(CC) $(PHCFLAGS)
 	@printf "\b\b done!\n"
 
-.PHONY: stdlib
 stdlib: makedirs
 	@$(MAKE) --no-print-directory -f $(STDLIB_DIR)/Makefile stdlib
 

@@ -44,8 +44,6 @@ Status CodeGenerator::generate(string infile, string outfile, const char* source
 		_top_module->setTargetTriple(_target_triple);
 
 		_value_stack = new stack<llvm::Value*>();
-		// _ret_val_stack = new stack<pair<llvm::Value*, llvm::Type*>>();
-		_ret_type_stack = new stack<llvm::Type*>();
 	}
 
 	// walk the tree
@@ -189,14 +187,19 @@ llvm::Type* CodeGenerator::lexical_type_to_llvm(TokenType type)
 
 VISIT(FuncDeclNode)
 {
+	llvm::Function* func;
 	vector<llvm::Type*> params;
-	for(EviType& type : node->_params) params.push_back(type.llvm_type);
-	
-	llvm::FunctionType* functype = llvm::FunctionType::get(node->_ret_type.llvm_type, params, false);
-	llvm::Function* func = llvm::Function::Create(
-		functype, llvm::Function::ExternalLinkage, node->_identifier, *_top_module);
-	
-	_functions[node->_identifier] = func;
+
+	if(_functions.find(node->_identifier) == _functions.end())
+	{
+		for(EviType& type : node->_params) params.push_back(type.llvm_type);
+		
+		llvm::FunctionType* functype = llvm::FunctionType::get(node->_ret_type.llvm_type, params, false);
+		func = llvm::Function::Create(functype, llvm::Function::ExternalLinkage, node->_identifier, *_top_module);
+		
+		_functions[node->_identifier] = func;
+	}
+	else func = _functions[node->_identifier];
 
 	if(node->_body)
 	{
@@ -220,13 +223,13 @@ VISIT(FuncDeclNode)
 			_named_values[tools::fstr("%d", i)].second = node->_params[i];
 		}
 
-		_ret_type_stack->push(node->_ret_type.llvm_type);
+		// eval the body
 		node->_body->accept(this);
 		SCOPE_DOWN();
 
 		// finish off function
-		_ret_type_stack->pop();
-		if(node->_ret_type.lexical_type != TYPE_VOID)
+		if(func->getBasicBlockList().back().getInstList().back().isTerminator()) {}
+		else if(node->_ret_type.lexical_type != TYPE_VOID)
 		{
 			llvm::Constant* nullret = llvm::Constant::getNullValue(node->_ret_type.llvm_type);
 			_builder->CreateRet(nullret);
@@ -410,8 +413,7 @@ VISIT(ReturnNode)
 	if(node->_expr)
 	{
 		node->_expr->accept(this);
-		llvm::Type* casttype = _ret_type_stack->top();
-		_builder->CreateRet(create_cast(pop(), false, casttype, false));
+		_builder->CreateRet(create_cast(pop(), false, node->_expected_type.llvm_type, false));
 	}
 	else _builder->CreateRetVoid();
 }

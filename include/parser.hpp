@@ -24,8 +24,10 @@ private:
 
 	typedef struct
 	{
-		LexicalType ret_type;
-		vector<LexicalType> params;
+		EviType ret_type;
+		vector<EviType> params;
+		bool defined;
+		bool invalid = false;
 	} FuncProperties;
 
 	typedef struct

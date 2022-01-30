@@ -272,7 +272,7 @@ VISIT(ReturnNode)
 	{
 		node->_expr->accept(this);
 		LexicalType exprtype = pop();
-		LexicalType functype = node->_expected_type;
+		LexicalType functype = node->_expected_type.lexical_type;
 
 		LexicalType result = resolve_types(functype, exprtype);
 

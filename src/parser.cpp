@@ -111,7 +111,7 @@ LexicalType Parser::get_variable_type(string name)
 	return (LexicalType)-1;
 }
 
-// returns with ret_type = -1 if not found
+// returns with invalid = true if not found
 Parser::FuncProperties Parser::get_function_props(string name)
 {
 	if(_current_scope.functions.find(name) != _current_scope.functions.end())
@@ -122,7 +122,7 @@ Parser::FuncProperties Parser::get_function_props(string name)
 		if (scope->functions.find(name) != scope->functions.end())
 			return scope->functions.at(name);
 	}
-	return {(LexicalType)-1, {}};
+	return {.invalid = true};
 }
 
 // checks if the given variable already exists
@@ -136,7 +136,7 @@ bool Parser::check_variable(string name)
 // checks if the given function already exists
 bool Parser::check_function(string name)
 {
-	if((int)(get_function_props(name).ret_type) == -1)
+	if(get_function_props(name).invalid)
 		return false;
 	return true;
 }
@@ -154,8 +154,17 @@ void Parser::add_function(Token* identtoken, FuncProperties properties)
 {
 	string name = string(identtoken->start, identtoken->length);
 
-	if(check_function(name)) error_at(identtoken, "Function already exists in current scope.");
-	else if (check_variable(name)) error_at(identtoken, "Variable with identical name already exists in current scope.");
+	if (check_variable(name)) error_at(identtoken, "Variable with identical name already exists in current scope.");
+	else if(check_function(name))
+	{
+		FuncProperties props = get_function_props(name);
+		if(props.defined) error_at(identtoken, "Function already defined in current scope.");
+		else if(!properties.defined) error_at(identtoken, "Function already declared in current scope.");
+		else if(props.ret_type.llvm_type != properties.ret_type.llvm_type || props.params != properties.params)
+			error_at(identtoken, "Function signature doesn't match declaration.");
+
+		_current_scope.functions.at(name).defined = true;
+	}
 	else _current_scope.functions.insert(pair<string, FuncProperties>(name, properties));
 }
 
@@ -207,38 +216,37 @@ StmtNode* Parser::function_declaration()
 	consume(TOKEN_LEFT_PAREN, "Expect '(' after return type.");
 
 	// get parameters
-	vector<EviType> eviparams;
-	vector<LexicalType> lexparams;
+	vector<EviType> params;
 	while(!check(TOKEN_RIGHT_PAREN)) do
 	{
-		if (eviparams.size() >= 255) error_at_current("Parameter count exceeded limit of 255.");
+		if (params.size() >= 255) error_at_current("Parameter count exceeded limit of 255.");
 		consume(TOKEN_TYPE, "Expected parameter.");
 		EviType type = get_prev_as_type();
-		eviparams.push_back(type);
-		lexparams.push_back(type.lexical_type);
+		params.push_back(type);
 
 	} while (check(TOKEN_TYPE));
 
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
-	add_function(&nametok, {ret_type.lexical_type, lexparams});
 
 	// get body?
 	if(match(TOKEN_SEMICOLON))
 	{
 		// declaration
-		// DEBUG_PRINT_F_MSG("Declared function (\"%s\").", name.c_str());
-		return new FuncDeclNode(tok, name, ret_type, eviparams, nullptr);
+		add_function(&nametok, {ret_type, params, false});
+		return new FuncDeclNode(tok, name, ret_type, params, nullptr);
 	}
 	else
 	{
 		// definition
+		add_function(&nametok, {ret_type, params, true});
+
 		scope_up();
-		_current_scope.func_props = FuncProperties{ret_type.lexical_type, lexparams};
+		_current_scope.func_props = FuncProperties{ret_type, params, true};
 		
 		StmtNode* body = statement();
 
 		scope_down();
-		return new FuncDeclNode(tok, name, ret_type, eviparams, body);
+		return new FuncDeclNode(tok, name, ret_type, params, body);
 	}
 }
 
@@ -672,7 +680,7 @@ ExprNode* Parser::primary()
 		int arity = _current_scope.func_props.params.size();
 		if(intval >= arity) error(tools::fstr("Parameter reference exceeds arity of %d.", arity));
 
-		LexicalType type = _current_scope.func_props.params[intval];
+		LexicalType type = _current_scope.func_props.params[intval].lexical_type;
 		return new ReferenceNode(_previous, "", intval, type);
 	}
 
@@ -695,10 +703,13 @@ ExprNode* Parser::primary()
 		} while(match(TOKEN_COMMA));
 
 		if(args.size() != funcprops.params.size())
-			error(tools::fstr("Expected %d arguments, not %d.", funcprops.params.size(), args.size()));
+			error(tools::fstr("Expected %d argument%s, not %d.",
+				funcprops.params.size(), funcprops.params.size() == 1 ? "" : "s", args.size()));
 		
 		consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
-		return new CallNode(tok, name, args, funcprops.ret_type, funcprops.params);
+
+		vector<LexicalType> lexparams; for(EviType& p : funcprops.params) lexparams.push_back(p.lexical_type);
+		return new CallNode(tok, name, args, funcprops.ret_type.lexical_type, lexparams);
 	}
 
 	error_at_current("Expected expression.");

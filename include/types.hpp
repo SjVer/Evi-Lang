@@ -26,7 +26,7 @@ extern const char* lexical_type_strings[TYPE_NONE];
 
 #define GET_LEX_TYPE_STR(type) (lexical_type_strings[type])
 
-typedef struct
+typedef struct 
 {
 	llvm::Type* llvm_type;
 	LexicalType lexical_type;
@@ -34,6 +34,8 @@ typedef struct
 	int alignment;
 	bool issigned;
 } EviType;
+
+bool operator==(const EviType& lhs, const EviType& rhs);
 
 #define EVI_INT_TYPE(name, bitsnum, issigned) \
 	((EviType){llvm::IntegerType::get(__context, bitsnum), \

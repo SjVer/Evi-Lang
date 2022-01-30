@@ -53,8 +53,6 @@ class CodeGenerator: public Visitor
 	llvm::BasicBlock* _global_init_func_block;
 
 	stack<llvm::Value*>* _value_stack;
-	// stack<pair<llvm::Value*, llvm::Type*>>* _ret_val_stack;
-	stack<llvm::Type*>* _ret_type_stack;
 	map<string, llvm::Function*> _functions;
 	map<string, pair<llvm::Value*, EviType>> _named_values;
 
