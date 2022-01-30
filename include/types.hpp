@@ -14,6 +14,7 @@ typedef enum
 {
 	TYPE_INTEGER,
 	TYPE_FLOAT,
+	TYPE_BOOL,
 	TYPE_CHARACTER,
 	TYPE_STRING,
 	TYPE_VOID,
@@ -58,6 +59,7 @@ static void init_builtin_evi_types()
 
 	lexical_type_strings[TYPE_INTEGER] = "integer";
 	lexical_type_strings[TYPE_FLOAT] = "float";
+	lexical_type_strings[TYPE_BOOL] = "boolean";
 	lexical_type_strings[TYPE_CHARACTER] = "character";
 	lexical_type_strings[TYPE_STRING] = "string";
 	lexical_type_strings[TYPE_VOID] = "void";
@@ -89,7 +91,7 @@ static void init_builtin_evi_types()
 	ADD_EVI_TYPE("dbl", ((EviType){llvm::Type::getDoubleTy(__context), TYPE_FLOAT, "dbl", 4, true}));
 
 	// ======================== Others ========================
-	ADD_EVI_TYPE("bln", ((EviType){llvm::Type::getInt1Ty(__context), TYPE_INTEGER,   "bln", 1, false}));
+	ADD_EVI_TYPE("bln", ((EviType){llvm::Type::getInt1Ty(__context), TYPE_BOOL,   "bln", 1, false}));
 	ADD_EVI_TYPE("chr", ((EviType){llvm::Type::getInt8Ty(__context), TYPE_CHARACTER, "chr", 8, false}));
 	ADD_EVI_TYPE("nll", ((EviType){llvm::Type::getVoidTy(__context), TYPE_VOID, "nll"}));
 }

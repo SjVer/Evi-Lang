@@ -138,7 +138,8 @@ llvm::Value* CodeGenerator::to_bool(llvm::Value* value)
 	llvm::Type* type = value->getType();
 
 	if(type->isIntegerTy())
-		return _builder->CreateICmpNE(value, llvm::ConstantInt::get(type, 0), "itobtmp");
+		return _builder->CreateTrunc(value, _builder->getInt1Ty(), "itobtmp");
+		// return _builder->CreateICmpNE(value, llvm::ConstantInt::get(type, 0), "itobtmp");
 	if(type->isFloatTy() || type->isDoubleTy())	
 		return _builder->CreateFCmpONE(value, llvm::ConstantFP::get(__context, llvm::APFloat(0.0)), "ftobtmp");
 
@@ -158,6 +159,7 @@ llvm::Type* CodeGenerator::lexical_type_to_llvm(LexicalType type)
 	{
 		case TYPE_INTEGER: 	 return _builder->getInt64Ty();
 		case TYPE_FLOAT:   	 return _builder->getDoubleTy();
+		case TYPE_BOOL:   	 return _builder->getInt1Ty();
 		case TYPE_CHARACTER: return _builder->getInt8Ty();
 		// case TYPE_STRING: 	 return ;
 		default: assert(false);
@@ -430,6 +432,45 @@ VISIT(BlockNode)
 
 VISIT(LogicalNode)
 {
+	if(node->_token.type == TOKEN_QUESTION) // ternary
+	{
+		assert(false);
+	}
+	else if(node->_token.type == TOKEN_AND_AND) // and
+	{
+		llvm::Function* func = _builder->GetInsertBlock()->getParent();
+		llvm::BasicBlock* start = _builder->GetInsertBlock();
+		llvm::BasicBlock* andtwo = llvm::BasicBlock::Create(__context, "andtwo", func);
+		llvm::BasicBlock* andcont = llvm::BasicBlock::Create(__context, "andcont", func);
+
+		// first condition
+		node->_left->accept(this);
+		// llvm::Value* resulta = to_bool(pop());
+		_builder->CreateCondBr(to_bool(pop()), andtwo, andcont);
+
+		// second condition (only evaluated if first is true)
+		_builder->SetInsertPoint(andtwo);
+		node->_right->accept(this);
+		llvm::Value* result = to_bool(pop());
+		_builder->CreateBr(andcont);
+		andtwo = _builder->GetInsertBlock(); // update andtwo block
+
+		// patch up
+		_builder->SetInsertPoint(andcont);
+		andcont->moveAfter(andtwo);
+		
+		// decide on result
+		llvm::PHINode *phi = _builder->CreatePHI(_builder->getInt1Ty(), 2, "andres");
+		phi->addIncoming(_builder->getFalse(), start);
+		phi->addIncoming(result, andtwo);
+
+		push(phi);
+	}
+	else if(node->_token.type == TOKEN_PIPE_PIPE) // or
+	{
+		assert(false);
+	}
+	else assert(false);
 }
 
 VISIT(BinaryNode)

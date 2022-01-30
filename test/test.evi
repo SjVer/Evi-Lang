@@ -5,7 +5,10 @@
 
 @main i32 ()
 {
-	printi(7 >> 3);
+	%a, b bln 1, 1;
+
+	??($a && 0) printc('t'); :: printc('f');
+	printc('\n');
 
 	~ 0;
 }

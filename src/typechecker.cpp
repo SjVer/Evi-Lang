@@ -60,6 +60,7 @@ LexicalType TypeChecker::resolve_types(LexicalType left, LexicalType right)
 		{
 			case TYPE_INTEGER: return TYPE_INTEGER;
 			case TYPE_FLOAT: return TYPE_FLOAT;
+			case TYPE_BOOL: return TYPE_INTEGER;
 			case TYPE_CHARACTER: return TYPE_INTEGER;
 			default: return TYPE_NONE;
 		}
@@ -67,13 +68,23 @@ LexicalType TypeChecker::resolve_types(LexicalType left, LexicalType right)
 		{
 			case TYPE_INTEGER: return TYPE_FLOAT;
 			case TYPE_FLOAT: return TYPE_FLOAT;
+			case TYPE_BOOL: return TYPE_FLOAT;
 			case TYPE_CHARACTER: return TYPE_FLOAT;
+			default: return TYPE_NONE;
+		}
+		case TYPE_BOOL: switch(right)
+		{
+			case TYPE_INTEGER: return TYPE_INTEGER;
+			case TYPE_FLOAT: return TYPE_FLOAT;
+			case TYPE_BOOL: return TYPE_INTEGER;
+			case TYPE_CHARACTER: return TYPE_INTEGER;
 			default: return TYPE_NONE;
 		}
 		case TYPE_CHARACTER: switch(right)
 		{
 			case TYPE_INTEGER: return TYPE_INTEGER;
 			case TYPE_FLOAT: return TYPE_FLOAT;
+			case TYPE_BOOL: return TYPE_INTEGER;
 			case TYPE_CHARACTER: return TYPE_CHARACTER;
 			default: return TYPE_NONE;
 		}
@@ -100,6 +111,7 @@ bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
 		{
 			case TYPE_INTEGER:
 			case TYPE_FLOAT:
+			case TYPE_BOOL:
 			case TYPE_CHARACTER: 
 				return true;
 			default: return false;
@@ -108,6 +120,16 @@ bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
 		{
 			case TYPE_INTEGER:
 			case TYPE_FLOAT:
+			case TYPE_BOOL:
+			case TYPE_CHARACTER:
+				return true;
+			default: return false;
+		}
+		case TYPE_BOOL: switch(to)
+		{
+			case TYPE_INTEGER:
+			case TYPE_FLOAT:
+			case TYPE_BOOL:
 			case TYPE_CHARACTER:
 				return true;
 			default: return false;
@@ -116,12 +138,15 @@ bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
 		{
 			case TYPE_INTEGER:
 			case TYPE_FLOAT:
+			case TYPE_BOOL:
 			case TYPE_CHARACTER:
 				return true;
 			default: return false;
 		}
 		case TYPE_STRING: switch(to)
 		{
+			case TYPE_BOOL:
+			case TYPE_INTEGER:
 			case TYPE_STRING:
 				return true;
 			default: return false;
@@ -299,7 +324,23 @@ VISIT(LogicalNode)
 	}
 	else
 	{
-		push(TYPE_INTEGER);
+		node->_left->accept(this);
+		node->_right->accept(this);
+		
+		LexicalType right = pop();
+		LexicalType left = pop();
+
+		// if(result == TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
+		if(!can_cast_types(left, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, left, TYPE_BOOL);
+		else if(!can_cast_types(right, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, right, TYPE_BOOL);
+
+		if(left != TYPE_BOOL) CONVERSION_WARNING_AT(&node->_left->_token, left, TYPE_BOOL);
+		else if(right != TYPE_BOOL) CONVERSION_WARNING_AT(&node->_right->_token, right, TYPE_BOOL);
+		
+		node->_left->_cast_to = TYPE_BOOL;
+		node->_right->_cast_to = TYPE_BOOL;
+
+		push(TYPE_BOOL);
 	}
 }
 
