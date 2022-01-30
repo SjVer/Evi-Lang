@@ -468,7 +468,33 @@ VISIT(LogicalNode)
 	}
 	else if(node->_token.type == TOKEN_PIPE_PIPE) // or
 	{
-		assert(false);
+		llvm::Function* func = _builder->GetInsertBlock()->getParent();
+		llvm::BasicBlock* start = _builder->GetInsertBlock();
+		llvm::BasicBlock* ortwo = llvm::BasicBlock::Create(__context, "ortwo", func);
+		llvm::BasicBlock* orcont = llvm::BasicBlock::Create(__context, "orcont", func);
+
+		// first condition
+		node->_left->accept(this);
+		// llvm::Value* resulta = to_bool(pop());
+		_builder->CreateCondBr(to_bool(pop()), orcont, ortwo);
+
+		// second condition (only evaluated if first is false)
+		_builder->SetInsertPoint(ortwo);
+		node->_right->accept(this);
+		llvm::Value* result = to_bool(pop());
+		_builder->CreateBr(orcont);
+		ortwo = _builder->GetInsertBlock(); // update ortwo block
+
+		// patch up
+		_builder->SetInsertPoint(orcont);
+		orcont->moveAfter(ortwo);
+		
+		// decide on result
+		llvm::PHINode *phi = _builder->CreatePHI(_builder->getInt1Ty(), 2, "orres");
+		phi->addIncoming(_builder->getTrue(), start);
+		phi->addIncoming(result, ortwo);
+
+		push(phi);
 	}
 	else assert(false);
 }
