@@ -15,6 +15,11 @@ class CodeGenerator: public Visitor
 	Status generate(string infile, string outfile, 
 					const char* source, AST* astree);
 
+	void prepare(string infile);
+	void finish();
+	void emit_object();
+	void emit_binary();
+
 	#define VISIT(_node) void visit(_node* node)
 	VISIT(FuncDeclNode);
 	VISIT(VarDeclNode);

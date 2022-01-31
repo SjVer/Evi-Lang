@@ -1,18 +1,10 @@
 #apply "std-io"
 
-\ @printi i8 (i64);
-\ @printc i8 (chr);
+@printi i8 (i64);
+@printc i8 (chr);
 \ @scani i64 ();
-
-@f i32 ();
 
 @main i64 ()
 {
-	~ f();
+	~ printi(8);
 }
-
-@f i32 ()
-{
-	~ 0;
-}
-

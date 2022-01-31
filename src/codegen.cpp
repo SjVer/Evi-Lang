@@ -1,6 +1,5 @@
 #include "codegen.hpp"
 
-// CodeGenerator::CodeGenerator(): _builder(__context) {}
 CodeGenerator::CodeGenerator()
 {
 	_llvm_errstream = new llvm::raw_os_ostream(_errstream);
@@ -25,26 +24,95 @@ CodeGenerator::CodeGenerator()
 	_target_machine = target->createTargetMachine(_target_triple, cpu, features, opt, rm);
 }
 
+void CodeGenerator::prepare(string infile)
+{
+	_global_init_func_block = nullptr;
+	#ifdef DEBUG_NO_FOLD
+	_builder = make_unique<llvm::IRBuilder<llvm::NoFolder>>(__context);
+	#else
+	_builder = make_unique<llvm::IRBuilder<>>(__context);
+	#endif
+	_top_module = make_unique<llvm::Module>("top", __context);
+	_top_module->setSourceFileName(infile);
+	_top_module->setDataLayout(_target_machine->createDataLayout());
+	_top_module->setTargetTriple(_target_triple);
+
+	_value_stack = new stack<llvm::Value*>();
+}
+
+void CodeGenerator::finish()
+{
+	if(_global_init_func_block)
+	{
+		_builder->SetInsertPoint(_global_init_func_block);
+		_builder->CreateRetVoid();
+
+		if(llvm::verifyFunction(*_global_init_func_block->getParent(), _llvm_errstream))
+		{
+			cerr << endl;
+			_error_dispatcher.dispatch_error("Code Generation Error",
+			"LLVM verification of globals initialization function failed.");
+			exit(STATUS_CODEGEN_ERROR);
+		}
+	}
+
+	// // verify module
+	// if(llvm::verifyModule(*_top_module, _llvm_errstream))
+	// {
+	// 	cerr << endl;
+	// 	_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed.");
+	// 	exit(STATUS_CODEGEN_ERROR);
+	// }
+
+	#ifdef DEBUG
+	DEBUG_PRINT_MSG("Generated LLVM IR:");
+	llvm::raw_os_ostream file_stream(cout);
+	_top_module->print(file_stream, nullptr);
+	file_stream.flush();
+	#endif
+}
+
+void CodeGenerator::emit_object()
+{
+	string filename = string(tmpnam((_outfile + ".o").c_str()));
+
+	DEBUG_PRINT_F_MSG("Emitting object file... (%s -> %s)", LLCBINARY, filename.c_str());
+
+	error_code errcode;
+	llvm::raw_fd_ostream dest(_outfile, errcode, llvm::sys::fs::OF_None);
+
+	if (errcode)
+	{
+		_error_dispatcher.dispatch_error("Code Generation Error", 
+			("Could not open file \"" + _outfile + "\": " + errcode.message()).c_str());
+		exit(STATUS_CODEGEN_ERROR);
+	}
+
+	llvm::legacy::PassManager pass;
+	auto filetype = llvm::CGFT_ObjectFile;
+
+	if (_target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype))
+	{
+		_error_dispatcher.dispatch_error("Code Generation Error",
+			"Target machine incompatible with object file type.");
+		exit(STATUS_CODEGEN_ERROR);
+	}
+
+	pass.run(*_top_module);
+	dest.flush();
+}
+
+void CodeGenerator::emit_binary()
+{
+
+}
+
 Status CodeGenerator::generate(string infile, string outfile, const char* source, AST* astree)
 {
 	_outfile = outfile;
 	_error_dispatcher = ErrorDispatcher(source, infile.c_str());
 
-	// prepare
-	{
-		_global_init_func_block = nullptr;
-		#ifdef DEBUG_NO_FOLD
-		_builder = make_unique<llvm::IRBuilder<llvm::NoFolder>>(__context);
-		#else
-		_builder = make_unique<llvm::IRBuilder<>>(__context);
-		#endif
-		_top_module = make_unique<llvm::Module>("top", __context);
-		_top_module->setSourceFileName(infile);
-		_top_module->setDataLayout(_target_machine->createDataLayout());
-		_top_module->setTargetTriple(_target_triple);
-
-		_value_stack = new stack<llvm::Value*>();
-	}
+	prepare(infile);
 
 	// walk the tree
 	for(auto& node : *astree)
@@ -52,35 +120,8 @@ Status CodeGenerator::generate(string infile, string outfile, const char* source
 		node->accept(this);
 	}
 
-	// finish up
-	{
-		if(_global_init_func_block)
-		{
-			_builder->SetInsertPoint(_global_init_func_block);
-			_builder->CreateRetVoid();
-
-			// if(llvm::verifyFunction(*_global_init_func_block->getParent(), _errstream))
-			// {
-			// 	cerr << endl;
-			// 	_error_dispatcher.dispatch_error("Code Generation Error",
-			// 	"LLVM verification of globals initialization function failed.");
-			// 	exit(STATUS_CODEGEN_ERROR);
-			// }
-		}
-
-		// verify module
-		// if(llvm::verifyModule(*_top_module, _llvm_errstream))
-		// {
-		// 	cerr << endl;
-		// 	_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed.");
-		// 	exit(STATUS_CODEGEN_ERROR);
-		// }
-
-		ofstream std_file_stream(_outfile);
-		llvm::raw_os_ostream file_stream(std_file_stream);
-		_top_module->print(file_stream, nullptr);
-		file_stream.flush();
-	}
+	finish();
+	emit_object();
 
 	// done!
 	DEBUG_PRINT_MSG("Codegen done!");
@@ -775,3 +816,6 @@ VISIT(CallNode)
 }
 
 #undef VISIT
+#undef ERROR_AT
+#undef SCOPE_UP
+#undef SCOPE_DOWN

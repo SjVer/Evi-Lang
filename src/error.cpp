@@ -41,7 +41,7 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 		else bef_ln_begin = 0;
 		
 		string bef_ln = string(_source + bef_ln_begin, tok_ln_begin - bef_ln_begin - 1);
-		before1 = tools::fstr("       %d| %s", token->line - 1, bef_ln.c_str());
+		before1 = tools::fstr("       %2d| %s", token->line - 1, bef_ln.c_str());
 	}
 
 	// find first newline after token
@@ -71,7 +71,7 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 		// get token and its full line
 		string tok = string(token->start, token->length);
 		string tok_ln = tok_ln_before_tok + COLOR_RED + tok + COLOR_NONE + tok_ln_after_tok;
-		tokenline = tools::fstr(COLOR_RED "    ->" COLOR_NONE " %d| %s", token->line, tok_ln.c_str());
+		tokenline = tools::fstr(COLOR_RED "    ->" COLOR_NONE " %2d| %s", token->line, tok_ln.c_str());
 	}
 
 	// get line after token's line if and possible
@@ -84,7 +84,7 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 
 		int af_ln_len = af_ln_end - tok_ln_end - 1; // minus trailing newline
 		string af_ln = string(_source + af_ln_begin, af_ln_len);
-		after1 = tools::fstr("       %d| %s", token->line + 1, af_ln.c_str());
+		after1 = tools::fstr("       %2d| %s", token->line + 1, af_ln.c_str());
 	}
 
 	// print it all out

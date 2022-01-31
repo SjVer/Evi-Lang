@@ -8,7 +8,7 @@ LLVMVERSION = 12
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
-CXXFLAGS = $(MUTE) -DCOMPILER=\"$(CC)\" `$(LLVMFLAGS)`
+CXXFLAGS = $(MUTE) -DCOMPILER=\"$(CC)\" -DLLCBINARY=\"`which llc-$(LLVMVERSION)`\" `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 
 # Makefile settings - Can be customized.
@@ -91,21 +91,12 @@ clean:
 .PHONY: test
 test: $(APP)
 	@printf "============= Running \"$(APP)\" =============\n\n"
-	@$(APP) test/test.evi -o bin/test.ll
-	
-	@echo =============================================
-	@cat bin/test.ll
-	
-	@printf "============= Running \"llc-$(LLVMVERSION)\" =============\n\n"
-	@llc-$(LLVMVERSION) -filetype=obj bin/test.ll -o bin/test.o
-	
-	@printf "============= Running \"$(CC)\" ============\n\n"
-	@$(CC) bin/test.o -o bin/test -L$(BINDIR) -levi
+	@$(APP) test/test.evi -o bin/test
 
 	@printf "============= Running \"bin/test\" ===========\n\n"
 	@bin/test
 	@printf "\n\n=============== Exited with $$? ==============\n"
-	@rm bin/test.ll bin/test.o bin/test
+	@rm bin/test
 
 .PHONY: test-debug
 test-debug: debug $(APP)
