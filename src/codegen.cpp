@@ -1,4 +1,5 @@
 #include "codegen.hpp"
+#include <unistd.h>
 
 CodeGenerator::CodeGenerator()
 {
@@ -24,7 +25,7 @@ CodeGenerator::CodeGenerator()
 	_target_machine = target->createTargetMachine(_target_triple, cpu, features, opt, rm);
 }
 
-void CodeGenerator::prepare(string infile)
+void CodeGenerator::prepare()
 {
 	_global_init_func_block = nullptr;
 	#ifdef DEBUG_NO_FOLD
@@ -33,7 +34,7 @@ void CodeGenerator::prepare(string infile)
 	_builder = make_unique<llvm::IRBuilder<>>(__context);
 	#endif
 	_top_module = make_unique<llvm::Module>("top", __context);
-	_top_module->setSourceFileName(infile);
+	_top_module->setSourceFileName(_infile);
 	_top_module->setDataLayout(_target_machine->createDataLayout());
 	_top_module->setTargetTriple(_target_triple);
 
@@ -72,19 +73,19 @@ void CodeGenerator::finish()
 	#endif
 }
 
-void CodeGenerator::emit_object()
+void CodeGenerator::emit_binary()
 {
-	string filename = string(tmpnam((_outfile + ".o").c_str()));
-
-	DEBUG_PRINT_F_MSG("Emitting object file... (%s -> %s)", LLCBINARY, filename.c_str());
+	// write to temporary object file
+	const char* objfile = strdup(tools::fstr(TEMP_OBJ_FILE_TEMPLATE, _infile, time(0)).c_str());
+	DEBUG_PRINT_F_MSG("Emitting object file... (%s)", objfile);
 
 	error_code errcode;
-	llvm::raw_fd_ostream dest(_outfile, errcode, llvm::sys::fs::OF_None);
+	llvm::raw_fd_ostream dest(objfile, errcode, llvm::sys::fs::OF_None);
 
 	if (errcode)
 	{
 		_error_dispatcher.dispatch_error("Code Generation Error", 
-			("Could not open file \"" + _outfile + "\": " + errcode.message()).c_str());
+			tools::fstr("Could not open file \"%s\": %s.", objfile, errcode.message().c_str()).c_str());
 		exit(STATUS_CODEGEN_ERROR);
 	}
 
@@ -100,19 +101,33 @@ void CodeGenerator::emit_object()
 
 	pass.run(*_top_module);
 	dest.flush();
+
+	// object file written, now invoke llc
+	// int ccstatus = execl(CC_PATH, CC_ARGS, NULL);
+	string cccommand;
+	for(int i = 0; i < CC_ARGC; i++) { cccommand += (const char*[]){CC_ARGS}[i]; cccommand += " "; }
+
+	DEBUG_PRINT_MSG("Invoking linker (" CC_PATH " with stdlib at " STDLIB_DIR ")");
+	DEBUG_PRINT_F_MSG("Linker command: %s", cccommand.c_str());
+
+	int ccstatus = system(cccommand.c_str());
+	if(ccstatus)
+	{
+		_error_dispatcher.dispatch_error("Linking Error", "Linking with " CC_PATH " failed");
+		exit(STATUS_CODEGEN_ERROR);
+	}
+
+	// clean up
+	remove(objfile);
+	free((void*)objfile);
 }
 
-void CodeGenerator::emit_binary()
+Status CodeGenerator::generate(const char* infile, const char* outfile, const char* source, AST* astree)
 {
-
-}
-
-Status CodeGenerator::generate(string infile, string outfile, const char* source, AST* astree)
-{
-	_outfile = outfile;
-	_error_dispatcher = ErrorDispatcher(source, infile.c_str());
-
-	prepare(infile);
+	_outfile = strdup(outfile);
+	_infile = strdup(infile);
+	_error_dispatcher = ErrorDispatcher(source, _infile);
+	prepare();
 
 	// walk the tree
 	for(auto& node : *astree)
@@ -121,7 +136,7 @@ Status CodeGenerator::generate(string infile, string outfile, const char* source
 	}
 
 	finish();
-	emit_object();
+	emit_binary();
 
 	// done!
 	DEBUG_PRINT_MSG("Codegen done!");

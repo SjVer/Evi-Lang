@@ -12,12 +12,11 @@ class CodeGenerator: public Visitor
 {
 	public:
 	CodeGenerator();
-	Status generate(string infile, string outfile, 
+	Status generate(const char* infile, const char* outfile, 
 					const char* source, AST* astree);
 
-	void prepare(string infile);
+	void prepare();
 	void finish();
-	void emit_object();
 	void emit_binary();
 
 	#define VISIT(_node) void visit(_node* node)
@@ -40,7 +39,8 @@ class CodeGenerator: public Visitor
 	private:
 
 
-	string _outfile;
+	char* _infile;
+	char* _outfile;
 	ErrorDispatcher _error_dispatcher;
 	stringstream _errstream;
 	llvm::raw_os_ostream* _llvm_errstream;

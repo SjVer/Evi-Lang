@@ -71,7 +71,18 @@ More info at %s.\nBuild: %s %s on %s (%s)."
 #define DEBUG_PRINT_F_MSG(format, ...) {}
 #endif
 
+// llvm stuff
 #define LLVM_MODULE_TOP_NAME "top"
+#define TEMP_OBJ_FILE_TEMPLATE "%s.%d.o" // format: sourcefile name and timestamp
+
+#ifndef CC_PATH
+#pragma error "CC_PATH must be defined!"
+#endif
+#ifndef STDLIB_DIR
+#pragma error "STDLIB_DIR must be defined! (e.g. \"/usr/lib/\")"
+#endif
+#define CC_ARGS CC_PATH, objfile, "-o", _outfile, "-L" STDLIB_DIR, "-levi"
+#define CC_ARGC 6
 
 // status enum
 typedef enum

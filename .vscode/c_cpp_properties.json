@@ -8,7 +8,9 @@
                 ""
             ],
             "defines": [
-                "DEBUG"
+                "DEBUG",
+                "CC_PATH=\"/usr/bin/clang\"",
+                "STDLIB_DIR=\"/usr/lib/\""
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",

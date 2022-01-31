@@ -5,10 +5,12 @@
 # Compiler settings - Can be customized.
 CC = clang++
 LLVMVERSION = 12
+CC_PATH = /usr/bin/clang
+STATLIB_DIR = /home/sjoerd/Coding/Languages/Evi-Lang/bin# /usr/lib
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
-CXXFLAGS = $(MUTE) -DCOMPILER=\"$(CC)\" -DLLCBINARY=\"`which llc-$(LLVMVERSION)`\" `$(LLVMFLAGS)`
+CXXFLAGS = $(MUTE) -DCOMPILER=\"$(CC)\" -DCC_PATH=\"$(CC_PATH)\" -DSTDLIB_DIR=\"$(STATLIB_DIR)\" `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 
 # Makefile settings - Can be customized.

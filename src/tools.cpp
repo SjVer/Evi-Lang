@@ -1,10 +1,17 @@
 #include "tools.hpp"
 
+#include <cassert>
 #include <cstdarg>
 #include <cstdio>
 #include <string>
 #include <algorithm>
 #include <sstream>
+#include <iostream>
+
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 using namespace std;
 
@@ -124,6 +131,35 @@ string tools::unescstr(string str, bool ign_s_quotes, bool ign_d_quotes)
 }
 
 // ========== file ops ========== 
+
+// // execute binary with given args
+// int tools::execbin(const char* executable, const char** argv)
+// {
+//     int status = -1;
+//     int pid = fork();
+
+//     if (pid == 0)
+//     {
+//         // We are in the child process, execute the command
+//         status = execv(executable, (char* const*)argv);
+
+//         // Exit child process
+//         // exit(1);
+//     }
+//     else if (pid > 0)
+//     {
+//         // The parent process, do whatever is needed
+//         // The parent process can even exit while the child process is running, since it's independent
+//         status = -1;
+//     }
+//     else
+//     {
+//         // Error forking, still in parent process (there are no child process at this point)
+//         cerr << "Fork error: " << errno << ", " << strerror(errno) << endl;
+//         status = -1;
+//     }
+//     return status;
+// }
 
 // read contents of file to string
 string tools::readf(string path)

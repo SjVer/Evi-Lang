@@ -16,6 +16,7 @@ namespace tools {
     string unescstr(string str, bool ign_s_quotes = false, bool ign_d_quotes = false);
 
     // file ops
+    int execbin(const char* executable, const char** argv);
     string readf(string path);
 }
 #endif
