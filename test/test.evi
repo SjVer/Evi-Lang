@@ -6,5 +6,9 @@
 
 @main i64 ()
 {
-	~ printi(8);
+	printc(':');
+	printc(')');
+	printc('\n');
+	~ 0;
 }
+

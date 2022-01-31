@@ -96,6 +96,7 @@ void CodeGenerator::emit_binary()
 	{
 		_error_dispatcher.dispatch_error("Code Generation Error",
 			"Target machine incompatible with object file type.");
+		remove(objfile);
 		exit(STATUS_CODEGEN_ERROR);
 	}
 
@@ -114,6 +115,7 @@ void CodeGenerator::emit_binary()
 	if(ccstatus)
 	{
 		_error_dispatcher.dispatch_error("Linking Error", "Linking with " CC_PATH " failed");
+		remove(objfile);
 		exit(STATUS_CODEGEN_ERROR);
 	}
 
