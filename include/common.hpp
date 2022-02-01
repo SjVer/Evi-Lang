@@ -40,7 +40,7 @@ using namespace std;
 #define APP_NAME "evi"
 #define APP_VERSION "0.0.1"
 #define APP_DOC "%s -- The Evi compiler.\nWritten by Sjoerd Vermeulen (%s)\v\
-More info at %s.\nBuild: %s %s on %s (%s)."
+More information at %s.\nBuild: %s %s on %s (%s)."
 // format: APP_NAME, EMAIL, LINK, __DATE__, __TIME__, OS_NAME, COMPILER
 #define EMAIL "sjoerd@marsenaar.com"
 #define LINK "https://github.com/SjVer/Evi-Lang"

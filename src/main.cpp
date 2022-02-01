@@ -35,7 +35,7 @@ static struct argp_option options[] =
 	{"output",  'o', "OUTFILE", 0, "Output to OUTFILE instead of to standard output."},
 	{"compile-only", 'c', 0, 0, "Compile and assemble but do not link."},
 	{"emit-llvm",  ARG_EMIT_LLVM, 0, 0, "Emit llvm IR instead of an executable."},
-	{"generate-ast",  ARG_GEN_AST, 0, 0, "Generate AST image (svg format)."},
+	{"generate-ast",  ARG_GEN_AST, 0, 0, "Generate AST image (for debugging purposes)."},
 	{"c-flags",  ARG_C_FLAGS, 0, 0, "Display the flags passed to the c compiler for linkage."},
 	{0}
 };

@@ -1,14 +1,16 @@
 #apply "std-io"
 
-@printi i8 (i64);
-@printc i8 (chr);
+\ @printi i8 (i64);
+\ @printc i8 (chr);
+@prints i8 (str);
 \ @scani i64 ();
+
+%mystr str "yo\n";
 
 @main i64 ()
 {
-	printc(':');
-	printc(')');
-	printc('\n');
+	prints("Hello World!\n");
+	prints($mystr);
 	~ 0;
 }
 

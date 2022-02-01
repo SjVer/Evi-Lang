@@ -37,6 +37,16 @@
 \? @ret the amount of printed characters or a negative number if printi failed
 @printi i8 (i64);
 
+\? writes a double to stdout
+\? @param 0 the double to print out
+\? @ret the amount of printed characters or a negative number if printd failed
+@printd i8 (dbl);
+
+\? writes a string to stdout
+\? @param 0 the string to print out
+\? @ret the amount of printed characters or a negative number if prints failed
+@prints i8 (str);
+
 \? tries to read an integer from stdin (without detecting invalid input)
 \? @ret the scanned integer
 @scani i64 ();

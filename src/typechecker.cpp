@@ -456,6 +456,7 @@ VISIT(LiteralNode)
 
 VISIT(ReferenceNode)
 {
+	node->_cast_to = node->_type;
 	push(node->_type);
 }
 

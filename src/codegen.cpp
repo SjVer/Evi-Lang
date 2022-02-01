@@ -213,8 +213,10 @@ llvm::Value* CodeGenerator::to_bool(llvm::Value* value)
 	if(type->isIntegerTy())
 		return _builder->CreateTrunc(value, _builder->getInt1Ty(), "itobtmp");
 		// return _builder->CreateICmpNE(value, llvm::ConstantInt::get(type, 0), "itobtmp");
-	if(type->isFloatTy() || type->isDoubleTy())	
+	else if(type->isFloatTy() || type->isDoubleTy())	
 		return _builder->CreateFCmpONE(value, llvm::ConstantFP::get(__context, llvm::APFloat(0.0)), "ftobtmp");
+	else if(type->isPointerTy())
+		return _builder->CreateICmpNE(value, llvm::Constant::getNullValue(type), "ptobtmp");
 
 	assert(false);
 }
@@ -234,7 +236,7 @@ llvm::Type* CodeGenerator::lexical_type_to_llvm(LexicalType type)
 		case TYPE_FLOAT:   	 return _builder->getDoubleTy();
 		case TYPE_BOOL:   	 return _builder->getInt1Ty();
 		case TYPE_CHARACTER: return _builder->getInt8Ty();
-		// case TYPE_STRING: 	 return ;
+		case TYPE_STRING: 	 return _builder->getInt8PtrTy();
 		default: assert(false);
 	}
 }
@@ -804,11 +806,49 @@ VISIT(LiteralNode)
 		case TOKEN_FLOAT:
 			constant = llvm::ConstantFP::get(type, node->_float_value);
 			break;
+		case TOKEN_STRING:
+		{
+			string str = tools::escstr(node->_string_value);
+			llvm::Type* chartype = _builder->getInt8Ty();
+
+			vector<llvm::Constant *> chars(str.length());
+			for(unsigned int i = 0; i < str.size(); i++)
+				chars[i] = llvm::ConstantInt::get(chartype, str[i]);
+
+			// add a zero terminator
+			chars.push_back(llvm::ConstantInt::get(chartype, 0));
+
+			// initialize the string from the characters
+			llvm::ArrayType* stringtype = llvm::ArrayType::get(chartype, chars.size());
+
+			// Create the declaration statement
+DEBUG_PRINT_LINE();
+			constant = _top_module->getOrInsertGlobal(".str", stringtype);
+DEBUG_PRINT_LINE();
+			llvm::GlobalVariable* globaldecl = (llvm::GlobalVariable*)constant;
+DEBUG_PRINT_LINE();
+
+DEBUG_PRINT_LINE();
+			globaldecl->setInitializer(llvm::ConstantArray::get(stringtype, chars));
+DEBUG_PRINT_LINE();
+			globaldecl->setConstant(true);
+DEBUG_PRINT_LINE();
+			globaldecl->setLinkage(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
+DEBUG_PRINT_LINE();
+			globaldecl->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+DEBUG_PRINT_LINE();
+			globaldecl->setAlignment(llvm::MaybeAlign(1));
+DEBUG_PRINT_LINE();
+
+			constant = globaldecl;
+			break;
+		}
 		default: assert(false);
 	}
 
-	llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
-	push(create_cast(constant, false, casttype, false));
+	// llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
+	// push(create_cast(constant, false, casttype, false));
+	push(constant);
 }
 
 VISIT(ReferenceNode)

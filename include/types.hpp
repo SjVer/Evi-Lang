@@ -26,7 +26,7 @@ extern const char* lexical_type_strings[TYPE_NONE];
 
 #define GET_LEX_TYPE_STR(type) (lexical_type_strings[type])
 
-typedef struct 
+typedef struct
 {
 	llvm::Type* llvm_type;
 	LexicalType lexical_type;
@@ -93,9 +93,12 @@ static void init_builtin_evi_types()
 	ADD_EVI_TYPE("dbl", ((EviType){llvm::Type::getDoubleTy(__context), TYPE_FLOAT, "dbl", 4, true}));
 
 	// ======================== Others ========================
-	ADD_EVI_TYPE("bln", ((EviType){llvm::Type::getInt1Ty(__context), TYPE_BOOL,   "bln", 1, false}));
+	ADD_EVI_TYPE("bln", ((EviType){llvm::Type::getInt1Ty(__context), TYPE_BOOL, "bln", 1, false}));
 	ADD_EVI_TYPE("chr", ((EviType){llvm::Type::getInt8Ty(__context), TYPE_CHARACTER, "chr", 8, false}));
 	ADD_EVI_TYPE("nll", ((EviType){llvm::Type::getVoidTy(__context), TYPE_VOID, "nll"}));
+
+	// temporary
+	ADD_EVI_TYPE("str", ((EviType){llvm::Type::getInt8PtrTy(__context), TYPE_STRING, "str"}));
 }
 
 #endif
