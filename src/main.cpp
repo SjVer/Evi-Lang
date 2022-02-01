@@ -11,8 +11,9 @@
 
 // ================= arg stuff =======================
 
-const char *argp_program_version = APP_NAME " " APP_VERSION;
+const char *argp_program_version = APP_NAME " " APP_VERSION " (MIT)";
 const char *argp_program_bug_address = EMAIL;
+const char *argp_args_doc = "";
 
 #define ARGS_COUNT 1
 
@@ -21,6 +22,8 @@ struct arguments
 {
 	char *args[ARGS_COUNT];	/* script */
 	int verbose;			/* The -v flag */
+	bool emit_llvm;
+	bool compile_only;
 	char *outfile;
 
 	bool output_given;
@@ -28,8 +31,11 @@ struct arguments
 
 static struct argp_option options[] =
 {
-	{"verbose", 'v', 0, 0, "Produce verbose output"},
-	{"output",  'o', "OUTFILE", 0, "Output to OUTFILE instead of to standard output"},
+	{"verbose", 'v', 0, 0, "Produce verbose output."},
+	{"output",  'o', "OUTFILE", 0, "Output to OUTFILE instead of to standard output."},
+	{"compile-only", 'c', 0, 0, "Compile and assemble but do not link."},
+	{"emit-llvm",  0, 0, 0, "Emit llvm IR instead of an executable."},
+	{"c-flags",  0, 0, 0, "Display the flags passed to the c compiler for linkage."},
 	{0}
 };
 

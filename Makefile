@@ -6,7 +6,7 @@
 CC = clang++
 LLVMVERSION = 12
 CC_PATH = /usr/bin/clang
-STATLIB_DIR = /home/sjoerd/Coding/Languages/Evi-Lang/bin# /usr/lib
+STATLIB_DIR = /home/sjoerd/evi/bin# /usr/lib
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
