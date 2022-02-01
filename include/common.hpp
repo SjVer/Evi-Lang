@@ -81,7 +81,7 @@ More info at %s.\nBuild: %s %s on %s (%s)."
 #ifndef STDLIB_DIR
 #pragma error "STDLIB_DIR must be defined! (e.g. \"/usr/lib/\")"
 #endif
-#define CC_ARGS CC_PATH, objfile, "-o", _outfile, "-L" STDLIB_DIR, "-levi"
+#define CC_ARGS CC_PATH, infile, "-o", outfile, "-L" STDLIB_DIR, "-levi"
 #define CC_ARGC 6
 
 // status enum
@@ -91,7 +91,8 @@ typedef enum
 	STATUS_CLI_ERROR = 64,
 	STATUS_PARSE_ERROR = 65,
 	STATUS_TYPE_ERROR = 65,
-	STATUS_CODEGEN_ERROR = 65
+	STATUS_CODEGEN_ERROR = 65,
+	STATUS_OUTPUT_ERROR = 65
 } Status;
 
 #endif

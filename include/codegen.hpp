@@ -15,9 +15,9 @@ class CodeGenerator: public Visitor
 	Status generate(const char* infile, const char* outfile, 
 					const char* source, AST* astree);
 
-	void prepare();
-	void finish();
-	void emit_binary();
+	Status emit_llvm(const char* filename);
+	Status emit_object(const char* filename);
+	Status emit_binary(const char* filename);
 
 	#define VISIT(_node) void visit(_node* node)
 	VISIT(FuncDeclNode);
@@ -38,6 +38,8 @@ class CodeGenerator: public Visitor
 
 	private:
 
+	void prepare();
+	void finish();
 
 	char* _infile;
 	char* _outfile;

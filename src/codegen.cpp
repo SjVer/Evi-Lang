@@ -25,6 +25,95 @@ CodeGenerator::CodeGenerator()
 	_target_machine = target->createTargetMachine(_target_triple, cpu, features, opt, rm);
 }
 
+Status CodeGenerator::emit_llvm(const char* outfile)
+{
+	ofstream std_file_stream(outfile);
+	llvm::raw_os_ostream file_stream(std_file_stream);
+	_top_module->print(file_stream, nullptr);
+	file_stream.flush();
+	return STATUS_SUCCESS;
+}
+
+Status CodeGenerator::emit_object(const char* outfile)
+{
+	error_code errcode;
+	llvm::raw_fd_ostream dest(outfile, errcode, llvm::sys::fs::OF_None);
+
+	if (errcode)
+	{
+		_error_dispatcher.dispatch_error("Code Generation Error", 
+			tools::fstr("Could not open file \"%s\": %s.", outfile, errcode.message().c_str()).c_str());
+		exit(STATUS_CODEGEN_ERROR);
+	}
+
+	llvm::legacy::PassManager pass;
+	auto filetype = llvm::CGFT_ObjectFile;
+
+	if (_target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype))
+	{
+		_error_dispatcher.dispatch_error("Code Generation Error",
+			"Target machine incompatible with object file type.");
+		remove(outfile);
+		exit(STATUS_CODEGEN_ERROR);
+	}
+
+	pass.run(*_top_module);
+	dest.flush();
+	return STATUS_SUCCESS;
+}
+
+Status CodeGenerator::emit_binary(const char* outfile)
+{
+	// write to temporary object file
+	const char* objfile = strdup(tools::fstr(TEMP_OBJ_FILE_TEMPLATE, _infile, time(0)).c_str());
+	DEBUG_PRINT_F_MSG("Emitting object file... (%s)", objfile);
+	Status objstatus = emit_object(objfile);
+	if(objstatus != STATUS_SUCCESS) return objstatus; 
+
+	// object file written, now invoke llc
+	// int ccstatus = execl(CC_PATH, CC_ARGS, NULL);
+	string cccommand; const char* infile = objfile;
+	for(int i = 0; i < CC_ARGC; i++) { cccommand += (const char*[]){CC_ARGS}[i]; cccommand += " "; }
+
+	DEBUG_PRINT_MSG("Invoking linker (" CC_PATH " with stdlib at " STDLIB_DIR ")");
+	DEBUG_PRINT_F_MSG("Linker command: %s", cccommand.c_str());
+
+	int ccstatus = system(cccommand.c_str());
+	if(ccstatus)
+	{
+		_error_dispatcher.dispatch_error("Linking Error", "Linking with " CC_PATH " failed");
+		remove(objfile);
+		return STATUS_OUTPUT_ERROR;
+	}
+
+	// clean up
+	remove(objfile);
+	free((void*)objfile);
+	return STATUS_SUCCESS;
+}
+
+Status CodeGenerator::generate(const char* infile, const char* outfile, const char* source, AST* astree)
+{
+	_outfile = strdup(outfile);
+	_infile = strdup(infile);
+	_error_dispatcher = ErrorDispatcher(source, _infile);
+	prepare();
+
+	// walk the tree
+	for(auto& node : *astree)
+	{
+		node->accept(this);
+	}
+
+	finish();
+
+	// done!
+	DEBUG_PRINT_MSG("Codegen done!");
+	return STATUS_SUCCESS;	
+}
+
+// =========================================
+
 void CodeGenerator::prepare()
 {
 	_global_init_func_block = nullptr;
@@ -71,78 +160,6 @@ void CodeGenerator::finish()
 	_top_module->print(file_stream, nullptr);
 	file_stream.flush();
 	#endif
-}
-
-void CodeGenerator::emit_binary()
-{
-	// write to temporary object file
-	const char* objfile = strdup(tools::fstr(TEMP_OBJ_FILE_TEMPLATE, _infile, time(0)).c_str());
-	DEBUG_PRINT_F_MSG("Emitting object file... (%s)", objfile);
-
-	error_code errcode;
-	llvm::raw_fd_ostream dest(objfile, errcode, llvm::sys::fs::OF_None);
-
-	if (errcode)
-	{
-		_error_dispatcher.dispatch_error("Code Generation Error", 
-			tools::fstr("Could not open file \"%s\": %s.", objfile, errcode.message().c_str()).c_str());
-		exit(STATUS_CODEGEN_ERROR);
-	}
-
-	llvm::legacy::PassManager pass;
-	auto filetype = llvm::CGFT_ObjectFile;
-
-	if (_target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype))
-	{
-		_error_dispatcher.dispatch_error("Code Generation Error",
-			"Target machine incompatible with object file type.");
-		remove(objfile);
-		exit(STATUS_CODEGEN_ERROR);
-	}
-
-	pass.run(*_top_module);
-	dest.flush();
-
-	// object file written, now invoke llc
-	// int ccstatus = execl(CC_PATH, CC_ARGS, NULL);
-	string cccommand;
-	for(int i = 0; i < CC_ARGC; i++) { cccommand += (const char*[]){CC_ARGS}[i]; cccommand += " "; }
-
-	DEBUG_PRINT_MSG("Invoking linker (" CC_PATH " with stdlib at " STDLIB_DIR ")");
-	DEBUG_PRINT_F_MSG("Linker command: %s", cccommand.c_str());
-
-	int ccstatus = system(cccommand.c_str());
-	if(ccstatus)
-	{
-		_error_dispatcher.dispatch_error("Linking Error", "Linking with " CC_PATH " failed");
-		remove(objfile);
-		exit(STATUS_CODEGEN_ERROR);
-	}
-
-	// clean up
-	remove(objfile);
-	free((void*)objfile);
-}
-
-Status CodeGenerator::generate(const char* infile, const char* outfile, const char* source, AST* astree)
-{
-	_outfile = strdup(outfile);
-	_infile = strdup(infile);
-	_error_dispatcher = ErrorDispatcher(source, _infile);
-	prepare();
-
-	// walk the tree
-	for(auto& node : *astree)
-	{
-		node->accept(this);
-	}
-
-	finish();
-	emit_binary();
-
-	// done!
-	DEBUG_PRINT_MSG("Codegen done!");
-	return STATUS_SUCCESS;	
 }
 
 // =========================================
