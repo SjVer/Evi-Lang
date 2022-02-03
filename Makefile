@@ -7,8 +7,7 @@ CC = clang++
 LLVMVERSION = 12
 CC_PATH = /usr/bin/clang
 # STATLIB_DIR = /usr/lib
-# STATLIB_DIR = /home/sjoerd/evi/bin
-STATLIB_DIR = /home/sjoerd/Coding/Languages/Evi-Lang/bin
+STATLIB_DIR = $(PWD)/bin
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
@@ -95,12 +94,16 @@ clean:
 .PHONY: test
 test: $(APP)
 	@printf "============= Running \"$(APP)\" =============\n\n"
-	@$(APP) test/test.evi -o bin/test
+	@$(APP) test/test.evi -o bin/test && \
+	\
+	printf "============= Running \"bin/test\" ===========\n\n" && \
+	bin/test && \
+	\
+	printf "\n\n============ Exited with code $$? ============\n" && \
+	rm bin/test \
+	|| echo "============ Test failed with code $$? ============"
 
-	@printf "============= Running \"bin/test\" ===========\n\n"
-	@bin/test
-	@printf "\n\n=============== Exited with $$? ==============\n"
-	@rm bin/test
+	@rm test/test.evi.*.o 2>/dev/null && echo "Object file left over! (now cleaned)" || true
 
 .PHONY: test-debug
 test-debug: debug $(APP)

@@ -10,7 +10,7 @@
 @main i64 ()
 {
 	prints("Hello World!\n");
-	prints($mystr);
+	\ prints($mystr);
 	~ 0;
 }
 

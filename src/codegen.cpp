@@ -822,23 +822,14 @@ VISIT(LiteralNode)
 			llvm::ArrayType* stringtype = llvm::ArrayType::get(chartype, chars.size());
 
 			// Create the declaration statement
-DEBUG_PRINT_LINE();
 			constant = _top_module->getOrInsertGlobal(".str", stringtype);
-DEBUG_PRINT_LINE();
 			llvm::GlobalVariable* globaldecl = (llvm::GlobalVariable*)constant;
-DEBUG_PRINT_LINE();
 
-DEBUG_PRINT_LINE();
 			globaldecl->setInitializer(llvm::ConstantArray::get(stringtype, chars));
-DEBUG_PRINT_LINE();
 			globaldecl->setConstant(true);
-DEBUG_PRINT_LINE();
 			globaldecl->setLinkage(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
-DEBUG_PRINT_LINE();
 			globaldecl->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
-DEBUG_PRINT_LINE();
 			globaldecl->setAlignment(llvm::MaybeAlign(1));
-DEBUG_PRINT_LINE();
 
 			constant = globaldecl;
 			break;
