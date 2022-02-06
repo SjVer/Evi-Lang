@@ -26,30 +26,33 @@ extern const char* lexical_type_strings[TYPE_NONE];
 
 #define GET_LEX_TYPE_STR(type) (lexical_type_strings[type])
 
-typedef struct
+// ================================
+
+class EviType
 {
+public:
 	llvm::Type* llvm_type;
 	LexicalType lexical_type;
 	string name;
 	int alignment;
-	bool issigned;
-} EviType;
 
-bool operator==(const EviType& lhs, const EviType& rhs);
+	bool operator==(const EviType& rhs);
+};
 
-#define EVI_INT_TYPE(name, bitsnum, issigned) \
-	((EviType){llvm::IntegerType::get(__context, bitsnum), \
-									  TYPE_INTEGER, name, 4, issigned})
+
+// #define EVI_INT_TYPE(name, bitsnum, issigned) \
+// 	((EviType){llvm::IntegerType::get(__context, bitsnum), \
+// 									  TYPE_INTEGER, name, 4, issigned})
 
 // ================================
 
 extern llvm::LLVMContext __context;
-extern map<string, EviType> __evi_types;
+extern map<string, EviType*> __evi_types;
 static bool __evi_builtin_types_initialized = false;
 
 // ================================
 
-#define ADD_EVI_TYPE(name, type) __evi_types.insert(pair<string, EviType>(name, type))
+#define ADD_EVI_TYPE(name, type) __evi_types.insert(pair<string, EviType*>(name, type))
 #define IS_EVI_TYPE(name) (__evi_types.find(name) != __evi_types.end())
 #define GET_EVI_TYPE(name) (assert(IS_EVI_TYPE(name)), __evi_types.at(name))
 

@@ -5,7 +5,7 @@
 @prints i8 (str);
 \ @scani i64 ();
 
-%mystr str "yo\n";
+\ %mystr str "yo\n";
 
 @main i64 ()
 {

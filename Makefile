@@ -94,7 +94,7 @@ clean:
 .PHONY: test
 test: $(APP)
 	@printf "============= Running \"$(APP)\" =============\n\n"
-	@$(APP) test/test.evi -o bin/test && \
+	@$(APP) $(args) test/test.evi -o bin/test && \
 	\
 	printf "============= Running \"bin/test\" ===========\n\n" && \
 	bin/test && \
