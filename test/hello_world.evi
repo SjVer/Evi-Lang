@@ -1,4 +1,4 @@
-#apply "std_io"
+#apply "std-io"
 
 @main i32 () {
 	print("Hello World!\n");

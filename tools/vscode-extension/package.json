@@ -45,7 +45,5 @@
                 }
             }
         ]
-    }//,
-
-    // "activationEvents": [ "onLanguage:evi" ]
+    }
 }

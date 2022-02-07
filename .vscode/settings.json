@@ -25,7 +25,10 @@
         "typeinfo": "cpp",
         "Evi.sublime-syntax": "yaml",
         "sstream": "cpp",
-        "cstdio": "cpp"
+        "cstdio": "cpp",
+        "numeric": "cpp",
+        "shared_mutex": "cpp",
+        "memory": "cpp"
     },
     "makefile.launchConfigurations": [
         {

@@ -72,11 +72,18 @@ void Parser::consume(TokenType type, string message)
 	error_at_current(message);
 }
 
-EviType Parser::get_prev_as_type()
+EviType* Parser::consume_type(string msg)
 {
+	// get base type
+	consume(TOKEN_TYPE, msg);
 	string typestr = PREV_TOKEN_STR;
 	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
-	return GET_EVI_TYPE(typestr);
+	EviType* type =  GET_EVI_TYPE(typestr);
+
+	// get as pointer if applicable
+	while(match(TOKEN_STAR)) type->_pointer_depth++;
+
+	return type;
 }
 
 // returns true and advances if the current token is of the given type
@@ -160,7 +167,7 @@ void Parser::add_function(Token* identtoken, FuncProperties properties)
 		FuncProperties props = get_function_props(name);
 		if(props.defined) error_at(identtoken, "Function already defined in current scope.");
 		else if(!properties.defined) error_at(identtoken, "Function already declared in current scope.");
-		else if(props.ret_type.llvm_type != properties.ret_type.llvm_type || props.params != properties.params)
+		else if(props.ret_type->_llvm_type != properties.ret_type->_llvm_type || props.params != properties.params)
 			error_at(identtoken, "Function signature doesn't match declaration.");
 
 		_current_scope.functions.at(name).defined = true;
@@ -210,19 +217,16 @@ StmtNode* Parser::function_declaration()
 	Token nametok = _previous;
 
 	// get type
-	consume(TOKEN_TYPE, tools::fstr("Expected type after '@%s'.", name.c_str()));
-	EviType ret_type = get_prev_as_type();
+	EviType* ret_type = consume_type(tools::fstr("Expected type after '@%s'.", name.c_str()));
 
 	consume(TOKEN_LEFT_PAREN, "Expect '(' after return type.");
 
 	// get parameters
-	vector<EviType> params;
+	vector<EviType*> params;
 	while(!check(TOKEN_RIGHT_PAREN)) do
 	{
 		if (params.size() >= 255) error_at_current("Parameter count exceeded limit of 255.");
-		consume(TOKEN_TYPE, "Expected parameter.");
-		EviType type = get_prev_as_type();
-		params.push_back(type);
+		params.push_back(consume_type("Expected parameter."));
 
 	} while (check(TOKEN_TYPE));
 
@@ -268,13 +272,14 @@ StmtNode* Parser::variable_declaration()
 	} while(match(TOKEN_COMMA));
 
 	// get type
-	consume(TOKEN_TYPE, "Expected type.");
-	string typestr = PREV_TOKEN_STR;
-	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
-	EviType type = GET_EVI_TYPE(typestr);
+	EviType* type = consume_type();
+	// consume(TOKEN_TYPE, "Expected type.");
+	// string typestr = PREV_TOKEN_STR;
+	// if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
+	// EviType* type = GET_EVI_TYPE(typestr);
 	
 	// add to locals for parser to use
-	for(Token& tok : nametokens) add_variable(&tok, type.lexical_type);
+	for(Token& tok : nametokens) add_variable(&tok, type->_lexical_type);
 
 	vector<VarDeclNode*> decls;
 	// get initializers(s)?
@@ -680,7 +685,7 @@ ExprNode* Parser::primary()
 		int arity = _current_scope.func_props.params.size();
 		if(intval >= arity) error(tools::fstr("Parameter reference exceeds arity of %d.", arity));
 
-		LexicalType type = _current_scope.func_props.params[intval].lexical_type;
+		LexicalType type = _current_scope.func_props.params[intval]->_lexical_type;
 		return new ReferenceNode(_previous, "", intval, type);
 	}
 
@@ -708,8 +713,8 @@ ExprNode* Parser::primary()
 		
 		consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
 
-		vector<LexicalType> lexparams; for(EviType& p : funcprops.params) lexparams.push_back(p.lexical_type);
-		return new CallNode(tok, name, args, funcprops.ret_type.lexical_type, lexparams);
+		vector<LexicalType> lexparams; for(EviType*& p : funcprops.params) lexparams.push_back(p->_lexical_type);
+		return new CallNode(tok, name, args, funcprops.ret_type->_lexical_type, lexparams);
 	}
 
 	error_at_current("Expected expression.");

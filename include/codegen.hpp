@@ -61,7 +61,7 @@ class CodeGenerator: public Visitor
 
 	stack<llvm::Value*>* _value_stack;
 	map<string, llvm::Function*> _functions;
-	map<string, pair<llvm::Value*, EviType>> _named_values;
+	map<string, pair<llvm::Value*, EviType*>> _named_values;
 
 	void error_at(Token *token, string message);
 	void warning_at(Token *token, string message);

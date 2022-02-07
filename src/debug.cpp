@@ -49,8 +49,8 @@ VISIT(FuncDeclNode)
 	string infolabel;
 	int c = 0;
 	if(node->_params.size() > 0) for(auto& p : node->_params)
-		{ infolabel += tools::fstr("%%%d ", c) + p.name + "\\n"; c++; }
-	infolabel += "~ " + node->_ret_type.name;
+		{ infolabel += tools::fstr("%%%d ", c) + p->to_string() + "\\n"; c++; }
+	infolabel += "~ " + node->_ret_type->to_string();
 
 	CONNECT_NODES(thisnode, ADD_NODE(infolabel.c_str()));
 
@@ -67,7 +67,7 @@ VISIT(VarDeclNode)
 	string namelabel = tools::fstr("%% %s", node->_identifier.c_str());
 	int thisnode = ADD_NODE(namelabel.c_str());
 	
-	CONNECT_NODES(thisnode, ADD_NODE(node->_type.name.c_str()));
+	CONNECT_NODES(thisnode, ADD_NODE(node->_type->to_string().c_str()));
 
 	if(node->_expr)
 	{

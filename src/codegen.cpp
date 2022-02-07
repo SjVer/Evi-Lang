@@ -257,7 +257,7 @@ llvm::Type* CodeGenerator::lexical_type_to_llvm(TokenType type)
 
 #define VISIT(_node) void CodeGenerator::visit(_node* node)
 #define ERROR_AT(token, format, ...) error_at(token, tools::fstr(format, __VA_ARGS__))
-#define SCOPE_UP() map<string, pair<llvm::Value*, EviType>> oldbindings = _named_values
+#define SCOPE_UP() map<string, pair<llvm::Value*, EviType*>> oldbindings = _named_values
 #define SCOPE_DOWN() _named_values = oldbindings
 
 // === Statements ===
@@ -269,9 +269,9 @@ VISIT(FuncDeclNode)
 
 	if(_functions.find(node->_identifier) == _functions.end())
 	{
-		for(EviType& type : node->_params) params.push_back(type.llvm_type);
+		for(EviType*& type : node->_params) params.push_back(type->get_llvm_type());
 		
-		llvm::FunctionType* functype = llvm::FunctionType::get(node->_ret_type.llvm_type, params, false);
+		llvm::FunctionType* functype = llvm::FunctionType::get(node->_ret_type->get_llvm_type(), params, false);
 		func = llvm::Function::Create(functype, llvm::Function::ExternalLinkage, node->_identifier, *_top_module);
 		
 		_functions[node->_identifier] = func;
@@ -306,9 +306,9 @@ VISIT(FuncDeclNode)
 
 		// finish off function
 		if(func->getBasicBlockList().back().getInstList().back().isTerminator()) {}
-		else if(node->_ret_type.lexical_type != TYPE_VOID)
+		else if(node->_ret_type->_lexical_type != TYPE_VOID)
 		{
-			llvm::Constant* nullret = llvm::Constant::getNullValue(node->_ret_type.llvm_type);
+			llvm::Constant* nullret = llvm::Constant::getNullValue(node->_ret_type->get_llvm_type());
 			_builder->CreateRet(nullret);
 		}
 		else _builder->CreateRetVoid();
@@ -330,12 +330,12 @@ VISIT(VarDeclNode)
 {
 	if(node->_is_global)
 	{
-		_top_module->getOrInsertGlobal(node->_identifier, node->_type.llvm_type);
+		_top_module->getOrInsertGlobal(node->_identifier, node->_type->get_llvm_type());
 		llvm::GlobalVariable* global_var = _top_module->getNamedGlobal(node->_identifier);
 		global_var->setLinkage(llvm::GlobalValue::CommonLinkage);
-		global_var->setAlignment(llvm::MaybeAlign(node->_type.alignment));
+		global_var->setAlignment(llvm::MaybeAlign(node->_type->_alignment));
 
-		llvm::Constant* init = llvm::Constant::getNullValue(node->_type.llvm_type);
+		llvm::Constant* init = llvm::Constant::getNullValue(node->_type->get_llvm_type());
 		global_var->setInitializer(init);
 	
 		// set initializer?
@@ -352,9 +352,9 @@ VISIT(VarDeclNode)
 
 			node->_expr->accept(this);
 
-			llvm::Value* val = create_cast(pop(), true, node->_type.llvm_type, node->_type.issigned);
+			llvm::Value* val = create_cast(pop(), true, node->_type->get_llvm_type(), node->_type->_is_signed);
 			_builder->CreateStore(val, global_var);
-			// _builder->CreateAlignedStore(val, global_var, llvm::MaybeAlign(node->_type.alignment));
+			// _builder->CreateAlignedStore(val, global_var, llvm::MaybeAlign(node->_type->_alignment));
 		}
 		
 		_named_values[node->_identifier].first = global_var;
@@ -369,12 +369,12 @@ VISIT(VarDeclNode)
 			node->_expr->accept(this);
 			init = pop();
 		}
-		else init = llvm::Constant::getNullValue(node->_type.llvm_type);
+		else init = llvm::Constant::getNullValue(node->_type->get_llvm_type());
 	
-		init = create_cast(init, true, node->_type.llvm_type, node->_type.issigned);
+		init = create_cast(init, true, node->_type->get_llvm_type(), node->_type->_is_signed);
 		
-		llvm::AllocaInst* alloca = _builder->CreateAlloca(node->_type.llvm_type, 0, node->_identifier);
-		// _builder->CreateAlignedStore(init, alloca, llvm::MaybeAlign(node->_type.alignment));
+		llvm::AllocaInst* alloca = _builder->CreateAlloca(node->_type->get_llvm_type(), 0, node->_identifier);
+		// _builder->CreateAlignedStore(init, alloca, llvm::MaybeAlign(node->_type->_alignment));
 		_builder->CreateStore(init, alloca);
 	
 		_named_values[node->_identifier].first = alloca;
@@ -386,14 +386,14 @@ VISIT(VarDeclNode)
 VISIT(AssignNode)
 {
 	llvm::Value* var = _named_values[node->_ident].first;
-	EviType type = _named_values[node->_ident].second;
+	EviType* type = _named_values[node->_ident].second;
 
 	node->_expr->accept(this);
 	llvm::Value* rawval = pop();
 
 	llvm::Instruction::CastOps cop = llvm::CastInst::getCastOpcode(
-		rawval, true, type.llvm_type, type.issigned);
-	llvm::Value* val = _builder->CreateCast(cop, rawval, type.llvm_type);
+		rawval, true, type->get_llvm_type(), type->_is_signed);
+	llvm::Value* val = _builder->CreateCast(cop, rawval, type->get_llvm_type());
 	
 	_builder->CreateStore(val, var);
 }
@@ -490,7 +490,7 @@ VISIT(ReturnNode)
 	if(node->_expr)
 	{
 		node->_expr->accept(this);
-		_builder->CreateRet(create_cast(pop(), false, node->_expected_type.llvm_type, false));
+		_builder->CreateRet(create_cast(pop(), false, node->_expected_type->get_llvm_type(), false));
 	}
 	else _builder->CreateRetVoid();
 }
@@ -837,15 +837,15 @@ VISIT(LiteralNode)
 		default: assert(false);
 	}
 
-	// llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
-	// push(create_cast(constant, false, casttype, false));
+	llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
+	push(create_cast(constant, false, casttype, false));
 	push(constant);
 }
 
 VISIT(ReferenceNode)
 {
 	llvm::Value* var = nullptr;
-	EviType type;
+	EviType* type = nullptr;
 
 	if(node->_token.type == TOKEN_VARIABLE_REF)
 	{
@@ -858,9 +858,9 @@ VISIT(ReferenceNode)
 		type = _named_values[tools::fstr("%d", node->_parameter)].second;
 	}
 
-	llvm::LoadInst* load = _builder->CreateLoad(type.llvm_type, var, "loadtmp");
+	llvm::LoadInst* load = _builder->CreateLoad(type->get_llvm_type(), var, "loadtmp");
 	llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
-	push(create_cast(load, type.issigned, casttype, false));
+	push(create_cast(load, type->_is_signed, casttype, false));
 }
 
 VISIT(CallNode)

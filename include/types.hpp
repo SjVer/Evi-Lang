@@ -28,33 +28,35 @@ extern const char* lexical_type_strings[TYPE_NONE];
 
 // ================================
 
-typedef struct
+class EviType
 {
-	llvm::Type* llvm_type;
-	LexicalType lexical_type;
-	string name;
-	int alignment;
-	bool issigned;
-	int pointer_depth;
+public:
+	llvm::Type* _llvm_type;
+	LexicalType _lexical_type;
+	string _name;
+	int _alignment;
+	bool _is_signed;
+	int _pointer_depth;
 
 	bool operator==(const EviType& rhs);
-	llvm::Type* generate_type();
-} EviType;
+	llvm::Type* get_llvm_type();
+	string to_string();
+};
 
 
 #define EVI_INT_TYPE(name, bitsnum, issigned) \
-	((EviType){llvm::IntegerType::get(__context, bitsnum), \
-									  TYPE_INTEGER, name, 4, issigned})
+	(new EviType{llvm::IntegerType::get(__context, bitsnum), \
+		TYPE_INTEGER, name, 4, issigned, 0})
 
 // ================================
 
 extern llvm::LLVMContext __context;
-extern map<string, EviType> __evi_types;
+extern map<string, EviType*> __evi_types;
 static bool __evi_builtin_types_initialized = false;
 
 // ================================
 
-#define ADD_EVI_TYPE(name, type) __evi_types.insert(pair<string, EviType>(name, type))
+#define ADD_EVI_TYPE(name, type) __evi_types.insert(pair<string, EviType*>(name, type))
 #define IS_EVI_TYPE(name) (__evi_types.find(name) != __evi_types.end())
 #define GET_EVI_TYPE(name) (assert(IS_EVI_TYPE(name)), __evi_types.at(name))
 
@@ -70,7 +72,6 @@ static void init_builtin_evi_types()
 	lexical_type_strings[TYPE_CHARACTER] = "character";
 	lexical_type_strings[TYPE_STRING] = "string";
 	lexical_type_strings[TYPE_VOID] = "void";
-
 
 	// ======================= Integers =======================
 	ADD_EVI_TYPE("i1",  EVI_INT_TYPE("i1",  1,  true));
@@ -94,16 +95,14 @@ static void init_builtin_evi_types()
 	ADD_EVI_TYPE("ui128",EVI_INT_TYPE("ui128",128, false));
 
 	// ======================== Floats ========================
-	ADD_EVI_TYPE("flt", ((EviType){llvm::Type::getFloatTy(__context), TYPE_FLOAT, "flt", 4, true}));
-	ADD_EVI_TYPE("dbl", ((EviType){llvm::Type::getDoubleTy(__context), TYPE_FLOAT, "dbl", 4, true}));
+	ADD_EVI_TYPE("flt", (new EviType{llvm::Type::getFloatTy(__context), TYPE_FLOAT, "flt", 4, true}));
+	ADD_EVI_TYPE("dbl", (new EviType{llvm::Type::getDoubleTy(__context), TYPE_FLOAT, "dbl", 4, true}));
 
 	// ======================== Others ========================
-	ADD_EVI_TYPE("bln", ((EviType){llvm::Type::getInt1Ty(__context), TYPE_BOOL, "bln", 1, false}));
-	ADD_EVI_TYPE("chr", ((EviType){llvm::Type::getInt8Ty(__context), TYPE_CHARACTER, "chr", 8, false}));
-	ADD_EVI_TYPE("nll", ((EviType){llvm::Type::getVoidTy(__context), TYPE_VOID, "nll"}));
+	ADD_EVI_TYPE("bln", (new EviType{llvm::Type::getInt1Ty(__context), TYPE_BOOL, "bln", 1, false}));
+	ADD_EVI_TYPE("chr", (new EviType{llvm::Type::getInt8Ty(__context), TYPE_CHARACTER, "chr", 8, false}));
+	ADD_EVI_TYPE("nll", (new EviType{llvm::Type::getVoidTy(__context), TYPE_VOID, "nll"}));
 
-	// temporary
-	ADD_EVI_TYPE("str", ((EviType){llvm::Type::getInt8PtrTy(__context), TYPE_STRING, "str"}));
 }
 
 #endif

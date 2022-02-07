@@ -191,20 +191,22 @@ VISIT(FuncDeclNode)
 
 VISIT(VarDeclNode)
 {
-	LexicalType vartype = node->_type.lexical_type;
+	EviType* vartype = node->_type;
 
 	if(node->_expr)
 	{
 		node->_expr->accept(this);
 		LexicalType exprtype = pop();
-		LexicalType result = resolve_types(vartype, exprtype);
+		LexicalType result = resolve_types(vartype->_lexical_type, exprtype);
 		
-		if(!can_cast_types(result, vartype))
+		DEBUG_PRINT_VAR(vartype->_pointer_depth, %d);
+
+		if(!can_cast_types(result, vartype->_lexical_type))
 			ERROR_AT(&node->_token, "Cannot initialize variable of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
-			GET_LEX_TYPE_STR(vartype), GET_LEX_TYPE_STR(exprtype));
+			vartype->to_string().c_str(), GET_LEX_TYPE_STR(exprtype));
 
-		node->_expr->_cast_to = vartype;
+		node->_expr->_cast_to = vartype->_lexical_type;
 	}
 	
 	push(TYPE_NONE);
@@ -272,7 +274,7 @@ VISIT(ReturnNode)
 	{
 		node->_expr->accept(this);
 		LexicalType exprtype = pop();
-		LexicalType functype = node->_expected_type.lexical_type;
+		LexicalType functype = node->_expected_type->_lexical_type;
 
 		LexicalType result = resolve_types(functype, exprtype);
 

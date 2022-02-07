@@ -144,6 +144,7 @@
 			
 			"patterns": [
 				{ "include": "#types" },
+				{ "match": "*", "scope": "storage.modifier.pointer.evi" },
 				{ "include": "#expressions" },
 				{ "match": ",", "name": "punctuation.delimeter.evi" },
 				{ "include": "#illegals" }
@@ -185,6 +186,7 @@
 
 			"patterns": [
 				{ "include": "#types" },
+				{ "match": "*", "scope": "storage.modifier.pointer.evi" },
 				{ "include": "#function-parameters" },
 				{ "include": "#blocks" },
 				{ "include": "#illegals" }
@@ -199,6 +201,7 @@
 
 			"patterns": [
 				{ "include": "#types" },
+				{ "match": "*", "scope": "storage.modifier.pointer.evi" },
 				{ "include": "#separators" },
 				{ "include": "#illegals" }
 			],

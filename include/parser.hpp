@@ -24,8 +24,8 @@ private:
 
 	typedef struct
 	{
-		EviType ret_type;
-		vector<EviType> params;
+		EviType* ret_type;
+		vector<EviType*> params;
 		bool defined;
 		bool invalid = false;
 	} FuncProperties;
@@ -47,7 +47,7 @@ private:
 	void advance();
 	bool check(TokenType type);
 	void consume(TokenType type, string message);
-	EviType get_prev_as_type();
+	EviType* consume_type(string msg = "Expected type.");
 	bool match(TokenType type);
 	bool is_at_end();
 
