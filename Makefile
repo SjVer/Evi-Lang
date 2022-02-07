@@ -47,6 +47,7 @@ OBJCOUNT = $(foreach v,$(OBJCOUNT_NOPAD),$(shell printf '%02d' $(v)))
 RM = rm
 MKDIR = mkdir
 DELOBJ = $(OBJ)
+SHELL := /bin/bash
 
 ########################################################################
 ####################### Targets beginning here #########################
@@ -146,3 +147,9 @@ newfile:
 	@test $(name) || ( echo "basename not given! ('make newfile name=BASENAME')"; false )
 	touch $(SRCDIR)/$(name).cpp
 	touch $(HEADERDIR)/$(name).hpp
+
+man:
+	@cp tools/evi-man tools/evi-man.tmp
+	@DATE=$$(date +"%a %d, %Y") && sed -i -e "s/<<<DATE>>>/$$DATE/g" tools/evi-man.tmp
+	@gzip tools/evi-man.tmp
+	@mv tools/evi-man.tmp.gz ~/.local/share/man/man1/evi.1.gz

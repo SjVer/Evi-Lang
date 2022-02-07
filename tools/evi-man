@@ -1,0 +1,148 @@
+.TH "EVI" "1" "<<<DATE>>>" "1" "Evi"
+
+.SH NAME
+.B evi
+- the official Evi compiler
+
+
+
+.SH SYNOPSIS
+.B evi
+.RB [OPTION...]
+.RB file...
+
+
+
+.SH DESCRIPTION
+.B evi
+is the official compiler for the Evi programming language. It is written in C++ by Sjoerd Vermeulen.
+
+
+
+
+
+.SH OPTIONS
+
+.INDENT 0.0
+.TP
+.B \-c, --compile-only
+Compile and assemble but do not link.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \--c-flags
+Display the flags passed to the c compiler for linkage.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \--emit-llvm
+Emit llvm IR instead of an executable.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \--generate-ast
+Generate AST image (for debugging purposes).
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \-o, --output=OUTFILE
+Output to OUTFILE instead of to standard output.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \-v, --verbose
+Produce verbose output.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \-?, --help
+Give a help list
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \--usage
+Give a short usage message
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \-V, --version
+Print program version
+.UNINDENT
+
+
+
+.SH FILES
+.TP
+.I
+/usr/share/man/man1/evi.1.gz
+.TP
+.I
+/usr/share/bash-completion/completions/evi
+.TP
+.I
+/usr/bin/evi
+
+
+
+.SH EXIT STATUS
+.TP
+.B
+0
+Success
+
+.TP
+.B
+64
+Invalid command line arguments
+
+.TP
+.B
+65
+Parse, type, codegen or output error
+
+
+.SH BUGS
+Please feel free to report bugs to <sjoerd@marsenaar.com> or create an issue on the github page.
+
+
+.SH SEE ALSO
+.UR "github page"
+https://github.com/SjVer/Evi-Lang
+.UE 
+
+.SH COPYRIGHT
+.PP
+MIT License
+
+Copyright (c) 2022 Sjoerd Vermeulen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+.SH CREDITS
+.PP
+This man page is written by Sjoerd Vermeulen <sjoerd@marsenaar.com>
