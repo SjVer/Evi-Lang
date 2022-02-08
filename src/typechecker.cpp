@@ -5,7 +5,7 @@ Status TypeChecker::check(string path, const char* source, AST* astree)
 {
 	_infile = path;
 	_error_dispatcher = ErrorDispatcher(source, path.c_str());
-	_type_stack = stack<LexicalType>();
+	_type_stack = stack<ParsedType*>();
 
 	for(auto& node : *astree)
 	{
@@ -35,131 +35,171 @@ void TypeChecker::warning_at(Token *token, string message)
 	_error_dispatcher.dispatch_warning_at(token, "Type Inference Warning", message.c_str());
 }
 
-void TypeChecker::push(LexicalType type)
+void TypeChecker::push(ParsedType* type)
 {
 	// just a lil push
 	_type_stack.push(type);
 }
 
-LexicalType TypeChecker::pop()
+ParsedType* TypeChecker::pop()
 {
 	assert(!_type_stack.empty());
-	LexicalType type = _type_stack.top();
+	ParsedType* type = _type_stack.top();
 	_type_stack.pop();
 	return type;
 }
 
 // check if right is compatible with left and return
 // "compromise" decided by left
-// returns TYPE_NONE if invalid
-LexicalType TypeChecker::resolve_types(LexicalType left, LexicalType right)
+// returns a nullptr if invalid
+ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 {
-	switch(left)
+	if(left == right || *left == *right) return std::move(left);
+
+	if(left->_pointer_depth == right->_pointer_depth)
 	{
-		case TYPE_INTEGER: switch(right)
+		// just check their types
+		switch(AS_LEX(left))
 		{
-			case TYPE_INTEGER: return TYPE_INTEGER;
-			case TYPE_FLOAT: return TYPE_FLOAT;
-			case TYPE_BOOL: return TYPE_INTEGER;
-			case TYPE_CHARACTER: return TYPE_INTEGER;
-			default: return TYPE_NONE;
+			case TYPE_BOOL: switch(AS_LEX(right))
+			{
+				case TYPE_CHARACTER:
+				case TYPE_INTEGER:
+					return left->copy_change_lex(TYPE_INTEGER);
+				case TYPE_FLOAT:
+					return left->copy_change_lex(TYPE_FLOAT);
+				default: return nullptr;
+			}
+			case TYPE_CHARACTER: switch(AS_LEX(right))
+			{
+				case TYPE_BOOL:
+				case TYPE_INTEGER:
+					return left->copy_change_lex(TYPE_INTEGER);
+				case TYPE_FLOAT:
+					return left->copy_change_lex(TYPE_FLOAT);
+				default: return nullptr;
+				
+			}
+			case TYPE_INTEGER: switch(AS_LEX(right))
+			{
+				case TYPE_BOOL:
+				case TYPE_CHARACTER:
+					return left->copy_change_lex(TYPE_INTEGER);
+				case TYPE_FLOAT:
+					return left->copy_change_lex(TYPE_FLOAT);
+				default: return nullptr;
+				
+			}
+			case TYPE_FLOAT: switch(AS_LEX(right))
+			{
+				case TYPE_BOOL:
+				case TYPE_INTEGER:
+				case TYPE_CHARACTER:
+					return left->copy_change_lex(TYPE_FLOAT);
+				default: return nullptr;
+			}
+			default: return nullptr;
 		}
-		case TYPE_FLOAT: switch(right)
-		{
-			case TYPE_INTEGER: return TYPE_FLOAT;
-			case TYPE_FLOAT: return TYPE_FLOAT;
-			case TYPE_BOOL: return TYPE_FLOAT;
-			case TYPE_CHARACTER: return TYPE_FLOAT;
-			default: return TYPE_NONE;
-		}
-		case TYPE_BOOL: switch(right)
-		{
-			case TYPE_INTEGER: return TYPE_INTEGER;
-			case TYPE_FLOAT: return TYPE_FLOAT;
-			case TYPE_BOOL: return TYPE_INTEGER;
-			case TYPE_CHARACTER: return TYPE_INTEGER;
-			default: return TYPE_NONE;
-		}
-		case TYPE_CHARACTER: switch(right)
-		{
-			case TYPE_INTEGER: return TYPE_INTEGER;
-			case TYPE_FLOAT: return TYPE_FLOAT;
-			case TYPE_BOOL: return TYPE_INTEGER;
-			case TYPE_CHARACTER: return TYPE_CHARACTER;
-			default: return TYPE_NONE;
-		}
-		case TYPE_STRING: switch(right)
-		{
-			case TYPE_STRING: return TYPE_STRING;
-			default: return TYPE_NONE;
-		}
-		case TYPE_VOID: switch(right)
-		{
-			case TYPE_VOID: return TYPE_VOID;
-			default: return TYPE_NONE;
-		}
-		
-		case TYPE_NONE: return TYPE_NONE;
 	}
+	else if(left->_pointer_depth < right->_pointer_depth)
+	{
+		// e.g. "int* a = int** b" is basically "int a = int* b"
+		// so relative to left, right is a pointer
+		switch (left->_lexical_type)
+		{
+			case TYPE_BOOL:
+			case TYPE_INTEGER:
+			case TYPE_CHARACTER:
+			case TYPE_FLOAT:
+				return left->copy_change_lex(TYPE_INTEGER);
+
+			default: return nullptr;
+		}
+	}
+	else if(left->_pointer_depth > right->_pointer_depth)
+	{
+		// e.g. "int** a = int* b" is basically "int* a = int b"
+		// so relative to right, left is a pointer
+		switch (right->_lexical_type)
+		{
+			case TYPE_BOOL:
+			case TYPE_INTEGER:
+			case TYPE_CHARACTER:
+			case TYPE_FLOAT:
+				return right->copy_change_lex(TYPE_INTEGER);
+
+			default: return nullptr;
+		}
+	}
+
+	DEBUG_PRINT_MSG("Boutta assert false at the end of resolve_types():");
+	DEBUG_PRINT_F_MSG("    left lextype: %s", GET_LEX_TYPE_STR(AS_LEX(left)));
+	DEBUG_PRINT_F_MSG("    left ptr depth: %d", left->_pointer_depth);
+	DEBUG_PRINT_F_MSG("    right lextype: %s", GET_LEX_TYPE_STR(AS_LEX(right)));
+	DEBUG_PRINT_F_MSG("    right ptr depth: %d", right->_pointer_depth);
+	assert(false);
 }
 
-bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
+bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 {
-	switch(from)
+	if(from == to || *from == *to) return true;
+
+	if(from->_pointer_depth == to->_pointer_depth)
 	{
-		case TYPE_INTEGER: switch(to)
+		// just check their types
+		switch(AS_LEX(from))
 		{
-			case TYPE_INTEGER:
-			case TYPE_FLOAT:
-			case TYPE_BOOL:
-			case TYPE_CHARACTER:
-				return true;
+			case TYPE_BOOL: switch(AS_LEX(to))
+			{
+				case TYPE_CHARACTER:
+				case TYPE_INTEGER:
+				case TYPE_FLOAT:
+					return true;
+				default: return false;
+			}
+			case TYPE_CHARACTER: switch(AS_LEX(to))
+			{
+				case TYPE_BOOL:
+				case TYPE_INTEGER:
+				case TYPE_FLOAT:
+					return true;
+				default: return false;
+				
+			}
+			case TYPE_INTEGER: switch(AS_LEX(to))
+			{
+				case TYPE_BOOL:
+				case TYPE_CHARACTER:
+				case TYPE_FLOAT:
+					return true;
+				default: return false;
+				
+			}
+			case TYPE_FLOAT: switch(AS_LEX(to))
+			{
+				case TYPE_BOOL:
+				case TYPE_INTEGER:
+				case TYPE_CHARACTER:
+					return true;
+				default: return false;
+			}
 			default: return false;
 		}
-		case TYPE_FLOAT: switch(to)
-		{
-			case TYPE_INTEGER:
-			case TYPE_FLOAT:
-			case TYPE_BOOL:
-			case TYPE_CHARACTER:
-				return true;
-			default: return false;
-		}
-		case TYPE_BOOL: switch(to)
-		{
-			case TYPE_INTEGER:
-			case TYPE_FLOAT:
-			case TYPE_BOOL:
-			case TYPE_CHARACTER:
-				return true;
-			default: return false;
-		}
-		case TYPE_CHARACTER: switch(to)
-		{
-			case TYPE_INTEGER:
-			case TYPE_FLOAT:
-			case TYPE_BOOL:
-			case TYPE_CHARACTER:
-				return true;
-			default: return false;
-		}
-		case TYPE_STRING: switch(to)
-		{
-			// case TYPE_BOOL:
-			// case TYPE_INTEGER:
-			case TYPE_STRING:
-				return true;
-			default: return false;
-		}
-		case TYPE_VOID: switch(to)
-		{
-			case TYPE_VOID:
-				return true;
-			default: return false;
-		}
-		
-		case TYPE_NONE: return false;
 	}
+	else if(from->_pointer_depth < to->_pointer_depth)
+	{
+		// to = ptr relative to from
+		switch(from->_lexical_type)
+		{
+			case TYPE_BOOL:
+			case TYPE_CHARACTER:
+			case TYPE_INTEGER:
+				return true;
+			default: return false;
+		}
+	}
+
+	assert(false);
 }
 
 // =========================================
@@ -169,11 +209,11 @@ bool TypeChecker::can_cast_types(LexicalType from, LexicalType to)
 #define CANNOT_CONVERT_ERROR_AT(token, ltype, rtype) \
 	ERROR_AT(token, "Cannot convert from type " COLOR_BOLD "'%s'" \
 	COLOR_NONE " to type " COLOR_BOLD "'%s'" COLOR_NONE ".", \
-	GET_LEX_TYPE_STR(rtype), GET_LEX_TYPE_STR(ltype))
+	rtype->to_c_string(), ltype->to_c_string())
 #define CONVERSION_WARNING_AT(token, original, result) \
 	warning_at(token, tools::fstr("Implicit conversion from type " COLOR_BOLD "'%s'" \
 	COLOR_NONE " to type " COLOR_BOLD "'%s'" COLOR_NONE ".", \
-	GET_LEX_TYPE_STR(original), GET_LEX_TYPE_STR(result)))
+	original->to_c_string(), result->to_c_string()))
 
 // === Statements ===
 // all nodes should have a stack effect of 1
@@ -186,7 +226,7 @@ VISIT(FuncDeclNode)
 		pop();
 	}
 	
-	push(TYPE_NONE);
+	push(nullptr);
 }
 
 VISIT(VarDeclNode)
@@ -196,36 +236,34 @@ VISIT(VarDeclNode)
 	if(node->_expr)
 	{
 		node->_expr->accept(this);
-		LexicalType exprtype = pop();
-		LexicalType result = resolve_types(vartype->_lexical_type, exprtype);
+		ParsedType* exprtype = pop();
+		ParsedType* result = resolve_types(vartype->_parsed_type, exprtype);
 		
-		DEBUG_PRINT_VAR(vartype->_pointer_depth, %d);
-
-		if(!can_cast_types(result, vartype->_lexical_type))
+		if(!can_cast_types(result, vartype->_parsed_type))
 			ERROR_AT(&node->_token, "Cannot initialize variable of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
-			vartype->to_string().c_str(), GET_LEX_TYPE_STR(exprtype));
+			vartype->to_string().c_str(), exprtype->to_c_string());
 
-		node->_expr->_cast_to = vartype->_lexical_type;
+		node->_expr->_cast_to = vartype->_parsed_type;
 	}
 	
-	push(TYPE_NONE);
+	push(nullptr);
 }
 
 VISIT(AssignNode)
 {
 	node->_expr->accept(this);
-	LexicalType exprtype = pop();
-	LexicalType vartype = node->_expected_type;
+	ParsedType* exprtype = pop();
+	ParsedType* vartype = node->_expected_type;
 
-	LexicalType result = resolve_types(vartype, exprtype);
+	ParsedType* result = resolve_types(vartype, exprtype);
 
 	if(!can_cast_types(result, vartype)) 
 		ERROR_AT(&node->_token, "Cannot implicitly convert expression of type " COLOR_BOLD \
 		"'%s'" COLOR_NONE " to variable's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
-		GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(vartype));
+		exprtype->to_c_string(), vartype->to_c_string());
 
-	push(TYPE_NONE);
+	push(nullptr);
 }
 
 VISIT(IfNode)
@@ -242,7 +280,7 @@ VISIT(IfNode)
 		pop();
 	}
 
-	push(TYPE_NONE);
+	push(nullptr);
 }
 
 VISIT(LoopNode)
@@ -265,7 +303,7 @@ VISIT(LoopNode)
 	node->_body->accept(this);
 	pop();
 
-	push(TYPE_NONE);
+	push(nullptr);
 }
 
 VISIT(ReturnNode)
@@ -273,20 +311,20 @@ VISIT(ReturnNode)
 	if(node->_expr)
 	{
 		node->_expr->accept(this);
-		LexicalType exprtype = pop();
-		LexicalType functype = node->_expected_type->_lexical_type;
+		ParsedType* exprtype = pop();
+		ParsedType* functype = node->_expected_type->_parsed_type;
 
-		LexicalType result = resolve_types(functype, exprtype);
+		ParsedType* result = resolve_types(functype, exprtype);
 
 		if(!can_cast_types(result, functype)) 
 			ERROR_AT(&node->_token, "Cannot implicitly convert return type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " to function's return type " COLOR_BOLD "'%s'" COLOR_NONE ".",
-			GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(functype));
+			exprtype->to_c_string(), functype->to_c_string());
 		
 		node->_expr->_cast_to = functype;
 	}
 
-	push(TYPE_NONE);
+	push(nullptr);
 }
 
 VISIT(BlockNode)
@@ -296,7 +334,7 @@ VISIT(BlockNode)
 		subnode->accept(this);
 		pop();
 	}
-	push(TYPE_NONE);
+	push(nullptr);
 }
 
 // === Expressions ===
@@ -306,21 +344,22 @@ VISIT(LogicalNode)
 	// _left && _right
 	// _left ? _middle : _right
 
+	ParsedType* booltype = PTYPE(TYPE_BOOL);
+
 	if(node->_token.type == TOKEN_QUESTION)
 	{
 		node->_left->accept(this);
-		LexicalType cond = pop();
-		if(!can_cast_types(cond, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, cond, TYPE_BOOL);
-		node->_left->_cast_to = TYPE_BOOL;
-
+		ParsedType* cond = pop();
+		if(!can_cast_types(cond, booltype))	CANNOT_CONVERT_ERROR_AT(&node->_left->_token, cond, booltype);
+		node->_left->_cast_to = booltype;
 
 		node->_middle->accept(this);
 		node->_right->accept(this);
-		LexicalType right = pop();
-		LexicalType left = pop();
-		LexicalType result = resolve_types(left, right);
+		ParsedType* right = pop();
+		ParsedType* left = pop();
+		ParsedType* result = resolve_types(left, right);
 
-		if(result == TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
+		if(result == nullptr) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
 		else if(left != result) CONVERSION_WARNING_AT(&node->_middle->_token, left, result);
 		else if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
 		
@@ -334,20 +373,20 @@ VISIT(LogicalNode)
 		node->_left->accept(this);
 		node->_right->accept(this);
 		
-		LexicalType right = pop();
-		LexicalType left = pop();
+		ParsedType* right = pop();
+		ParsedType* left = pop();
 
 		// if(result == TYPE_NONE) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
-		if(!can_cast_types(left, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, left, TYPE_BOOL);
-		if(!can_cast_types(right, TYPE_BOOL)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, right, TYPE_BOOL);
+		if(!can_cast_types(left, booltype)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, left, booltype);
+		if(!can_cast_types(right, booltype)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, right, booltype);
 
-		if(left != TYPE_BOOL) CONVERSION_WARNING_AT(&node->_left->_token, left, TYPE_BOOL);
-		if(right != TYPE_BOOL) CONVERSION_WARNING_AT(&node->_right->_token, right, TYPE_BOOL);
+		if(left != booltype) CONVERSION_WARNING_AT(&node->_left->_token, left, booltype);
+		if(right != booltype) CONVERSION_WARNING_AT(&node->_right->_token, right, booltype);
 		
-		node->_left->_cast_to = TYPE_BOOL;
-		node->_right->_cast_to = TYPE_BOOL;
+		node->_left->_cast_to = booltype;
+		node->_right->_cast_to = booltype;
 
-		push(TYPE_BOOL);
+		push(booltype);
 	}
 }
 
@@ -356,42 +395,44 @@ VISIT(BinaryNode)
 	node->_left->accept(this);
 	node->_right->accept(this);
 
-	LexicalType right = pop();
-	LexicalType left = pop();
+	ParsedType* right = pop();
+	ParsedType* left = pop();
 
 	if(node->_optype == TOKEN_AND
 	|| node->_optype == TOKEN_PIPE
 	|| node->_optype == TOKEN_CARET) // binary op requires ints
 	{
-		if(!can_cast_types(left, TYPE_INTEGER))
+		ParsedType* inttype = PTYPE(TYPE_INTEGER);
+
+		if(!can_cast_types(left, inttype))
 		{
 			ERROR_AT(&node->_left->_token, "Cannot implicitly convert expression of type " COLOR_BOLD "'%s'" COLOR_NONE
 			" to type " COLOR_BOLD "'integer'" COLOR_NONE " required by binary operator '%.*s'.",
-			GET_LEX_TYPE_STR(left), node->_token.length, node->_token.start);
+			left->to_c_string(), node->_token.length, node->_token.start);
 		}
-		if(!can_cast_types(right, TYPE_INTEGER))
+		if(!can_cast_types(right, inttype))
 		{
 			ERROR_AT(&node->_right->_token, "Cannot implicitly convert expression of type " COLOR_BOLD "'%s'" COLOR_NONE
 			" to type " COLOR_BOLD "'integer'" COLOR_NONE " required by binary operator '%.*s'.",
-			GET_LEX_TYPE_STR(right), node->_token.length, node->_token.start);
+			right->to_c_string(), node->_token.length, node->_token.start);
 		}
-		if(left != TYPE_INTEGER) CONVERSION_WARNING_AT(&node->_left->_token, left, TYPE_INTEGER);
-		if(right != TYPE_INTEGER) CONVERSION_WARNING_AT(&node->_right->_token, right, TYPE_INTEGER);
+		if(AS_LEX(left) != TYPE_INTEGER) CONVERSION_WARNING_AT(&node->_left->_token, left, inttype);
+		if(AS_LEX(right) != TYPE_INTEGER) CONVERSION_WARNING_AT(&node->_right->_token, right, inttype);
 
-		node->_left->_cast_to = TYPE_INTEGER;
-		node->_right->_cast_to = TYPE_INTEGER;
-		node->_cast_to = TYPE_INTEGER; // in case nothing else sets it
-		push(TYPE_INTEGER);
+		node->_left->_cast_to = inttype;
+		node->_right->_cast_to = inttype;
+		node->_cast_to = inttype; // in case nothing else sets it
+		push(inttype);
 	}
 	else
 	{
-		LexicalType result = resolve_types(left, right);
+		ParsedType* result = resolve_types(left, right);
 
-		if(result == TYPE_NONE) 
+		if(result == nullptr) 
 		{
 			if(right != left) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
 			else ERROR_AT(&node->_token, "Cannot peform binary operation on expressions of type " \
-				COLOR_BOLD "'%s'" COLOR_NONE ".", GET_LEX_TYPE_STR(right));
+				COLOR_BOLD "'%s'" COLOR_NONE ".", right->to_c_string());
 		}
 		if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
 		if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
@@ -406,33 +447,78 @@ VISIT(BinaryNode)
 VISIT(UnaryNode)
 {
 	node->_expr->accept(this);
-	LexicalType type = pop();
+	ParsedType* type = pop();
 
-	switch(type)
+	if(type->_pointer_depth == 0) switch(node->_optype)
 	{
-		case TYPE_INTEGER:
-			node->_expr->_cast_to = TYPE_INTEGER;
-			push(TYPE_INTEGER);
+		case TOKEN_STAR:
+		{
+			// can only dereference if pointer depth > 0
+			error_at(&node->_token, "Cannot dereference non-pointer value.");
 			break;
-
-		case TYPE_CHARACTER:
-			if(node->_optype == TOKEN_BANG) CONVERSION_WARNING_AT(&node->_token, TYPE_CHARACTER, TYPE_INTEGER);
-			node->_expr->_cast_to = node->_optype == TOKEN_BANG ? TYPE_INTEGER : TYPE_CHARACTER;
-			push(node->_optype == TOKEN_BANG ? TYPE_INTEGER : TYPE_CHARACTER);
-			break;
-
-		case TYPE_FLOAT:
-			if(node->_optype != TOKEN_BANG)
+		}
+		case TOKEN_AND:
+		{
+			// can only get address of "lvalue"
+			if(!type->_is_reference)
 			{
-				node->_expr->_cast_to = TYPE_FLOAT;
-				push(TYPE_FLOAT);
+				error_at(&node->_token, "Cannot get address of non-reference value.");
 				break;
 			}
 
-		case TYPE_STRING:
-			ERROR_AT(&node->_token, "Cannot apply '%.*s'-operator to expression of type " \
-					 COLOR_BOLD "'%s'" COLOR_NONE ".", getTokenStr(node->_optype), GET_LEX_TYPE_STR(type));
+			node->_expr->_cast_to = type->copy_inc_depth();
+			push(node->_expr->_cast_to);
 			break;
+		}
+		case TOKEN_BANG:
+		{
+			node->_expr->_cast_to = PTYPE(TYPE_BOOL);
+			push(node->_expr->_cast_to);
+			break;
+		}
+
+		case TOKEN_MINUS:
+		case TOKEN_PLUS_PLUS:
+		case TOKEN_MINUS_MINUS:
+		{
+			node->_expr->_cast_to = type;
+			push(type);
+			break;
+		}
+
+		default: assert(false);
+	}
+	else switch(node->_optype) // we're dealing with a pointer
+	{
+		case TOKEN_STAR:
+		{
+			node->_expr->_cast_to = type->copy_dec_depth();
+			push(node->_expr->_cast_to);
+			break;
+		}
+		case TOKEN_AND:
+		{
+			node->_expr->_cast_to = type->copy_inc_depth();
+			push(node->_expr->_cast_to);
+			break;
+		}
+		case TOKEN_BANG:
+		{
+			node->_expr->_cast_to = PTYPE(TYPE_BOOL);
+			push(node->_expr->_cast_to);
+			break;
+		}
+
+		case TOKEN_MINUS:
+		case TOKEN_PLUS_PLUS:
+		case TOKEN_MINUS_MINUS:
+		{
+			// pointer arithmetic :(
+			node->_expr->_cast_to = PTYPE(TYPE_BOOL);
+			push(node->_expr->_cast_to);
+			CONVERSION_WARNING_AT(&node->_token, type, node->_expr->_cast_to);
+			break;
+		}
 
 		default: assert(false);
 	}
@@ -448,10 +534,10 @@ VISIT(LiteralNode)
 {
 	switch(node->_token.type)
 	{
-		case TOKEN_INTEGER: 	node->_cast_to = TYPE_INTEGER;   push(TYPE_INTEGER); break;
-		case TOKEN_FLOAT: 		node->_cast_to = TYPE_FLOAT; 	 push(TYPE_FLOAT); break;
-		case TOKEN_CHARACTER: 	node->_cast_to = TYPE_CHARACTER; push(TYPE_CHARACTER); break;
-		case TOKEN_STRING: 		node->_cast_to = TYPE_STRING; 	 push(TYPE_STRING); break;
+		case TOKEN_INTEGER: 	node->_cast_to = PTYPE(TYPE_INTEGER);      push(node->_cast_to); break;
+		case TOKEN_FLOAT: 		node->_cast_to = PTYPE(TYPE_FLOAT); 	   push(node->_cast_to); break;
+		case TOKEN_CHARACTER: 	node->_cast_to = PTYPE(TYPE_CHARACTER);    push(node->_cast_to); break;
+		case TOKEN_STRING: 		node->_cast_to = PTYPE(TYPE_CHARACTER, 1); push(node->_cast_to); break;
 		default: assert(false);
 	}
 }
@@ -467,16 +553,16 @@ VISIT(CallNode)
 	for(int i = 0; i < node->_arguments.size(); i++)
 	{
 		node->_arguments[i]->accept(this);
-		LexicalType exprtype = pop();
-		LexicalType argtype = node->_expected_arg_types[i];
+		ParsedType* exprtype = pop();
+		ParsedType* argtype = node->_expected_arg_types[i];
 
-		LexicalType result = resolve_types(argtype, exprtype);
+		ParsedType* result = resolve_types(argtype, exprtype);
 		node->_arguments[i]->_cast_to = argtype;
 
 		if(!can_cast_types(result, argtype)) 
 			ERROR_AT(&node->_token, "Cannot implicitly convert argument of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " to parameter's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
-			GET_LEX_TYPE_STR(exprtype), GET_LEX_TYPE_STR(argtype));
+			exprtype->to_c_string(), argtype->to_c_string());
 	}
 
 	push(node->_ret_type);

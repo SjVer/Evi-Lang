@@ -144,7 +144,6 @@
 			
 			"patterns": [
 				{ "include": "#types" },
-				{ "match": "*", "scope": "storage.modifier.pointer.evi" },
 				{ "include": "#expressions" },
 				{ "match": ",", "name": "punctuation.delimeter.evi" },
 				{ "include": "#illegals" }
@@ -186,7 +185,6 @@
 
 			"patterns": [
 				{ "include": "#types" },
-				{ "match": "*", "scope": "storage.modifier.pointer.evi" },
 				{ "include": "#function-parameters" },
 				{ "include": "#blocks" },
 				{ "include": "#illegals" }
@@ -201,7 +199,6 @@
 
 			"patterns": [
 				{ "include": "#types" },
-				{ "match": "*", "scope": "storage.modifier.pointer.evi" },
 				{ "include": "#separators" },
 				{ "include": "#illegals" }
 			],
@@ -218,11 +215,28 @@
 				{ "include": "#comments" },
 
 				{ "include": "#separators" },
+				
+				{ "include": "#assignment" },
+
 				{ "include": "#keywords" },
 				{ "include": "#blocks" },
 				{ "include": "#expressions" }
 			]
 		},
+		"assignment":
+		{
+			"begin": "(=)",
+			"beginCaptures": { "0": { "name": "keyword.operator.assignment.evi"} },
+
+			"patterns": [
+				{ "match": "[A-z_]+[0-z_]*", "name": "variable.name.evi" },
+				{ "include": "#expressions" },
+				{ "include": "#illegals" }
+			],
+
+			"end": ";|$"
+		},
+
 		"keywords":
 		{
 			"patterns": [
@@ -244,7 +258,8 @@
 				}
 			]
 		},
-		"blocks": {
+		"blocks":
+		{
 			"name": "meta.statement.block.evi",
 			"begin": "\\{",
 			"patterns": [{ "include": "#declarations" }],
@@ -287,7 +302,7 @@
 				},
 				{
 					"name": "keyword.operator.bitwise.evi",
-					"match": "\\&|\\^|\\|"
+					"match": "&|\\^|\\|"
 				},
 				{
 					"name": "keyword.operator.decrement.evi",
@@ -438,7 +453,6 @@
 		},
 		"types":
 		{
-			"name": "meta.type.evi",
 			"patterns": [
 				{
 					"name": "storage.type.integer.evi",
@@ -459,6 +473,10 @@
 				{
 					"name": "storage.type.character.evi",
 					"match": "chr"
+				},
+				{
+					"name": "storage.modifier.pointer.evi",
+					"match": "\\*"
 				}
 			]
 		},

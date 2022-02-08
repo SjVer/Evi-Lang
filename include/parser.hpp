@@ -33,7 +33,7 @@ private:
 	typedef struct
 	{
 		int depth;
-		map<string, LexicalType> variables;
+		map<string, ParsedType*> variables;
 		FuncProperties func_props;
 		map<string, FuncProperties> functions;
 	} Scope;
@@ -51,11 +51,11 @@ private:
 	bool match(TokenType type);
 	bool is_at_end();
 
-	LexicalType get_variable_type(string name);
+	ParsedType* get_variable_type(string name);
 	FuncProperties get_function_props(string name);
 	bool check_variable(string name);
 	bool check_function(string name);
-	void add_variable(Token* identtoken, LexicalType type);
+	void add_variable(Token* identtoken, ParsedType* type);
 	void add_function(Token* identtoken, FuncProperties properties);
 	void scope_up();
 	void scope_down();

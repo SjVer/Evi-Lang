@@ -228,27 +228,31 @@ llvm::Value* CodeGenerator::create_cast(llvm::Value* srcval, bool srcsigned, llv
 	return _builder->CreateCast(cop, srcval, desttype, "casttmp");
 }
 
-llvm::Type* CodeGenerator::lexical_type_to_llvm(LexicalType type)
+llvm::Type* CodeGenerator::parsed_type_to_llvm(ParsedType* type)
 {
-	switch(type)
+	llvm::Type* ret;
+
+	switch(AS_LEX(type))
 	{
-		case TYPE_INTEGER: 	 return _builder->getInt64Ty();
-		case TYPE_FLOAT:   	 return _builder->getDoubleTy();
-		case TYPE_BOOL:   	 return _builder->getInt1Ty();
-		case TYPE_CHARACTER: return _builder->getInt8Ty();
-		case TYPE_STRING: 	 return _builder->getInt8PtrTy();
+		case TYPE_BOOL:   	 ret = _builder->getInt1Ty(); break;
+		case TYPE_CHARACTER: ret = _builder->getInt8Ty(); break;
+		case TYPE_INTEGER: 	 ret = _builder->getInt32Ty(); break;
+		case TYPE_FLOAT:   	 ret = _builder->getDoubleTy(); break;
 		default: assert(false);
 	}
+
+	for(int i = 0; i < type->_pointer_depth; i++) ret = ret->getPointerTo();
+	return ret;
 }
 
-llvm::Type* CodeGenerator::lexical_type_to_llvm(TokenType type)
+llvm::Type* CodeGenerator::parsed_type_to_llvm(TokenType type)
 {
 	switch(type)
 	{
-		case TOKEN_INTEGER:   return lexical_type_to_llvm(TYPE_INTEGER);
-		case TOKEN_FLOAT: 	  return lexical_type_to_llvm(TYPE_FLOAT);
-		case TOKEN_CHARACTER: return lexical_type_to_llvm(TYPE_CHARACTER);
-		case TOKEN_STRING: 	  return lexical_type_to_llvm(TYPE_STRING);
+		case TOKEN_INTEGER:   return parsed_type_to_llvm(PTYPE(TYPE_INTEGER));
+		case TOKEN_FLOAT: 	  return parsed_type_to_llvm(PTYPE(TYPE_FLOAT));
+		case TOKEN_CHARACTER: return parsed_type_to_llvm(PTYPE(TYPE_CHARACTER));
+		case TOKEN_STRING: 	  return parsed_type_to_llvm(PTYPE(TYPE_CHARACTER, 1));
 		default: assert(false);
 	}
 }
@@ -306,7 +310,7 @@ VISIT(FuncDeclNode)
 
 		// finish off function
 		if(func->getBasicBlockList().back().getInstList().back().isTerminator()) {}
-		else if(node->_ret_type->_lexical_type != TYPE_VOID)
+		else if(node->_ret_type->_parsed_type->_lexical_type != TYPE_VOID)
 		{
 			llvm::Constant* nullret = llvm::Constant::getNullValue(node->_ret_type->get_llvm_type());
 			_builder->CreateRet(nullret);
@@ -351,6 +355,9 @@ VISIT(VarDeclNode)
 			_builder->SetInsertPoint(_global_init_func_block);
 
 			node->_expr->accept(this);
+
+			DEBUG_PRINT_F_MSG("creating cast for %s: %p", node->_identifier.c_str(), pop());
+			assert(false);
 
 			llvm::Value* val = create_cast(pop(), true, node->_type->get_llvm_type(), node->_type->_is_signed);
 			_builder->CreateStore(val, global_var);
@@ -527,7 +534,7 @@ VISIT(LogicalNode)
 		// if block
 		_builder->SetInsertPoint(ifblock);
 		node->_middle->accept(this);
-		llvm::Value* ifval = create_cast(pop(), false, lexical_type_to_llvm(node->_middle->_cast_to), false);
+		llvm::Value* ifval = create_cast(pop(), false, parsed_type_to_llvm(node->_middle->_cast_to), false);
 		_builder->CreateBr(endblock);
 		ifblock = _builder->GetInsertBlock(); // update ifblock
 
@@ -535,7 +542,7 @@ VISIT(LogicalNode)
 		endblock->moveAfter(ifblock);
 		_builder->SetInsertPoint(elseblock);
 		node->_right->accept(this);
-		llvm::Value* elseval = create_cast(pop(), false, lexical_type_to_llvm(node->_right->_cast_to), false);
+		llvm::Value* elseval = create_cast(pop(), false, parsed_type_to_llvm(node->_right->_cast_to), false);
 		_builder->CreateBr(endblock);
 		elseblock = _builder->GetInsertBlock(); // update elseblock
 
@@ -544,11 +551,11 @@ VISIT(LogicalNode)
 		endblock->moveAfter(elseblock);
 
 		// decide on result
-		llvm::PHINode* phi = _builder->CreatePHI(lexical_type_to_llvm(node->_middle->_cast_to), 2, "ternres");
+		llvm::PHINode* phi = _builder->CreatePHI(parsed_type_to_llvm(node->_middle->_cast_to), 2, "ternres");
 		phi->addIncoming(ifval, ifblock);
 		phi->addIncoming(elseval, elseblock);
 
-		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
+		// push(create_cast(phi, false, parsed_type_to_llvm(node->_cast_to), false));
 		push(phi);
 	}
 	else if(node->_token.type == TOKEN_AND_AND) // and
@@ -578,7 +585,7 @@ VISIT(LogicalNode)
 		phi->addIncoming(_builder->getFalse(), start);
 		phi->addIncoming(result, andtwo);
 
-		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
+		// push(create_cast(phi, false, parsed_type_to_llvm(node->_cast_to), false));
 		push(phi);
 	}
 	else if(node->_token.type == TOKEN_PIPE_PIPE) // or
@@ -609,7 +616,7 @@ VISIT(LogicalNode)
 		phi->addIncoming(_builder->getTrue(), start);
 		phi->addIncoming(result, ortwo);
 
-		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
+		// push(create_cast(phi, false, parsed_type_to_llvm(node->_cast_to), false));
 		push(phi);
 	}
 	else assert(false);
@@ -623,11 +630,11 @@ VISIT(BinaryNode)
 	llvm::Value* right = pop();
 	llvm::Value* left = pop();
 
-	LexicalType resulttype = node->_left->_cast_to;
+	ParsedType* resulttype = node->_left->_cast_to;
 
 	switch(node->_optype)
 	{
-		case TOKEN_PIPE: switch(resulttype)
+		case TOKEN_PIPE: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateOr(left, right, "ibotmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateOr(left, right,"fbotmp")); break;
@@ -635,7 +642,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			}
 			break;
-		case TOKEN_CARET: switch(resulttype)
+		case TOKEN_CARET: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateXor(left, right, "ibxtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateXor(left, right,"fbxtmp")); break;
@@ -643,7 +650,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			}
 			break;
-		case TOKEN_AND: switch(resulttype)
+		case TOKEN_AND: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateAnd(left, right, "ibatmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateAnd(left, right,"fbatmp")); break;
@@ -652,7 +659,7 @@ VISIT(BinaryNode)
 			}
 			break;
 
-		case TOKEN_EQUAL_EQUAL: switch(resulttype)
+		case TOKEN_EQUAL_EQUAL: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateICmpEQ(left, right, "ieqtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOEQ(left, right,"feqtmp")); break;
@@ -660,7 +667,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			}
 			break;
-		case TOKEN_SLASH_EQUAL: switch(resulttype)
+		case TOKEN_SLASH_EQUAL: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateICmpNE(left, right, "inetmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpONE(left, right,"fnetmp")); break;
@@ -669,7 +676,7 @@ VISIT(BinaryNode)
 			}
 			break;
 
-		case TOKEN_GREATER_EQUAL: switch(resulttype)
+		case TOKEN_GREATER_EQUAL: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateICmpSGE(left, right, "igetmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOGE(left, right,"fgetmp")); break;
@@ -677,7 +684,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			}
 			break;
-		case TOKEN_LESS_EQUAL: switch(resulttype)
+		case TOKEN_LESS_EQUAL: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLE(left, right, "iletmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOLE(left, right,"fletmp")); break;
@@ -685,7 +692,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			}
 			break;
-		case TOKEN_GREATER: switch(resulttype)
+		case TOKEN_GREATER: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateICmpSGT(left, right, "igttmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOGT(left, right,"fgttmp")); break;
@@ -693,7 +700,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			}
 			break;
-		case TOKEN_LESS: switch(resulttype)
+		case TOKEN_LESS: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLT(left, right, "ilttmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOLT(left, right,"flttmp")); break;
@@ -702,7 +709,7 @@ VISIT(BinaryNode)
 			}
 			break;
 
-		case TOKEN_GREATER_GREATER: switch(resulttype)
+		case TOKEN_GREATER_GREATER: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateLShr(left, right, "isrtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateLShr(left, right,"fsrtmp")); break;
@@ -710,7 +717,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			}
 			break;
-		case TOKEN_LESS_LESS: switch(resulttype)
+		case TOKEN_LESS_LESS: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateShl(left, right, "isltmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateShl(left, right,"fsltmp")); break;
@@ -719,7 +726,7 @@ VISIT(BinaryNode)
 			}
 			break;
 
-		case TOKEN_PLUS: switch(resulttype)
+		case TOKEN_PLUS: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateAdd(left, right, "iaddtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFAdd(left, right,"faddtmp")); break;
@@ -727,7 +734,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			} 
 			break;
-		case TOKEN_MINUS: switch(resulttype)
+		case TOKEN_MINUS: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateSub(left, right, "isubmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFSub(left, right,"fsubmp")); break;
@@ -735,7 +742,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			} 
 			break;
-		case TOKEN_STAR: switch(resulttype)
+		case TOKEN_STAR: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateMul(left, right, "imultmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFMul(left, right,"fmultmp")); break;
@@ -743,7 +750,7 @@ VISIT(BinaryNode)
 				default: assert(false);
 			} 
 			break;
-		case TOKEN_SLASH: switch(resulttype)
+		case TOKEN_SLASH: switch(AS_LEX(resulttype))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateSDiv(left, right, "idivtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFDiv(left, right,"fdivtmp")); break;
@@ -759,21 +766,46 @@ VISIT(BinaryNode)
 VISIT(UnaryNode)
 {
 	node->_expr->accept(this);
-	llvm::Type* casttype = lexical_type_to_llvm(node->_expr->_cast_to);
+	llvm::Type* casttype = parsed_type_to_llvm(node->_expr->_cast_to);
 	llvm::Value* value = create_cast(pop(), false, casttype, false);
 
 	switch(node->_optype)
 	{
-		case TOKEN_MINUS: switch(node->_expr->_cast_to)
+		case TOKEN_STAR:
+		{
+			push(_builder->CreateLoad(value, "dereftmp"));
+			break;	
+		}
+		case TOKEN_AND:
+		{
+			push(llvm::getPointerOperand(value));
+			break;
+		}
+		case TOKEN_BANG:
+		{
+			push(_builder->CreateNot(to_bool(value)));
+			break;
+		}
+
+		case TOKEN_MINUS: switch(AS_LEX(node->_expr->_cast_to))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateNeg(value, "inegtmp")); break;
 				default: assert(false);
 			} 
 			break;
-		case TOKEN_PLUS_PLUS: switch(node->_expr->_cast_to)
+		case TOKEN_PLUS_PLUS: switch(AS_LEX(node->_expr->_cast_to))
 			{
-				case TYPE_INTEGER:   push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "iinctmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "cinctmp")); break;
+				case TYPE_INTEGER:   push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "iinctmp")); break;
+				case TYPE_FLOAT: 	 push(_builder->CreateFAdd(value, llvm::ConstantFP::get(casttype, 1), "finctmp")); break;
+				default: assert(false);
+			} 
+			break;
+		case TOKEN_MINUS_MINUS: switch(AS_LEX(node->_expr->_cast_to))
+			{
+				case TYPE_CHARACTER: push(_builder->CreateSub(value, llvm::ConstantInt::get(casttype, 1), "cdectmp")); break;
+				case TYPE_INTEGER:   push(_builder->CreateSub(value, llvm::ConstantInt::get(casttype, 1), "idectmp")); break;
+				case TYPE_FLOAT: 	 push(_builder->CreateFSub(value, llvm::ConstantFP::get(casttype, 1), "fdectmp")); break;
 				default: assert(false);
 			} 
 			break;
@@ -785,14 +817,14 @@ VISIT(UnaryNode)
 VISIT(GroupingNode)
 {
 	node->_expr->accept(this);
-	llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
+	llvm::Type* casttype = parsed_type_to_llvm(node->_cast_to);
 	push(create_cast(pop(), false, casttype, false));
 }
 
 
 VISIT(LiteralNode)
 {
-	llvm::Type* type = lexical_type_to_llvm(node->_token.type);
+	llvm::Type* type = parsed_type_to_llvm(node->_token.type);
 	llvm::Constant* constant;
 
 	switch(node->_token.type)
@@ -837,7 +869,7 @@ VISIT(LiteralNode)
 		default: assert(false);
 	}
 
-	llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
+	llvm::Type* casttype = parsed_type_to_llvm(node->_cast_to);
 	push(create_cast(constant, false, casttype, false));
 	push(constant);
 }
@@ -859,7 +891,7 @@ VISIT(ReferenceNode)
 	}
 
 	llvm::LoadInst* load = _builder->CreateLoad(type->get_llvm_type(), var, "loadtmp");
-	llvm::Type* casttype = lexical_type_to_llvm(node->_cast_to);
+	llvm::Type* casttype = parsed_type_to_llvm(node->_cast_to);
 	push(create_cast(load, type->_is_signed, casttype, false));
 }
 

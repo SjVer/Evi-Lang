@@ -28,7 +28,8 @@
         "cstdio": "cpp",
         "numeric": "cpp",
         "shared_mutex": "cpp",
-        "memory": "cpp"
+        "memory": "cpp",
+        "algorithm": "cpp"
     },
     "makefile.launchConfigurations": [
         {

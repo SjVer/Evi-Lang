@@ -74,8 +74,8 @@ class CodeGenerator: public Visitor
 	llvm::Value* to_bool(llvm::Value* value);
 	llvm::Value* create_cast(llvm::Value* srcval, bool srcsigned, 
 							 llvm::Type* desttype, bool destsigned);
-	llvm::Type* lexical_type_to_llvm(LexicalType type);
-	llvm::Type* lexical_type_to_llvm(TokenType type);
+	llvm::Type* parsed_type_to_llvm(ParsedType* type);
+	llvm::Type* parsed_type_to_llvm(TokenType type);
 };
 
 #endif

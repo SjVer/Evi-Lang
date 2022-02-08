@@ -19,7 +19,7 @@ variables:
 
   # types
   inttype: '(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1'
-  type: '{{inttype}}|flt|dbl|bln|nll|chr'
+  type: '({{inttype}}|flt|dbl|bln|nll|chr)(\*)*'
 
 contexts:
   # The prototype context is prepended to all contexts but those setting
@@ -189,10 +189,8 @@ contexts:
             - meta_scope: meta.parameter_list.evi
             - include: comment, pre-directive
 
-            - match: '\b{{type}}\b'
+            - match: '\b{{type}}\b|\*'
               scope: variable.parameter.evi
-            - match: \,
-              scope: punctuation.delimeter.parameter.evi
             - match: \)
               pop: true
             - match: \S

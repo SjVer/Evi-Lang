@@ -38,12 +38,12 @@ class TypeChecker: public Visitor
 
 	// bc the visitor methods return void we instead
 	// just use a stack for the stuff
-	stack<LexicalType> _type_stack;
-	void push(LexicalType type);
-	LexicalType pop();
+	stack<ParsedType*> _type_stack;
+	void push(ParsedType* type);
+	ParsedType* pop();
 
-	LexicalType resolve_types(LexicalType left, LexicalType right);
-	bool can_cast_types(LexicalType from, LexicalType to);
+	ParsedType* resolve_types(ParsedType* left, ParsedType* right);
+	bool can_cast_types(ParsedType* from, ParsedType* to);
 };
 
 #endif

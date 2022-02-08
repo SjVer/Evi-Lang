@@ -81,7 +81,8 @@ EviType* Parser::consume_type(string msg)
 	EviType* type =  GET_EVI_TYPE(typestr);
 
 	// get as pointer if applicable
-	while(match(TOKEN_STAR)) type->_pointer_depth++;
+	type->_parsed_type->_pointer_depth = 0;
+	while(match(TOKEN_STAR)) type->_parsed_type->_pointer_depth++;
 
 	return type;
 }
@@ -104,8 +105,8 @@ bool Parser::is_at_end()
 
 // ======================= state =======================
 
-// returns -1 if not found
-LexicalType Parser::get_variable_type(string name)
+// returns nullptr if not found
+ParsedType* Parser::get_variable_type(string name)
 {
 	if(_current_scope.variables.find(name) != _current_scope.variables.end())
 		return _current_scope.variables.at(name);
@@ -115,7 +116,7 @@ LexicalType Parser::get_variable_type(string name)
 		if (scope->variables.find(name) != scope->variables.end())
 			return scope->variables.at(name);
 	}
-	return (LexicalType)-1;
+	return nullptr;
 }
 
 // returns with invalid = true if not found
@@ -135,7 +136,7 @@ Parser::FuncProperties Parser::get_function_props(string name)
 // checks if the given variable already exists
 bool Parser::check_variable(string name)
 {
-	if((int)(get_variable_type(name)) == -1)
+	if(get_variable_type(name) == nullptr)
 		return false;
 	return true;
 }
@@ -148,13 +149,13 @@ bool Parser::check_function(string name)
 	return true;
 }
 
-void Parser::add_variable(Token* identtoken, LexicalType type)
+void Parser::add_variable(Token* identtoken, ParsedType* type)
 {
 	string name = string(identtoken->start, identtoken->length);
 
 	if(check_function(name)) error_at(identtoken, "Function with identical name already exists in current scope.");
 	else if (check_variable(name)) error_at(identtoken, "Variable already exists in current scope.");
-	else _current_scope.variables.insert(pair<string, LexicalType>(name, type));
+	else _current_scope.variables.insert(pair<string, ParsedType*>(name, type));
 }
 
 void Parser::add_function(Token* identtoken, FuncProperties properties)
@@ -181,7 +182,7 @@ void Parser::scope_up()
 	FuncProperties func_props = _current_scope.func_props;
 	
 	_scope_stack.push_back(_current_scope);
-	_current_scope = Scope{depth, map<string, LexicalType>(), func_props, map<string, FuncProperties>()};
+	_current_scope = Scope{depth, map<string, ParsedType*>(), func_props, map<string, FuncProperties>()};
 }
 
 void Parser::scope_down()
@@ -279,7 +280,7 @@ StmtNode* Parser::variable_declaration()
 	// EviType* type = GET_EVI_TYPE(typestr);
 	
 	// add to locals for parser to use
-	for(Token& tok : nametokens) add_variable(&tok, type->_lexical_type);
+	for(Token& tok : nametokens) add_variable(&tok, type->_parsed_type);
 
 	vector<VarDeclNode*> decls;
 	// get initializers(s)?
@@ -343,8 +344,7 @@ StmtNode* Parser::assign_statement()
 	ExprNode* expr = expression();
 	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
 
-	LexicalType vartype = get_variable_type(ident);
-	return new AssignNode(tok, ident, expr, vartype);
+	return new AssignNode(tok, ident, expr, get_variable_type(ident));
 }
 
 StmtNode* Parser::if_statement()
@@ -600,10 +600,10 @@ ExprNode* Parser::factor()
 
 ExprNode* Parser::unary()
 {
-	// unary		: ("!" | "-" | "++" | "--") unary | primary
+	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | primary
 
-	if(match(TOKEN_BANG) || match(TOKEN_MINUS)
-	|| match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS))
+	if(match(TOKEN_BANG) || match(TOKEN_MINUS)     || match(TOKEN_STAR) 
+	|| match(TOKEN_AND)  || match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS))
 	{
 		Token tok = _previous;
 		ExprNode* expr = unary();
@@ -622,9 +622,6 @@ ExprNode* Parser::primary()
 	// call			: IDENT "(" (expression ("," expression)*)? ")"
 	
 	// literals
-	// if(match(TOKEN_INTEGER) || match(TOKEN_FLOAT)
-	// || match(TOKEN_CHARACTER) || match(TOKEN_STRING))
-	// 	return (ExprNode*)(new LiteralNode(_previous, PREV_TOKEN_STR, _previous.type));
 	if(match(TOKEN_INTEGER))
 	{
 		int base = 0;
@@ -661,10 +658,11 @@ ExprNode* Parser::primary()
 		return new LiteralNode(_previous, string(_previous.start + 1, _previous.length - 2));
 	}
 
-
 	// grouping
 	else if(match(TOKEN_LEFT_PAREN))
 	{
+		
+
 		Token tok = _previous;
 		ExprNode* expr = expression();
 		consume(TOKEN_RIGHT_PAREN, "Expected ')' after parenthesized expression.");
@@ -685,7 +683,7 @@ ExprNode* Parser::primary()
 		int arity = _current_scope.func_props.params.size();
 		if(intval >= arity) error(tools::fstr("Parameter reference exceeds arity of %d.", arity));
 
-		LexicalType type = _current_scope.func_props.params[intval]->_lexical_type;
+		ParsedType* type = _current_scope.func_props.params[intval]->_parsed_type;
 		return new ReferenceNode(_previous, "", intval, type);
 	}
 
@@ -713,8 +711,8 @@ ExprNode* Parser::primary()
 		
 		consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
 
-		vector<LexicalType> lexparams; for(EviType*& p : funcprops.params) lexparams.push_back(p->_lexical_type);
-		return new CallNode(tok, name, args, funcprops.ret_type->_lexical_type, lexparams);
+		vector<ParsedType*> lexparams; for(EviType*& p : funcprops.params) lexparams.push_back(p->_parsed_type);
+		return new CallNode(tok, name, args, funcprops.ret_type->_parsed_type, lexparams);
 	}
 
 	error_at_current("Expected expression.");
@@ -732,7 +730,7 @@ Status Parser::parse(string infile, const char* source, AST* astree)
 	_scanner = Scanner(source);
 
 	_scope_stack = vector<Scope>();
-	_current_scope = Scope{0, map<string, LexicalType>(), {}, map<string, FuncProperties>()};
+	_current_scope = Scope{0, map<string, ParsedType*>(), {}, map<string, FuncProperties>()};
 
 	_error_dispatcher = ErrorDispatcher(source, infile.c_str());
 

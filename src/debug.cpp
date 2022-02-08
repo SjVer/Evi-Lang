@@ -214,6 +214,8 @@ VISIT(UnaryNode)
 	int thisnode;
 	switch(node->_optype)
 	{
+		case TOKEN_STAR:  	  	thisnode = ADD_NODE("*"); break;
+		case TOKEN_AND:  	  	thisnode = ADD_NODE("&"); break;
 		case TOKEN_BANG:  	  	thisnode = ADD_NODE("!"); break;
 		case TOKEN_MINUS:  	  	thisnode = ADD_NODE("-"); break;
 		case TOKEN_PLUS_PLUS: 	thisnode = ADD_NODE("++"); break;

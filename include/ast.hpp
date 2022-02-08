@@ -56,7 +56,7 @@ class ASTNode
 	public:
 	ASTNode(Token token): _token(token) {}
 	Token _token;
-	LexicalType _cast_to;
+	ParsedType* _cast_to;
 	virtual void accept(Visitor* v) = 0;
 };
 
@@ -110,13 +110,15 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 	{
 		public:
 
-		AssignNode(Token token, string ident, ExprNode* expr, LexicalType expected_type):
+		AssignNode(Token token, string ident,
+				   ExprNode* expr, ParsedType* expected_type
+				   ):
 			StmtNode(token), _ident(ident), _expr(expr), _expected_type(expected_type) {}
 		ACCEPT
 
 		string _ident;
 		ExprNode* _expr;
-		LexicalType _expected_type;
+		ParsedType* _expected_type;
 	};
 
 	class IfNode: public StmtNode
@@ -252,13 +254,13 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 			{
 				public:
 
-				ReferenceNode(Token token, string var, int par, LexicalType type):
+				ReferenceNode(Token token, string var, int par, ParsedType* type):
 					PrimaryNode(token), _variable(var), _parameter(par), _type(type) {}
 				ACCEPT
 
 				string _variable;
 				int _parameter;
-				LexicalType _type;
+				ParsedType* _type;
 			};
 
 			class CallNode: public PrimaryNode
@@ -266,15 +268,15 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 				public:
 
 				CallNode(Token token, string ident, vector<ExprNode*> arguments,
-						 LexicalType ret_t_type, vector<LexicalType> expected_arg_types):
+						 ParsedType* ret_t_type, vector<ParsedType*> expected_arg_types):
 					PrimaryNode(token), _ident(ident), _arguments(arguments),
 					_ret_type(ret_t_type), _expected_arg_types(expected_arg_types) {}
 				ACCEPT
 
 				string _ident;
 				vector<ExprNode*> _arguments;
-				LexicalType _ret_type;
-				vector<LexicalType> _expected_arg_types;
+				ParsedType* _ret_type;
+				vector<ParsedType*> _expected_arg_types;
 			};
 
 #undef ACCEPT
