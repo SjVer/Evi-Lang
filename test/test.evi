@@ -8,13 +8,13 @@
 %int i32 123;
 %ptr i32* &$int;
 
-@main i64 ()
+@main i32 ()
 {
-	printi($ptr);  \ address
-	printc('\n');
+	\ printi($ptr);  \ address
+	\ printc('\n');
 
-	printi(&$int); \ address
-	printc('\n');
+	\ printi(&$int); \ address
+	\ printc('\n');
 
 	\ printi(*$ptr); \ 123
 	~ 0;

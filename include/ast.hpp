@@ -97,7 +97,8 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 		VarDeclNode(Token token, string identifier,
 					EviType* type, ExprNode* expr, bool is_global):
 			StmtNode(token), _identifier(identifier),
-			_type(type), _expr(expr), _is_global(is_global) {}
+			_type(type), _expr(expr), _is_global(is_global)
+			{ type->_parsed_type = type->_parsed_type->copy(); }
 		ACCEPT
 
 		string _identifier;

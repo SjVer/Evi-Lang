@@ -2,30 +2,41 @@
 
 bool ParsedType::operator==(const ParsedType& rhs)
 {
+	// DEBUG_PRINT_MSG("=======================");
+	// DEBUG_PRINT_VAR(_lexical_type, %d);
+	// DEBUG_PRINT_VAR(rhs._lexical_type, %d);
+	// DEBUG_PRINT_VAR(_pointer_depth, %d);
+	// DEBUG_PRINT_VAR(rhs._pointer_depth, %d);
+	// DEBUG_PRINT_VAR(_is_reference, %d);
+	// DEBUG_PRINT_VAR(rhs._is_reference, %d);
+
 	return _lexical_type == rhs._lexical_type
-		&& _pointer_depth == rhs._pointer_depth
-		&& _is_reference == rhs._is_reference;
+		&& _pointer_depth == rhs._pointer_depth;
+}
+
+ParsedType* ParsedType::copy()
+{
+	ParsedType* ret = new ParsedType(_lexical_type, _pointer_depth, _is_reference);
+	return ret;
 }
 
 ParsedType* ParsedType::copy_change_lex(LexicalType type)
 {
-	ParsedType* ret = new ParsedType();
+	ParsedType* ret = this->copy();
 	ret->_lexical_type = type;
-	ret->_is_reference = _is_reference;
-	ret->_pointer_depth = _pointer_depth;
 	return ret;
 }
 
 ParsedType* ParsedType::copy_inc_depth()
 {
-	ParsedType* ret = new ParsedType(_lexical_type, _pointer_depth, _is_reference);
+	ParsedType* ret = this->copy();
 	ret->_pointer_depth++;
 	return ret;
 }
 
 ParsedType* ParsedType::copy_dec_depth()
 {
-	ParsedType* ret = new ParsedType(_lexical_type, _pointer_depth, _is_reference);
+	ParsedType* ret = this->copy();
 	ret->_pointer_depth--;
 	return ret;
 }

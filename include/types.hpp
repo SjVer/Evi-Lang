@@ -36,6 +36,7 @@ public:
 		_pointer_depth(pointer_depth) {}
 
 	bool operator==(const ParsedType& rhs);
+	ParsedType* copy();
 	ParsedType* copy_change_lex(LexicalType type);
 	ParsedType* copy_inc_depth();
 	ParsedType* copy_dec_depth();
@@ -44,6 +45,7 @@ public:
 
 	LexicalType _lexical_type;
 	bool _is_reference = false;
+	bool _keep_as_reference = false;
 	uint _pointer_depth = 0;
 };
 

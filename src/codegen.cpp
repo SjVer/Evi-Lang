@@ -334,6 +334,9 @@ VISIT(VarDeclNode)
 {
 	if(node->_is_global)
 	{
+		DEBUG_PRINT_F_MSG("decl var '%s' %d", node->_identifier.c_str(), 
+											  node->_type->_parsed_type->_pointer_depth);
+
 		_top_module->getOrInsertGlobal(node->_identifier, node->_type->get_llvm_type());
 		llvm::GlobalVariable* global_var = _top_module->getNamedGlobal(node->_identifier);
 		global_var->setLinkage(llvm::GlobalValue::CommonLinkage);
@@ -762,21 +765,24 @@ VISIT(BinaryNode)
 VISIT(UnaryNode)
 {
 	node->_expr->accept(this);
-	llvm::Type* casttype = parsed_type_to_llvm(node->_expr->_cast_to);
+	ParsedType* parsedtype = node->_expr->_cast_to;
+	llvm::Type* casttype = parsed_type_to_llvm(parsedtype);
 	llvm::Value* value = create_cast(pop(), false, casttype, false);
 
 	switch(node->_optype)
 	{
 		case TOKEN_STAR:
 		{
-			push(_builder->CreateLoad(value, "dereftmp"));
-			break;	
+			// TODO: Cast value to pointer
+			// because now "value" is loaded as i32 and not i32*
+			
+			push(_builder->CreateLoad(casttype->getPointerTo(), value, "dereftmp"));
+			break;
 		}
 		case TOKEN_AND:
 		{
-			// assert(false);
-			// push(_builder->CreatePointerCast(value, casttype));
-			push(_builder->CreatePtrToInt(value, casttype, "addrtmp"));
+			llvm::Value* intval = _builder->CreateIntCast(value, casttype, false);
+			push(_builder->CreatePtrToInt(intval, casttype, "addrtmp"));
 			break;
 		}
 		case TOKEN_BANG:
@@ -888,9 +894,16 @@ VISIT(ReferenceNode)
 		type = _named_values[tools::fstr("%d", node->_parameter)].second;
 	}
 
-	llvm::LoadInst* load = _builder->CreateLoad(type->get_llvm_type(), var, "loadtmp");
-	llvm::Type* casttype = parsed_type_to_llvm(node->_cast_to);
-	push(create_cast(load, type->_is_signed, casttype, false));
+	if(node->_cast_to->_keep_as_reference)
+	{
+		push(var);
+	}
+	else
+	{
+		llvm::LoadInst* load = _builder->CreateLoad(type->get_llvm_type(), var, "loadtmp");
+		llvm::Type* casttype = parsed_type_to_llvm(node->_cast_to);
+		push(create_cast(load, type->_is_signed, casttype, false));
+	}
 }
 
 VISIT(CallNode)

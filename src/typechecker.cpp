@@ -54,7 +54,10 @@ ParsedType* TypeChecker::pop()
 // returns a nullptr if invalid
 ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 {
-	if(left == right || *left == *right) return std::move(left);
+	// DEBUG_PRINT_F_MSG("resolve_types(%s, %s) (%s)", left->to_c_string(), right->to_c_string(),
+	// 												*left == *right ? "same" : "different");
+
+	if(left == right || *left == *right) return left->copy();
 
 	if(left->_pointer_depth == right->_pointer_depth)
 	{
@@ -132,16 +135,17 @@ ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 		}
 	}
 
-	DEBUG_PRINT_MSG("Boutta assert false at the end of resolve_types():");
-	DEBUG_PRINT_F_MSG("    left lextype: %s", GET_LEX_TYPE_STR(AS_LEX(left)));
-	DEBUG_PRINT_F_MSG("    left ptr depth: %d", left->_pointer_depth);
-	DEBUG_PRINT_F_MSG("    right lextype: %s", GET_LEX_TYPE_STR(AS_LEX(right)));
-	DEBUG_PRINT_F_MSG("    right ptr depth: %d", right->_pointer_depth);
+	// DEBUG_PRINT_MSG("Boutta assert false at the end of resolve_types():");
+	// DEBUG_PRINT_F_MSG("    left lextype: %s", GET_LEX_TYPE_STR(AS_LEX(left)));
+	// DEBUG_PRINT_F_MSG("    left ptr depth: %d", left->_pointer_depth);
+	// DEBUG_PRINT_F_MSG("    right lextype: %s", GET_LEX_TYPE_STR(AS_LEX(right)));
+	// DEBUG_PRINT_F_MSG("    right ptr depth: %d", right->_pointer_depth);
 	assert(false);
 }
 
 bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 {
+	if(!from) return false;
 	if(from == to || *from == *to) return true;
 
 	if(from->_pointer_depth == to->_pointer_depth)
@@ -238,8 +242,8 @@ VISIT(VarDeclNode)
 		node->_expr->accept(this);
 		ParsedType* exprtype = pop();
 		ParsedType* result = resolve_types(vartype->_parsed_type, exprtype);
-		
-		if(!can_cast_types(result, vartype->_parsed_type))
+
+		if(!can_cast_types(result ? result : exprtype, vartype->_parsed_type))
 			ERROR_AT(&node->_token, "Cannot initialize variable of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			vartype->to_string().c_str(), exprtype->to_c_string());
@@ -467,6 +471,7 @@ VISIT(UnaryNode)
 			}
 
 			node->_expr->_cast_to = type->copy_inc_depth();
+			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
 		}

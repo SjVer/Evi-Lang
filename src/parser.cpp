@@ -155,7 +155,7 @@ void Parser::add_variable(Token* identtoken, ParsedType* type)
 
 	if(check_function(name)) error_at(identtoken, "Function with identical name already exists in current scope.");
 	else if (check_variable(name)) error_at(identtoken, "Variable already exists in current scope.");
-	else _current_scope.variables.insert(pair<string, ParsedType*>(name, type));
+	else _current_scope.variables.insert(pair<string, ParsedType*>(name, type->copy()));
 }
 
 void Parser::add_function(Token* identtoken, FuncProperties properties)
@@ -274,11 +274,8 @@ StmtNode* Parser::variable_declaration()
 
 	// get type
 	EviType* type = consume_type();
-	// consume(TOKEN_TYPE, "Expected type.");
-	// string typestr = PREV_TOKEN_STR;
-	// if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
-	// EviType* type = GET_EVI_TYPE(typestr);
-	
+	type->_parsed_type->_is_reference = true;
+
 	// add to locals for parser to use
 	for(Token& tok : nametokens) add_variable(&tok, type->_parsed_type);
 
@@ -684,6 +681,7 @@ ExprNode* Parser::primary()
 		if(intval >= arity) error(tools::fstr("Parameter reference exceeds arity of %d.", arity));
 
 		ParsedType* type = _current_scope.func_props.params[intval]->_parsed_type;
+		type->_is_reference = true;
 		return new ReferenceNode(_previous, "", intval, type);
 	}
 
