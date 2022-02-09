@@ -2,21 +2,21 @@
 
 @printi i8 (i64);
 @printc i8 (chr);
-@prints i8 (chr*);
-@scani i64 ();
+\ @prints i8 (chr*);
+\ @scani i64 ();
 
-\ %mystr chr* "yo\n";
 %int i32 123;
 %ptr i32* &$int;
 
 @main i64 ()
 {
-	\ prints("Hello World!\n");
-	\ prints($mystr);
-	=ptr 2;
-	printi($ptr);
-	printi(&$ptr);
-	printi(*$ptr);
+	printi($ptr);  \ address
+	printc('\n');
+
+	printi(&$int); \ address
+	printc('\n');
+
+	\ printi(*$ptr); \ 123
 	~ 0;
 }
 

@@ -356,9 +356,6 @@ VISIT(VarDeclNode)
 
 			node->_expr->accept(this);
 
-			DEBUG_PRINT_F_MSG("creating cast for %s: %p", node->_identifier.c_str(), pop());
-			assert(false);
-
 			llvm::Value* val = create_cast(pop(), true, node->_type->get_llvm_type(), node->_type->_is_signed);
 			_builder->CreateStore(val, global_var);
 			// _builder->CreateAlignedStore(val, global_var, llvm::MaybeAlign(node->_type->_alignment));
@@ -387,7 +384,6 @@ VISIT(VarDeclNode)
 		_named_values[node->_identifier].first = alloca;
 		_named_values[node->_identifier].second = node->_type;
 	}
-	
 }
 
 VISIT(AssignNode)
@@ -778,7 +774,9 @@ VISIT(UnaryNode)
 		}
 		case TOKEN_AND:
 		{
-			push(llvm::getPointerOperand(value));
+			// assert(false);
+			// push(_builder->CreatePointerCast(value, casttype));
+			push(_builder->CreatePtrToInt(value, casttype, "addrtmp"));
 			break;
 		}
 		case TOKEN_BANG:

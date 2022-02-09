@@ -131,7 +131,9 @@ debug: CXXFLAGS += $(DEBUGDEFS)
 debug: printdebug
 debug: all
 
-no-fold: CXXFLAGS += -D DEBUG_NO_FOLD
+.PHONY: debug-no-fold
+debug-no-fold: CXXFLAGS += -D DEBUG_NO_FOLD
+debug-no-fold: debug
 
 .PHONY: valgrind
 valgrind: debug $(APP)
