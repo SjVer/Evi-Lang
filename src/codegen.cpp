@@ -212,7 +212,8 @@ llvm::Value* CodeGenerator::to_bool(llvm::Value* value)
 	llvm::Type* type = value->getType();
 
 	if(type->isIntegerTy())
-		return _builder->CreateTrunc(value, _builder->getInt1Ty(), "itobtmp");
+		// return _builder->CreateTrunc(value, _builder->getInt1Ty(), "itobtmp");
+		return _builder->CreateICmpNE(value, llvm::ConstantInt::get(value->getType(), 0), "itobtmp");
 	else if(type->isFloatTy() || type->isDoubleTy())	
 		return _builder->CreateFCmpONE(value, llvm::ConstantFP::get(__context, llvm::APFloat(0.0)), "ftobtmp");
 	else if(type->isPointerTy())
@@ -551,35 +552,17 @@ VISIT(LogicalNode)
 	}
 	else if(node->_token.type == TOKEN_CARET_CARET) // xor
 	{
-		llvm::BasicBlock* start = _builder->GetInsertBlock();
-		llvm::BasicBlock* andtwo = llvm::BasicBlock::Create(__context, "xortwo", func);
-		llvm::BasicBlock* andcont = llvm::BasicBlock::Create(__context, "xorcont", func);
-
 		// first condition
 		node->_left->accept(this);
-		// llvm::Value* resulta = to_bool(pop());
-		_builder->CreateCondBr(to_bool(pop()), andtwo, andcont);
+		llvm::Value* lhs = to_bool(pop());
 
 		// second condition (only evaluated if first is true)
-		_builder->SetInsertPoint(andtwo);
 		node->_right->accept(this);
-		llvm::Value* result = to_bool(pop());
-		_builder->CreateBr(andcont);
-		andtwo = _builder->GetInsertBlock(); // update andtwo block
+		llvm::Value* rhs = to_bool(pop());
 
-		// patch up
-		_builder->SetInsertPoint(andcont);
-		andcont->moveAfter(andtwo);
-		
 		// decide on result
-		llvm::PHINode *phi = _builder->CreatePHI(_builder->getInt1Ty(), 2, "andres");
-		phi->addIncoming(_builder->getFalse(), start);
-		phi->addIncoming(result, andtwo);
-
-		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
-		push(phi);
+		push(_builder->CreateXor(lhs, rhs));
 	}
-	
 	else if(node->_token.type == TOKEN_AND_AND) // and
 	{
 		llvm::BasicBlock* start = _builder->GetInsertBlock();

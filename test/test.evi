@@ -2,24 +2,11 @@
 
 @printi i8 (i64);
 @printc i8 (chr);
-\ @prints i8 (chr*);
+@prints i8 (chr*);
 \ @scani i64 ();
-
-%int i32 123;
-%ptr i32* &$int;
-%subptr i32** &$ptr;
-%lol i32* $ptr;
-\ %subptr1 i32*** &$subptr;
-\ %subptr2 i32**** &$subptr1;
 
 @main i32 ()
 {
-	printi(*$lol); \ 123
-	printc('\n');
-	printi(*$ptr); \ 123
-
-	\ printi(*$subptr); \ 123
-
-	\ ~ 0;
+	prints("Hello World!");
+	~ 0;
 }
-

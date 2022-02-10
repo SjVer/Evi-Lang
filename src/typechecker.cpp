@@ -435,8 +435,8 @@ VISIT(BinaryNode)
 			else ERROR_AT(&node->_token, "Cannot peform binary operation on expressions of type " \
 				COLOR_BOLD "'%s'" COLOR_NONE ".", right->to_c_string());
 		}
-		if(left != result) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
-		if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
+		if(!left->eq(result)) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
+		if(!right->eq(result)) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
 		
 		node->_left->_cast_to = result;
 		node->_right->_cast_to = result;

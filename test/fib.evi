@@ -1,41 +1,9 @@
 #apply "std-io"
-#flag DEBUG
 
-@printc i8 (chr);
+\ @printc i8 (chr);
 @printi i8 (i64);
+@prints i8 (chr*);
 @scani i64 ();
-
-@getnum i32 ()
-{
-	printc('E');
-	printc('n');
-	printc('t');
-	printc('e');
-	printc('r');
-	printc(' ');
-	printc('t');
-	printc('h');
-	printc('e');
-	printc(' ');
-	printc('n');
-	printc('u');
-	printc('m');
-	printc('b');
-	printc('e');
-	printc('r');
-	printc(' ');
-	printc('o');
-	printc('f');
-	printc(' ');
-	printc('t');
-	printc('e');
-	printc('r');
-	printc('m');
-	printc('s');
-	printc(':');
-	printc(' ');
-	~ scani();
-}
 
 @fib i32 () {
 	%i, n i32;
@@ -47,17 +15,19 @@
 	%tn i32 $t1 + $t2;
 
 	\ get no. of terms from user
-	=n getnum();
+	prints("Enter the number of terms: ");
+	=n scani();
 	\ =n prompti("Enter the number of terms:");
 
 	\ print the first two terms t1 and t2
-	printi($t1); printc('\n');
-	printi($t2); printc('\n');
+	prints("Fibbonaci Series: ");
+	printi($t1);
+	printi($t2);
 	\ printf("Fibonacci Series: %d, %d, ", $t1, $t2);
 
 	\ print 3rd to nth terms
   	!!(=i 3; $i <= $n; =i ++$i;) {
-	    printi($tn); printc('\n');
+	    printi($tn);
 	    \ printf("%d, ", $tn);
 	    =t1 $t2;
 	    =t2 $tn;
@@ -65,9 +35,4 @@
 	}
 }
 
-%zero i32 0;
-
-@main i32 () {
-	fib();
-	~ $zero;
-}
+@main i32 () fib();
