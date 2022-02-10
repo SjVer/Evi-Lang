@@ -273,7 +273,6 @@ Token Scanner::scanToken()
 		case '*': return makeToken(TOKEN_STAR);
 		case '%': return makeToken(TOKEN_MODULO);
 		case '~': return makeToken(TOKEN_TILDE);
-		case '^': return makeToken(TOKEN_CARET);
 		case '@': return makeToken(TOKEN_AT);
 		case ';': return makeToken(TOKEN_SEMICOLON);
 
@@ -286,6 +285,7 @@ Token Scanner::scanToken()
 		case '>': return makeToken(match('=') ? TOKEN_GREATER_EQUAL : match('>') ? TOKEN_GREATER_GREATER : TOKEN_GREATER);
 		
 		case '|': return match('|') ? makeToken(TOKEN_PIPE_PIPE) : makeToken(TOKEN_PIPE);
+		case '^': return match('^') ? makeToken(TOKEN_CARET_CARET) : makeToken(TOKEN_CARET);
 		case '&': return match('&') ? makeToken(TOKEN_AND_AND) : makeToken(TOKEN_AND);
 		case '?': return match('?') ? makeToken(TOKEN_QUESTION_QUESTION) : makeToken(TOKEN_QUESTION);
 		case ':': return match(':') ? makeToken(TOKEN_COLON_COLON) : makeToken(TOKEN_COLON);
@@ -347,7 +347,6 @@ char *getTokenStr(TokenType type)
 		case TOKEN_MODULO: return "MODULO";
 		case TOKEN_TILDE: return "TILDE";
 		case TOKEN_AT: return "AT";
-		case TOKEN_CARET: return "CARET";
 		case TOKEN_HASHTAG: return "HASHTAG";
 
 		// One or two character tokens.
@@ -361,10 +360,12 @@ char *getTokenStr(TokenType type)
 		case TOKEN_LESS_LESS: return "LESS_LESS";
 		case TOKEN_EQUAL: return "EQUAL";
 		case TOKEN_EQUAL_EQUAL: return "EQUAL_EQUAL";
-		case TOKEN_AND: return "AND";
-		case TOKEN_AND_AND: return "AND_AND";
 		case TOKEN_PIPE: return "PIPE";
 		case TOKEN_PIPE_PIPE: return "PIPE_PIPE";
+		case TOKEN_CARET: return "CARET";
+		case TOKEN_CARET_CARET: return "CARET_CARET";
+		case TOKEN_AND: return "AND";
+		case TOKEN_AND_AND: return "AND_AND";
 		case TOKEN_QUESTION: return "QUESTION";
 		case TOKEN_QUESTION_QUESTION: return "QUESTION_QUESTION";
 		case TOKEN_COLON: return "COLON";

@@ -1,22 +1,36 @@
 #include "types.hpp"
 
-bool ParsedType::operator==(const ParsedType& rhs)
+ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
+			   		   bool is_reference, uint pointer_depth)
 {
-	// DEBUG_PRINT_MSG("=======================");
-	// DEBUG_PRINT_VAR(_lexical_type, %d);
-	// DEBUG_PRINT_VAR(rhs._lexical_type, %d);
-	// DEBUG_PRINT_VAR(_pointer_depth, %d);
-	// DEBUG_PRINT_VAR(rhs._pointer_depth, %d);
-	// DEBUG_PRINT_VAR(_is_reference, %d);
-	// DEBUG_PRINT_VAR(rhs._is_reference, %d);
+	_lexical_type = lexical_type;
 
-	return _lexical_type == rhs._lexical_type
-		&& _pointer_depth == rhs._pointer_depth;
+	if(evi_type) _evi_type = evi_type;
+	else switch(lexical_type)
+	{
+		case TYPE_BOOL: 	 _evi_type = GET_EVI_TYPE("bln"); break;
+		case TYPE_CHARACTER: _evi_type = GET_EVI_TYPE("chr"); break;
+		case TYPE_INTEGER: 	 _evi_type = GET_EVI_TYPE("i32"); break;
+		case TYPE_FLOAT: 	 _evi_type = GET_EVI_TYPE("flt"); break;
+		case TYPE_VOID: 	 _evi_type = GET_EVI_TYPE("nll"); break;
+		default: assert(false);
+	}
+
+	_is_reference = is_reference;
+	_pointer_depth = pointer_depth;
+}
+
+// bool ParsedType::operator==(const ParsedType& rhs)
+bool ParsedType::eq(ParsedType* rhs)
+{
+	return _lexical_type == rhs->_lexical_type
+		&& _pointer_depth == rhs->_pointer_depth
+		&& _evi_type == rhs->_evi_type;
 }
 
 ParsedType* ParsedType::copy()
 {
-	ParsedType* ret = new ParsedType(_lexical_type, _pointer_depth, _is_reference);
+	ParsedType* ret = new ParsedType(_lexical_type, _evi_type, _is_reference, _pointer_depth);
 	return ret;
 }
 
@@ -43,7 +57,7 @@ ParsedType* ParsedType::copy_dec_depth()
 
 string ParsedType::to_string()
 {
-	string ret = string(GET_LEX_TYPE_STR(_lexical_type));
+	string ret = _evi_type->_name;
 	for(int i = 0; i < _pointer_depth; i++) ret += "*";
 	return ret;
 }
@@ -54,25 +68,31 @@ const char* ParsedType::to_c_string()
 	return strdup(to_string().c_str());
 }
 
+llvm::Type* ParsedType::get_llvm_type()
+{
+	llvm::Type* ret = _evi_type->_llvm_type;
+	for(int i =0; i < _pointer_depth; i++) ret = ret->getPointerTo();
+	return ret;
+}
+
+bool ParsedType::is_signed()
+{
+	if(_pointer_depth) return false;
+	return _evi_type->_is_signed;
+}
+
+uint ParsedType::get_alignment()
+{
+	if(_pointer_depth) return POINTER_ALIGNMENT;
+	else return _evi_type->_alignment;
+}
+
+
 
 bool EviType::operator==(const EviType& rhs)
 {
-	return _name == rhs._name
-		&& _parsed_type == rhs._parsed_type;
-}
-
-llvm::Type* EviType::get_llvm_type()
-{
-	llvm::Type* ret = _llvm_type;
-	for(int i =0; i < _parsed_type->_pointer_depth; i++) ret = ret->getPointerTo();
-	return ret;
-}
-
-string EviType::to_string()
-{
-	string ret = _name;
-	for(int i = 0; i < _parsed_type->_pointer_depth; i++) ret += "*";
-	return ret;
+	// name is enough
+	return _name == rhs._name;
 }
 
 

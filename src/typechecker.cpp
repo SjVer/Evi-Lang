@@ -55,12 +55,14 @@ ParsedType* TypeChecker::pop()
 ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 {
 	// DEBUG_PRINT_F_MSG("resolve_types(%s, %s) (%s)", left->to_c_string(), right->to_c_string(),
-	// 												*left == *right ? "same" : "different");
+	// 												left->eq(right) ? "same" : "different");
 
-	if(left == right || *left == *right) return left->copy();
+	if(left->eq(right)) return left->copy();
 
 	if(left->_pointer_depth == right->_pointer_depth)
 	{
+		if(left->_lexical_type == right->_lexical_type) return left->copy();
+
 		// just check their types
 		switch(AS_LEX(left))
 		{
@@ -135,18 +137,13 @@ ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 		}
 	}
 
-	// DEBUG_PRINT_MSG("Boutta assert false at the end of resolve_types():");
-	// DEBUG_PRINT_F_MSG("    left lextype: %s", GET_LEX_TYPE_STR(AS_LEX(left)));
-	// DEBUG_PRINT_F_MSG("    left ptr depth: %d", left->_pointer_depth);
-	// DEBUG_PRINT_F_MSG("    right lextype: %s", GET_LEX_TYPE_STR(AS_LEX(right)));
-	// DEBUG_PRINT_F_MSG("    right ptr depth: %d", right->_pointer_depth);
 	assert(false);
 }
 
 bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 {
 	if(!from) return false;
-	if(from == to || *from == *to) return true;
+	if(from->eq(to)) return true;
 
 	if(from->_pointer_depth == to->_pointer_depth)
 	{
@@ -235,20 +232,20 @@ VISIT(FuncDeclNode)
 
 VISIT(VarDeclNode)
 {
-	EviType* vartype = node->_type;
+	ParsedType* vartype = node->_type;
 
 	if(node->_expr)
 	{
 		node->_expr->accept(this);
 		ParsedType* exprtype = pop();
-		ParsedType* result = resolve_types(vartype->_parsed_type, exprtype);
+		ParsedType* result = resolve_types(vartype, exprtype);
 
-		if(!can_cast_types(result ? result : exprtype, vartype->_parsed_type))
+		if(!can_cast_types(result ? result : exprtype, vartype))
 			ERROR_AT(&node->_token, "Cannot initialize variable of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
-			vartype->to_string().c_str(), exprtype->to_c_string());
+			vartype->to_c_string(), exprtype->to_c_string());
 
-		node->_expr->_cast_to = vartype->_parsed_type;
+		node->_expr->_cast_to = vartype;
 	}
 	
 	push(nullptr);
@@ -316,7 +313,7 @@ VISIT(ReturnNode)
 	{
 		node->_expr->accept(this);
 		ParsedType* exprtype = pop();
-		ParsedType* functype = node->_expected_type->_parsed_type;
+		ParsedType* functype = node->_expected_type;
 
 		ParsedType* result = resolve_types(functype, exprtype);
 
@@ -498,12 +495,14 @@ VISIT(UnaryNode)
 		case TOKEN_STAR:
 		{
 			node->_expr->_cast_to = type->copy_dec_depth();
+			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
 		}
 		case TOKEN_AND:
 		{
 			node->_expr->_cast_to = type->copy_inc_depth();
+			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
 		}
@@ -534,7 +533,6 @@ VISIT(GroupingNode)
 	node->_expr->accept(this);
 }
 
-
 VISIT(LiteralNode)
 {
 	switch(node->_token.type)
@@ -542,7 +540,7 @@ VISIT(LiteralNode)
 		case TOKEN_INTEGER: 	node->_cast_to = PTYPE(TYPE_INTEGER);      push(node->_cast_to); break;
 		case TOKEN_FLOAT: 		node->_cast_to = PTYPE(TYPE_FLOAT); 	   push(node->_cast_to); break;
 		case TOKEN_CHARACTER: 	node->_cast_to = PTYPE(TYPE_CHARACTER);    push(node->_cast_to); break;
-		case TOKEN_STRING: 		node->_cast_to = PTYPE(TYPE_CHARACTER, 1); push(node->_cast_to); break;
+		case TOKEN_STRING: 		node->_cast_to = new ParsedType(TYPE_CHARACTER, nullptr, 1); push(node->_cast_to); break;
 		default: assert(false);
 	}
 }
@@ -564,7 +562,7 @@ VISIT(CallNode)
 		ParsedType* result = resolve_types(argtype, exprtype);
 		node->_arguments[i]->_cast_to = argtype;
 
-		if(!can_cast_types(result, argtype)) 
+		if(!can_cast_types(result ? result : exprtype, argtype)) 
 			ERROR_AT(&node->_token, "Cannot implicitly convert argument of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " to parameter's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			exprtype->to_c_string(), argtype->to_c_string());

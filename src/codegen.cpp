@@ -97,6 +97,7 @@ Status CodeGenerator::generate(const char* infile, const char* outfile, const ch
 	_outfile = strdup(outfile);
 	_infile = strdup(infile);
 	_error_dispatcher = ErrorDispatcher(source, _infile);
+
 	prepare();
 
 	// walk the tree
@@ -212,7 +213,6 @@ llvm::Value* CodeGenerator::to_bool(llvm::Value* value)
 
 	if(type->isIntegerTy())
 		return _builder->CreateTrunc(value, _builder->getInt1Ty(), "itobtmp");
-		// return _builder->CreateICmpNE(value, llvm::ConstantInt::get(type, 0), "itobtmp");
 	else if(type->isFloatTy() || type->isDoubleTy())	
 		return _builder->CreateFCmpONE(value, llvm::ConstantFP::get(__context, llvm::APFloat(0.0)), "ftobtmp");
 	else if(type->isPointerTy())
@@ -228,31 +228,14 @@ llvm::Value* CodeGenerator::create_cast(llvm::Value* srcval, bool srcsigned, llv
 	return _builder->CreateCast(cop, srcval, desttype, "casttmp");
 }
 
-llvm::Type* CodeGenerator::parsed_type_to_llvm(ParsedType* type)
-{
-	llvm::Type* ret;
-
-	switch(AS_LEX(type))
-	{
-		case TYPE_BOOL:   	 ret = _builder->getInt1Ty(); break;
-		case TYPE_CHARACTER: ret = _builder->getInt8Ty(); break;
-		case TYPE_INTEGER: 	 ret = _builder->getInt32Ty(); break;
-		case TYPE_FLOAT:   	 ret = _builder->getDoubleTy(); break;
-		default: assert(false);
-	}
-
-	for(int i = 0; i < type->_pointer_depth; i++) ret = ret->getPointerTo();
-	return ret;
-}
-
-llvm::Type* CodeGenerator::parsed_type_to_llvm(TokenType type)
+ParsedType* CodeGenerator::from_token_type(TokenType type)
 {
 	switch(type)
 	{
-		case TOKEN_INTEGER:   return parsed_type_to_llvm(PTYPE(TYPE_INTEGER));
-		case TOKEN_FLOAT: 	  return parsed_type_to_llvm(PTYPE(TYPE_FLOAT));
-		case TOKEN_CHARACTER: return parsed_type_to_llvm(PTYPE(TYPE_CHARACTER));
-		case TOKEN_STRING: 	  return parsed_type_to_llvm(PTYPE(TYPE_CHARACTER, 1));
+		case TOKEN_INTEGER:   return PTYPE(TYPE_INTEGER);
+		case TOKEN_FLOAT: 	  return PTYPE(TYPE_FLOAT);
+		case TOKEN_CHARACTER: return PTYPE(TYPE_CHARACTER);
+		case TOKEN_STRING: 	  return new ParsedType(TYPE_CHARACTER, nullptr, 1);
 		default: assert(false);
 	}
 }
@@ -261,7 +244,7 @@ llvm::Type* CodeGenerator::parsed_type_to_llvm(TokenType type)
 
 #define VISIT(_node) void CodeGenerator::visit(_node* node)
 #define ERROR_AT(token, format, ...) error_at(token, tools::fstr(format, __VA_ARGS__))
-#define SCOPE_UP() map<string, pair<llvm::Value*, EviType*>> oldbindings = _named_values
+#define SCOPE_UP() map<string, pair<llvm::Value*, ParsedType*>> oldbindings = _named_values
 #define SCOPE_DOWN() _named_values = oldbindings
 
 // === Statements ===
@@ -273,7 +256,7 @@ VISIT(FuncDeclNode)
 
 	if(_functions.find(node->_identifier) == _functions.end())
 	{
-		for(EviType*& type : node->_params) params.push_back(type->get_llvm_type());
+		for(ParsedType*& type : node->_params) params.push_back(type->get_llvm_type());
 		
 		llvm::FunctionType* functype = llvm::FunctionType::get(node->_ret_type->get_llvm_type(), params, false);
 		func = llvm::Function::Create(functype, llvm::Function::ExternalLinkage, node->_identifier, *_top_module);
@@ -310,7 +293,7 @@ VISIT(FuncDeclNode)
 
 		// finish off function
 		if(func->getBasicBlockList().back().getInstList().back().isTerminator()) {}
-		else if(node->_ret_type->_parsed_type->_lexical_type != TYPE_VOID)
+		else if(node->_ret_type->_lexical_type != TYPE_VOID)
 		{
 			llvm::Constant* nullret = llvm::Constant::getNullValue(node->_ret_type->get_llvm_type());
 			_builder->CreateRet(nullret);
@@ -334,13 +317,13 @@ VISIT(VarDeclNode)
 {
 	if(node->_is_global)
 	{
-		DEBUG_PRINT_F_MSG("decl var '%s' %d", node->_identifier.c_str(), 
-											  node->_type->_parsed_type->_pointer_depth);
+		// DEBUG_PRINT_F_MSG("decl var '%s' %d", node->_identifier.c_str(), 
+		// 									  node->_type->_pointer_depth);
 
 		_top_module->getOrInsertGlobal(node->_identifier, node->_type->get_llvm_type());
 		llvm::GlobalVariable* global_var = _top_module->getNamedGlobal(node->_identifier);
 		global_var->setLinkage(llvm::GlobalValue::CommonLinkage);
-		global_var->setAlignment(llvm::MaybeAlign(node->_type->_alignment));
+		global_var->setAlignment(llvm::MaybeAlign(node->_type->get_alignment()));
 
 		llvm::Constant* init = llvm::Constant::getNullValue(node->_type->get_llvm_type());
 		global_var->setInitializer(init);
@@ -359,7 +342,7 @@ VISIT(VarDeclNode)
 
 			node->_expr->accept(this);
 
-			llvm::Value* val = create_cast(pop(), true, node->_type->get_llvm_type(), node->_type->_is_signed);
+			llvm::Value* val = create_cast(pop(), false, node->_type->get_llvm_type(), node->_type->is_signed());
 			_builder->CreateStore(val, global_var);
 			// _builder->CreateAlignedStore(val, global_var, llvm::MaybeAlign(node->_type->_alignment));
 		}
@@ -378,7 +361,7 @@ VISIT(VarDeclNode)
 		}
 		else init = llvm::Constant::getNullValue(node->_type->get_llvm_type());
 	
-		init = create_cast(init, true, node->_type->get_llvm_type(), node->_type->_is_signed);
+		init = create_cast(init, true, node->_type->get_llvm_type(), node->_type->is_signed());
 		
 		llvm::AllocaInst* alloca = _builder->CreateAlloca(node->_type->get_llvm_type(), 0, node->_identifier);
 		// _builder->CreateAlignedStore(init, alloca, llvm::MaybeAlign(node->_type->_alignment));
@@ -392,13 +375,13 @@ VISIT(VarDeclNode)
 VISIT(AssignNode)
 {
 	llvm::Value* var = _named_values[node->_ident].first;
-	EviType* type = _named_values[node->_ident].second;
+	ParsedType* type = _named_values[node->_ident].second;
 
 	node->_expr->accept(this);
 	llvm::Value* rawval = pop();
 
 	llvm::Instruction::CastOps cop = llvm::CastInst::getCastOpcode(
-		rawval, true, type->get_llvm_type(), type->_is_signed);
+		rawval, true, type->get_llvm_type(), type->is_signed());
 	llvm::Value* val = _builder->CreateCast(cop, rawval, type->get_llvm_type());
 	
 	_builder->CreateStore(val, var);
@@ -437,30 +420,7 @@ VISIT(IfNode)
 
 VISIT(LoopNode)
 {
-	/*
-		; for(int i = 0; i < 10; i++) ...
-
-		entry:
-			...
-			alloca i 
-			store 0 to i
-			br cond
-
-		cond:
-			cmpless i 10
-			brcond end loop
-		
-		loop:
-			...
-			store i + 1 to i
-			br cond
-
-		end:
-			...
-	*/
-
 	llvm::Function* func = _builder->GetInsertBlock()->getParent();
-	// llvm::BasicBlock* preheaderblock = _builder->GetInsertBlock();
 	llvm::BasicBlock* condblock = llvm::BasicBlock::Create(__context, "loopcond", func);
 	llvm::BasicBlock* loopblock = llvm::BasicBlock::Create(__context, "loopbody", func);
 	llvm::BasicBlock* endblock = llvm::BasicBlock::Create(__context, "loopcont", func);
@@ -488,7 +448,6 @@ VISIT(LoopNode)
 	_builder->SetInsertPoint(endblock);
 	endblock->moveAfter(loopblock);
 	SCOPE_DOWN();
-	
 }
 
 VISIT(ReturnNode)
@@ -533,7 +492,8 @@ VISIT(LogicalNode)
 		// if block
 		_builder->SetInsertPoint(ifblock);
 		node->_middle->accept(this);
-		llvm::Value* ifval = create_cast(pop(), false, parsed_type_to_llvm(node->_middle->_cast_to), false);
+		ParsedType* casttype = node->_middle->_cast_to;
+		llvm::Value* ifval = create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed());
 		_builder->CreateBr(endblock);
 		ifblock = _builder->GetInsertBlock(); // update ifblock
 
@@ -541,7 +501,8 @@ VISIT(LogicalNode)
 		endblock->moveAfter(ifblock);
 		_builder->SetInsertPoint(elseblock);
 		node->_right->accept(this);
-		llvm::Value* elseval = create_cast(pop(), false, parsed_type_to_llvm(node->_right->_cast_to), false);
+		casttype = node->_right->_cast_to;
+		llvm::Value* elseval = create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed());
 		_builder->CreateBr(endblock);
 		elseblock = _builder->GetInsertBlock(); // update elseblock
 
@@ -550,41 +511,11 @@ VISIT(LogicalNode)
 		endblock->moveAfter(elseblock);
 
 		// decide on result
-		llvm::PHINode* phi = _builder->CreatePHI(parsed_type_to_llvm(node->_middle->_cast_to), 2, "ternres");
+		llvm::PHINode* phi = _builder->CreatePHI(node->_middle->_cast_to->get_llvm_type(), 2, "ternres");
 		phi->addIncoming(ifval, ifblock);
 		phi->addIncoming(elseval, elseblock);
 
-		// push(create_cast(phi, false, parsed_type_to_llvm(node->_cast_to), false));
-		push(phi);
-	}
-	else if(node->_token.type == TOKEN_AND_AND) // and
-	{
-		llvm::BasicBlock* start = _builder->GetInsertBlock();
-		llvm::BasicBlock* andtwo = llvm::BasicBlock::Create(__context, "andtwo", func);
-		llvm::BasicBlock* andcont = llvm::BasicBlock::Create(__context, "andcont", func);
-
-		// first condition
-		node->_left->accept(this);
-		// llvm::Value* resulta = to_bool(pop());
-		_builder->CreateCondBr(to_bool(pop()), andtwo, andcont);
-
-		// second condition (only evaluated if first is true)
-		_builder->SetInsertPoint(andtwo);
-		node->_right->accept(this);
-		llvm::Value* result = to_bool(pop());
-		_builder->CreateBr(andcont);
-		andtwo = _builder->GetInsertBlock(); // update andtwo block
-
-		// patch up
-		_builder->SetInsertPoint(andcont);
-		andcont->moveAfter(andtwo);
-		
-		// decide on result
-		llvm::PHINode *phi = _builder->CreatePHI(_builder->getInt1Ty(), 2, "andres");
-		phi->addIncoming(_builder->getFalse(), start);
-		phi->addIncoming(result, andtwo);
-
-		// push(create_cast(phi, false, parsed_type_to_llvm(node->_cast_to), false));
+		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
 		push(phi);
 	}
 	else if(node->_token.type == TOKEN_PIPE_PIPE) // or
@@ -615,9 +546,71 @@ VISIT(LogicalNode)
 		phi->addIncoming(_builder->getTrue(), start);
 		phi->addIncoming(result, ortwo);
 
-		// push(create_cast(phi, false, parsed_type_to_llvm(node->_cast_to), false));
+		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
 		push(phi);
 	}
+	else if(node->_token.type == TOKEN_CARET_CARET) // xor
+	{
+		llvm::BasicBlock* start = _builder->GetInsertBlock();
+		llvm::BasicBlock* andtwo = llvm::BasicBlock::Create(__context, "xortwo", func);
+		llvm::BasicBlock* andcont = llvm::BasicBlock::Create(__context, "xorcont", func);
+
+		// first condition
+		node->_left->accept(this);
+		// llvm::Value* resulta = to_bool(pop());
+		_builder->CreateCondBr(to_bool(pop()), andtwo, andcont);
+
+		// second condition (only evaluated if first is true)
+		_builder->SetInsertPoint(andtwo);
+		node->_right->accept(this);
+		llvm::Value* result = to_bool(pop());
+		_builder->CreateBr(andcont);
+		andtwo = _builder->GetInsertBlock(); // update andtwo block
+
+		// patch up
+		_builder->SetInsertPoint(andcont);
+		andcont->moveAfter(andtwo);
+		
+		// decide on result
+		llvm::PHINode *phi = _builder->CreatePHI(_builder->getInt1Ty(), 2, "andres");
+		phi->addIncoming(_builder->getFalse(), start);
+		phi->addIncoming(result, andtwo);
+
+		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
+		push(phi);
+	}
+	
+	else if(node->_token.type == TOKEN_AND_AND) // and
+	{
+		llvm::BasicBlock* start = _builder->GetInsertBlock();
+		llvm::BasicBlock* andtwo = llvm::BasicBlock::Create(__context, "andtwo", func);
+		llvm::BasicBlock* andcont = llvm::BasicBlock::Create(__context, "andcont", func);
+
+		// first condition
+		node->_left->accept(this);
+		// llvm::Value* resulta = to_bool(pop());
+		_builder->CreateCondBr(to_bool(pop()), andtwo, andcont);
+
+		// second condition (only evaluated if first is true)
+		_builder->SetInsertPoint(andtwo);
+		node->_right->accept(this);
+		llvm::Value* result = to_bool(pop());
+		_builder->CreateBr(andcont);
+		andtwo = _builder->GetInsertBlock(); // update andtwo block
+
+		// patch up
+		_builder->SetInsertPoint(andcont);
+		andcont->moveAfter(andtwo);
+		
+		// decide on result
+		llvm::PHINode *phi = _builder->CreatePHI(_builder->getInt1Ty(), 2, "andres");
+		phi->addIncoming(_builder->getFalse(), start);
+		phi->addIncoming(result, andtwo);
+
+		// push(create_cast(phi, false, lexical_type_to_llvm(node->_cast_to), false));
+		push(phi);
+	}
+	
 	else assert(false);
 }
 
@@ -766,23 +759,25 @@ VISIT(UnaryNode)
 {
 	node->_expr->accept(this);
 	ParsedType* parsedtype = node->_expr->_cast_to;
-	llvm::Type* casttype = parsed_type_to_llvm(parsedtype);
-	llvm::Value* value = create_cast(pop(), false, casttype, false);
+	llvm::Type* casttype = parsedtype->get_llvm_type();
+	llvm::Value* value = pop();
+
+	if(node->_optype != TOKEN_STAR && node->_optype != TOKEN_AND)
+		value = create_cast(value, false, casttype, parsedtype->is_signed());
 
 	switch(node->_optype)
 	{
 		case TOKEN_STAR:
 		{
-			// TODO: Cast value to pointer
-			// because now "value" is loaded as i32 and not i32*
-			
-			push(_builder->CreateLoad(casttype->getPointerTo(), value, "dereftmp"));
+			// if(casttype->isPointerTy())
+				value = _builder->CreateLoad(casttype->getPointerTo(), value,
+					tools::fstr("predtmp_%d_", parsedtype->_pointer_depth));
+			push(_builder->CreateLoad(casttype, value, "dereftmp"));
 			break;
 		}
 		case TOKEN_AND:
 		{
-			llvm::Value* intval = _builder->CreateIntCast(value, casttype, false);
-			push(_builder->CreatePtrToInt(intval, casttype, "addrtmp"));
+			push(_builder->CreatePtrToInt(value, casttype, "addrtmp"));
 			break;
 		}
 		case TOKEN_BANG:
@@ -821,26 +816,26 @@ VISIT(UnaryNode)
 VISIT(GroupingNode)
 {
 	node->_expr->accept(this);
-	llvm::Type* casttype = parsed_type_to_llvm(node->_cast_to);
-	push(create_cast(pop(), false, casttype, false));
+	ParsedType* casttype = node->_cast_to;
+	push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
 }
 
 
 VISIT(LiteralNode)
 {
-	llvm::Type* type = parsed_type_to_llvm(node->_token.type);
+	ParsedType* type = from_token_type(node->_token.type);
 	llvm::Constant* constant;
 
 	switch(node->_token.type)
 	{
 		case TOKEN_INTEGER:
-			constant = llvm::ConstantInt::get(type, node->_int_value, false);
+			constant = llvm::ConstantInt::get(type->get_llvm_type(), node->_int_value, false);
 			break;
 		case TOKEN_CHARACTER:
-			constant = llvm::ConstantInt::get(type, node->_char_value, false);
+			constant = llvm::ConstantInt::get(type->get_llvm_type(), node->_char_value, false);
 			break;
 		case TOKEN_FLOAT:
-			constant = llvm::ConstantFP::get(type, node->_float_value);
+			constant = llvm::ConstantFP::get(type->get_llvm_type(), node->_float_value);
 			break;
 		case TOKEN_STRING:
 		{
@@ -873,15 +868,14 @@ VISIT(LiteralNode)
 		default: assert(false);
 	}
 
-	llvm::Type* casttype = parsed_type_to_llvm(node->_cast_to);
-	push(create_cast(constant, false, casttype, false));
-	push(constant);
+	ParsedType* casttype = node->_cast_to;
+	push(create_cast(constant, type->is_signed(), casttype->get_llvm_type(), casttype->is_signed()));
 }
 
 VISIT(ReferenceNode)
 {
 	llvm::Value* var = nullptr;
-	EviType* type = nullptr;
+	ParsedType* type = nullptr;
 
 	if(node->_token.type == TOKEN_VARIABLE_REF)
 	{
@@ -896,13 +890,14 @@ VISIT(ReferenceNode)
 
 	if(node->_cast_to->_keep_as_reference)
 	{
+		// DEBUG_PRINT_F_MSG("kept '%s' as ref", node->_variable.c_str());
 		push(var);
 	}
 	else
 	{
 		llvm::LoadInst* load = _builder->CreateLoad(type->get_llvm_type(), var, "loadtmp");
-		llvm::Type* casttype = parsed_type_to_llvm(node->_cast_to);
-		push(create_cast(load, type->_is_signed, casttype, false));
+		ParsedType* casttype = node->_cast_to;
+		push(create_cast(load, type->is_signed(), casttype->get_llvm_type(), casttype->is_signed()));
 	}
 }
 
@@ -917,7 +912,7 @@ VISIT(CallNode)
 		node->_arguments[i]->accept(this);
 		llvm::Type* casttype = callee->getArg(i)->getType();
 		
-		args.push_back(create_cast(pop(), false, casttype, false));
+		args.push_back(create_cast(pop(), false, casttype, node->_expected_arg_types[i]->is_signed()));
 	}
 
 	push(_builder->CreateCall(callee, args, "calltmp"));

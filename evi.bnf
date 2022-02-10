@@ -25,7 +25,8 @@ block			: "{" declaration* "}"
 expression		: ternary
 
 ternary			: logical_or ("?" expression ":" ternary)?
-logical_or		: logical_and ("||" logical_and)*
+logical_or		: logical_xor ("||" logical_xor)*
+logical_or		: logical_and ("^^" logical_and)*
 logical_and		: bitwise_or ("&&" bitwise_or)*
 bitwise_or		: bitwise_xor ("|" bitwise_xor)*
 bitwise_xor		: bitwise_and ("^" bitwise_and)*

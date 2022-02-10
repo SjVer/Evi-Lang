@@ -77,15 +77,15 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 		public:
 
 		// body = nullptr if only declaration
-		FuncDeclNode(Token token, string identifier, EviType* ret_type,
-					 vector<EviType*> params, StmtNode* body):
+		FuncDeclNode(Token token, string identifier, ParsedType* ret_type,
+					 vector<ParsedType*> params, StmtNode* body):
 			StmtNode(token), _identifier(identifier), 
 			_ret_type(ret_type), _params(params), _body(body) {}
 		ACCEPT
 
 		string _identifier;
-		EviType* _ret_type;
-		vector<EviType*> _params;
+		ParsedType* _ret_type;
+		vector<ParsedType*> _params;
 		StmtNode* _body; // nullptr if only declared
 	};
 
@@ -95,14 +95,14 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 
 		// expr = nullptr if only declaration
 		VarDeclNode(Token token, string identifier,
-					EviType* type, ExprNode* expr, bool is_global):
+					ParsedType* type, ExprNode* expr, bool is_global):
 			StmtNode(token), _identifier(identifier),
 			_type(type), _expr(expr), _is_global(is_global)
-			{ type->_parsed_type = type->_parsed_type->copy(); }
+			{ type = type->copy(); }
 		ACCEPT
 
 		string _identifier;
-		EviType* _type;
+		ParsedType* _type;
 		ExprNode* _expr;
 		bool _is_global;
 	};
@@ -112,8 +112,7 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 		public:
 
 		AssignNode(Token token, string ident,
-				   ExprNode* expr, ParsedType* expected_type
-				   ):
+				   ExprNode* expr, ParsedType* expected_type):
 			StmtNode(token), _ident(ident), _expr(expr), _expected_type(expected_type) {}
 		ACCEPT
 
@@ -157,12 +156,12 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 	{
 		public:
 
-		ReturnNode(Token token, ExprNode* expr, EviType* expected_type):
+		ReturnNode(Token token, ExprNode* expr, ParsedType* expected_type):
 			StmtNode(token), _expr(expr), _expected_type(expected_type) {}
 		ACCEPT
 
 		ExprNode* _expr;
-		EviType* _expected_type;
+		ParsedType* _expected_type;
 	};
 
 	class BlockNode: public StmtNode

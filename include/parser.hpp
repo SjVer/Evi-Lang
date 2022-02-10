@@ -24,8 +24,8 @@ private:
 
 	typedef struct
 	{
-		EviType* ret_type;
-		vector<EviType*> params;
+		ParsedType* ret_type;
+		vector<ParsedType*> params;
 		bool defined;
 		bool invalid = false;
 	} FuncProperties;
@@ -47,7 +47,7 @@ private:
 	void advance();
 	bool check(TokenType type);
 	void consume(TokenType type, string message);
-	EviType* consume_type(string msg = "Expected type.");
+	ParsedType* consume_type(string msg = "Expected type.");
 	bool match(TokenType type);
 	bool is_at_end();
 
@@ -74,6 +74,7 @@ private:
 			ExprNode* expression();
 			ExprNode* ternary();
 			ExprNode* logical_or();
+			ExprNode* logical_xor();
 			ExprNode* logical_and();
 			ExprNode* bitwise_or();
 			ExprNode* bitwise_xor();

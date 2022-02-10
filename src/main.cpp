@@ -22,11 +22,11 @@ struct arguments
 {
 	char *args[ARGS_COUNT];	/* script */
 	char *outfile;
-	int verbose;			/* The -v flag */
-	bool emit_llvm;
-	bool generate_ast;
-	bool compile_only;
-	bool output_given;
+	int verbose = 0;			/* The -v flag */
+	bool emit_llvm = false;
+	bool generate_ast = false;
+	bool compile_only = false;
+	bool output_given = false;
 };
 
 static struct argp_option options[] =

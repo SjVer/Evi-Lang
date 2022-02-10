@@ -61,7 +61,7 @@ class CodeGenerator: public Visitor
 
 	stack<llvm::Value*>* _value_stack;
 	map<string, llvm::Function*> _functions;
-	map<string, pair<llvm::Value*, EviType*>> _named_values;
+	map<string, pair<llvm::Value*, ParsedType*>> _named_values;
 
 	void error_at(Token *token, string message);
 	void warning_at(Token *token, string message);
@@ -74,8 +74,8 @@ class CodeGenerator: public Visitor
 	llvm::Value* to_bool(llvm::Value* value);
 	llvm::Value* create_cast(llvm::Value* srcval, bool srcsigned, 
 							 llvm::Type* desttype, bool destsigned);
-	llvm::Type* parsed_type_to_llvm(ParsedType* type);
-	llvm::Type* parsed_type_to_llvm(TokenType type);
+
+	ParsedType* from_token_type(TokenType type);
 };
 
 #endif

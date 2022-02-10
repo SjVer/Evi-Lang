@@ -84,6 +84,8 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define CC_ARGS CC_PATH, infile, "-o", outfile, "-L" STDLIB_DIR, "-levi"
 #define CC_ARGC 6
 
+#define POINTER_ALIGNMENT 8
+
 // status enum
 typedef enum
 {
