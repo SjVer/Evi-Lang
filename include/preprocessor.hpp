@@ -11,7 +11,6 @@ class Preprocessor
 {
 public:
 	Preprocessor():
-		_result_source(),
 		_current_file() {}
 	Status preprocess(string infile, const char* source);
 
@@ -33,20 +32,36 @@ private:
 		DIR_NONE
 	} DirectiveType;
 
-	typedef void(Preprocessor::*DirectiveHandler)(string);
+	typedef void(Preprocessor::*DirectiveHandler)(string, uint);
 
 	// methods
+	#define ERR_PROMPT "Preprocessing Error"
+	#define ERROR(line, msg) { \
+		_error_dispatcher.dispatch_error_at_ln(\
+		line, ERR_PROMPT, msg); _had_error = true; }
+	#define ERROR_F(line, format, ...) { _error_dispatcher.dispatch_error_at_ln(\
+		line, ERR_PROMPT, tools::fstr(format, __VA_ARGS__).c_str()); _had_error = true; }
+
 	string strip_start(string str);
+	bool consume_identifier(string* str, string* dest, uint line);
 
 	DirectiveType get_directive_type(string str);
-	DirectiveFn get_directive_fn(DirectiveType type);
+	DirectiveHandler get_directive_handler(DirectiveType type);
 	void handle_directive(string line);
+	void append_line_marker(uint line);
+
+	#define HANDLER(name) void handle_directive_##name(string line, uint line_idx)
+		HANDLER(apply);
+		HANDLER(flag);
+	#undef HANDLER
 
 	// members
 	vector<string> _lines;
-	string _result_source;
 	string _current_file;
 
+	vector<string> _flags;
+
+	bool _had_error;
 	ErrorDispatcher _error_dispatcher;
 };
 

@@ -93,11 +93,12 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 	if(after1 	 != "") cerr << after1 << endl;
 }
 
-void ErrorDispatcher::__dispatch(bool at, Token* t, const char* c, const char* p, const char* m)
+void ErrorDispatcher::__dispatch(bool at, Token* t, const char* c,
+								 const char* p, const char* m, uint line)
 {
     fprintf(stderr, "[%s:%d%s] %s%s" COLOR_NONE, _infile, 
-		at ? t->line : 0,
-		at ? "" : "\b\b", c, p);
+		at ? t->line : line ? line : 0,
+		(at || line) ? "" : "\b\b", c, p);
 
     if (at && t->type == TOKEN_EOF) 
 		fprintf(stderr, " at end");
@@ -115,6 +116,11 @@ void ErrorDispatcher::dispatch_error(const char* prompt, const char* message)
 void ErrorDispatcher::dispatch_error_at(Token *token, const char* prompt, const char* message)
 {
     __dispatch(true, token, COLOR_RED, prompt, message);
+}
+
+void ErrorDispatcher::dispatch_error_at_ln(uint line, const char* prompt, const char* message)
+{
+    __dispatch(false, nullptr, COLOR_RED, prompt, message, line);
 }
 
 void ErrorDispatcher::dispatch_warning(const char* prompt, const char* message)

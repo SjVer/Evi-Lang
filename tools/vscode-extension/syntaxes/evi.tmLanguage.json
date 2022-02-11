@@ -52,13 +52,13 @@
 					]
 				},
 				{
-					"begin": "^\\s*((#)\\s*(flag))\\b\\s*",
+					"begin": "^\\s*((#)\\s*(flag|unflag))\\b\\s*",
 					"beginCaptures": {
 						"1": {
 							"name": "keyword.control.directive.evi"
 						},
 						"2": {
-							"name": "punctuation.definition.directive.evi"
+							"name": "punctuation.definition.directive.flag.evi"
 						}
 					},
 					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
@@ -66,10 +66,37 @@
 					"patterns": [
 						{
 							"match": "[A-z_]+[0-z_]*",
-							"name": "entity.name.function.flag.evi"
+							"name": "entity.name.function.preprocessor.flag.evi"
 						},
 						{ "include": "#illegals" }
 					]
+				},
+				{
+					"begin": "^\\s*((#)\\s*(ifset|ifnset))\\b\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.directive.evi"
+						},
+						"2": {
+							"name": "punctuation.definition.directive.conditional.evi"
+						}
+					},
+					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
+					"name": "meta.preprocessor.flag.evi",
+					"patterns": [
+						{
+							"match": "[A-z_]+[0-z_]*",
+							"name": "entity.name.function.preprocessor.flag.evi"
+						},
+						{ "include": "#illegals" }
+					]
+				},
+				{
+					"match": "^\\s*((#)\\s*(else|endif))\\b\\s*",
+					"captures": {
+						"0": { "name": "keyword.control.directive.evi" },
+						"1": { "name": "punctuation.defenition.directive.conditional.evi" }
+					}
 				}
 			]
 		},

@@ -8,8 +8,8 @@
 	func(123);
 
 	\ #ifset DEBUG
-		~ 0;
+	\ 	~ 0;
 	\ #else
-		~ 1;
+	\ 	~ 1;
 	\ #endif
 }
