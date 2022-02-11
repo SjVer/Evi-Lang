@@ -1,12 +1,7 @@
 #apply "std-io"
 
-@printi i8 (i64);
-@printc i8 (chr);
-@prints i8 (chr*);
-\ @scani i64 ();
-
 @main i32 ()
 {
-	prints("Hello World!");
+	printi(123);
 	~ 0;
 }

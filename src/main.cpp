@@ -3,6 +3,7 @@
 #include "common.hpp"
 #include "parser.hpp"
 #include "typechecker.hpp"
+#include "preprocessor.hpp"
 #include "codegen.hpp"
 #include "debug.hpp"
 
@@ -22,7 +23,8 @@ struct arguments
 {
 	char *args[ARGS_COUNT];	/* script */
 	char *outfile;
-	int verbose = 0;			/* The -v flag */
+	int verbose = 0;		/* The -v flag */
+	bool preprocess_only = false;
 	bool emit_llvm = false;
 	bool generate_ast = false;
 	bool compile_only = false;
@@ -33,6 +35,7 @@ static struct argp_option options[] =
 {
 	{"verbose", 'v', 0, 0, "Produce verbose output."},
 	{"output",  'o', "OUTFILE", 0, "Output to OUTFILE instead of to standard output."},
+	{0, 'E', 0, 0, "Preprocess only but do not compile or link."},
 	{"compile-only", 'c', 0, 0, "Compile and assemble but do not link."},
 	{"emit-llvm",  ARG_EMIT_LLVM, 0, 0, "Emit llvm IR instead of an executable."},
 	{"generate-ast",  ARG_GEN_AST, 0, 0, "Generate AST image (for debugging purposes)."},
@@ -52,6 +55,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'o':
 		arguments->outfile = arg;
 		arguments->output_given = true;
+		break;
+	case 'E':
+		arguments->preprocess_only = true;
 		break;
 	case 'c':
 		arguments->compile_only = true;
@@ -148,6 +154,8 @@ int main(int argc, char **argv)
 		cout << "[evi] AST image written to \"" + string(arguments.args[0]) + ".svg\"." << endl;
 	}
 
+	// TODO: make sure that e.g. --emit-llvm and --compile-only don't go together :)
+	//		 then start working on the curseth preprocessoreth.
 
 	// type check
 	TypeChecker checker;

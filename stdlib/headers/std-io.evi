@@ -45,7 +45,7 @@
 \? writes a string to stdout
 \? @param 0 the string to print out
 \? @ret the amount of printed characters or a negative number if prints failed
-@prints i8 (str);
+@prints i8 (chr[]);
 
 \? tries to read an integer from stdin (without detecting invalid input)
 \? @ret the scanned integer

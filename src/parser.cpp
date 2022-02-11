@@ -85,8 +85,8 @@ ParsedType* Parser::consume_type(string msg)
 	type->_is_reference = true;
 	type->_pointer_depth = 0;
 
-	// get as pointer if applicable
-	while(match(TOKEN_STAR)) type->_pointer_depth++;
+	// // get as pointer if applicable
+	// while(match(TOKEN_STAR)) type->_pointer_depth++;
 
 	return type;
 }

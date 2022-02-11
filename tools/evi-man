@@ -43,6 +43,12 @@ Emit llvm IR instead of an executable.
 
 .INDENT 0.0
 .TP
+.B \-E
+Preprocess only but do not compile or link.
+.UNINDENT
+
+.INDENT 0.0
+.TP
 .B \--generate-ast
 Generate AST image (for debugging purposes).
 .UNINDENT
