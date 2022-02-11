@@ -1,7 +1,15 @@
-#apply "std-io"
+\ #apply "std-io"
+#apply "header"
+
+#flag DEBUG
 
 @main i32 ()
 {
-	printi(123);
-	~ 0;
+	func(123);
+
+	\ #ifset DEBUG
+		~ 0;
+	\ #else
+		~ 1;
+	\ #endif
 }

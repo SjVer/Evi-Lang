@@ -2,12 +2,14 @@
 #define TOOLS_H
 
 #include <string>
+#include <vector>
 
 using namespace std;
 
 namespace tools {
 
     // string ops
+    vector<string> split_string(const string& str, const string& delimiter);
     string fstr(string format, ...);
     string replacestr(string source, string oldstring, string newstring);
     char escchr(char ogchar);
@@ -18,5 +20,6 @@ namespace tools {
     // file ops
     int execbin(const char* executable, const char** argv);
     string readf(string path);
+    void writef(string path, string text);
 }
 #endif

@@ -254,12 +254,35 @@ contexts:
         scope: constant.other.placeholder.evi
 
   pre-directive:
-    - match: ^\s*#
-      scope: keyword.preprocessor.evi
+    - match: ^\s*#apply
+      scope: keyword.preprocessor.apply.evi
       push:
-        - meta_scope: keyword.preprocessor.evi
-        - match: ' '
-          set:
-            - include: string-char
-            - match: $\n?
-              pop: true
+        - include: string-char
+        - match: $\n?
+          pop: true
+        - include: invalids
+
+    - match: ^\s*#(flag|unflag)
+      scope: keyword.preprocessor.flag.evi
+      push:
+        - match: '[A-Za-z_]+[A-Za-z_0-9]*'
+          scope: entity.name.constant.preprocessor.evi
+        - match: $\n?
+          pop: true
+        - include: invalids
+
+    - match: ^\s*#(ifset|ifnset)
+      scope: keyword.preprocessor.conditional.evi
+      push:
+        - match: '[A-Za-z_]+[A-Za-z_0-9]*'
+          scope: entity.name.constant.preprocessor.evi
+        - match: $\n?
+          pop: true
+        - include: invalids
+
+    - match: ^\s*#(else|endif)
+      scope: keyword.preprocessor.conditional.evi
+      push:
+        - match: $\n?
+          pop: true
+        - include: invalids

@@ -15,9 +15,26 @@
 
 using namespace std;
 
-// ==============================
-
 // ========= string ops =========
+
+// split string by delimeter
+vector<string> tools::split_string(const string& str, const string& delimiter)
+{
+    vector<string> strings;
+
+    string::size_type pos = 0;
+    string::size_type prev = 0;
+    while ((pos = str.find(delimiter, prev)) != string::npos)
+    {
+        strings.push_back(str.substr(prev, pos - prev));
+        prev = pos + 1;
+    }
+
+    // To get the last substring (or only, if delimiter is not found)
+    strings.push_back(str.substr(prev));
+
+    return strings;
+}
 
 // replace substring
 string tools::replacestr(string source, string oldstring, string newstring)
@@ -179,4 +196,18 @@ string tools::readf(string path)
 
     fclose(file);
     return buffer;
+}
+
+// write string to file
+void tools::writef(string path, string text)
+{
+    fstream file_out;
+
+    file_out.open(path, std::ios_base::out);
+    if (!file_out.is_open()) {
+        cerr << "failed to open " << path << '\n';
+        exit(74);
+    } else {
+        file_out << text;
+    }
 }

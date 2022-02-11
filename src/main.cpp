@@ -56,6 +56,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arguments->outfile = arg;
 		arguments->output_given = true;
 		break;
+
 	case 'E':
 		arguments->preprocess_only = true;
 		break;
@@ -65,9 +66,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case ARG_EMIT_LLVM:
 		arguments->emit_llvm = true;
 		break;
+
 	case ARG_GEN_AST:
 		arguments->generate_ast = true;
 		break;
+
 	case ARG_C_FLAGS:
 	{
 		const char* infile = "<object-file>";
@@ -127,7 +130,9 @@ int main(int argc, char **argv)
 		arguments.outfile = strdup(arguments.args[0]);
 		arguments.outfile = strtok(arguments.outfile, ".");
 
-		if(arguments.compile_only && !arguments.emit_llvm)
+		if(arguments.preprocess_only)
+			arguments.outfile = strdup(tools::fstr("%s.evii", arguments.outfile).c_str());
+		else if(arguments.compile_only && !arguments.emit_llvm)
 			arguments.outfile = strdup(tools::fstr("%s.o", arguments.outfile).c_str());
 		else if(arguments.emit_llvm) 
 			arguments.outfile = strdup(tools::fstr("%s.ll", arguments.outfile).c_str());
@@ -141,9 +146,17 @@ int main(int argc, char **argv)
 	init_builtin_evi_types();
 	Status status;
 
+
+	// preprocess
+	Preprocessor* prepr = new Preprocessor();
+	status = prepr->preprocess(arguments.args[0], source);
+	if(arguments.preprocess_only) { tools::writef(arguments.outfile, source); return STATUS_SUCCESS; }
+	if(status != STATUS_SUCCESS) { free((void*)source); return status; }
+
+
 	// parse program
-	Parser parser;
-	status = parser.parse(arguments.args[0], source, &astree);
+	Parser* parser = new Parser();
+	status = parser->parse(arguments.args[0], source, &astree);
 	if(status != STATUS_SUCCESS) { free((void*)source); return status; }
 
 	
@@ -152,14 +165,11 @@ int main(int argc, char **argv)
 	{
 		ASTVisualizer().visualize(string(arguments.args[0]) + ".svg", &astree);
 		cout << "[evi] AST image written to \"" + string(arguments.args[0]) + ".svg\"." << endl;
-	}
-
-	// TODO: make sure that e.g. --emit-llvm and --compile-only don't go together :)
-	//		 then start working on the curseth preprocessoreth.
+	}	
 
 	// type check
-	TypeChecker checker;
-	status = checker.check(arguments.args[0], source, &astree);
+	TypeChecker* checker = new TypeChecker();
+	status = checker->check(arguments.args[0], source, &astree);
 	if(status != STATUS_SUCCESS) { free((void*)source); return status; }
 
 
