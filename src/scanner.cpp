@@ -5,8 +5,7 @@
 #include <cstdio>
 #include <cctype>
 #include <cstring>
-#include <string>
-#include <vector>
+#include <regex>
 
 Scanner::Scanner() {}
 
@@ -298,28 +297,29 @@ Token Scanner::scanToken()
 
 		case '#':
 		{
-			while(peek() != '\n') advance();
+			// get line marker
+			// ptrdiff_t start = (ptrdiff_t)_start;
+			while(peek() != '\n' && !isAtEnd()) advance();
+			std::string line = std::string(_start + 1, _current);
+			
+			// check it
+			cmatch match; // index 0 is whole match
+			if(!regex_match(line.c_str(), match, regex(LINE_MARKER_REGEX)))
+				return errorToken("Preprocessed code corrupted. (Line marker invalid.)");
 
-			// TODO: implement line markers (after preprocessor)
+			int lineno = stoi(match[1].str(), 0, 10);
+			_line = lineno;
 
-			// if (peek() == 'l')
-			// {
-			// 	advance();
-			// 	char c = advance();
-			// 	if (!isDigit(c)) return errorToken(
-			// 		"Preprocessor failed to correctly process directive.");
+			// // clear line marker for neatness' sake
+			// std::string new_line = std::string(' ', line.length() + 1);
+			// _src_start[start] = ' '; // remove '\0'
 
-			// 	current_--;
-			// 	int len = 0;
-			// 	while(isDigit(*current_)) { current_++, len++; }
-			// 	std::string numstr(current_ - len, len);
-			// 	line_ = std::stoi(numstr);
-
-			// 	// while(advance() != '\n') {}
-			// }
-
-			// else return errorToken("Preprocessor failed to correctly process directive.");
-			return scanToken();
+			// return token
+			return Token{
+				/*type  */ TOKEN_LINE_MARKER,
+				/*start */ strdup(match[2].str().c_str()),
+				/*length*/ (int)match[2].length(),
+				/*line  */ _line};
 		}
 	}
 
@@ -389,6 +389,7 @@ char *getTokenStr(TokenType type)
 		case TOKEN_TYPE: return "TYPE";
 
 		// misc.
+		case TOKEN_LINE_MARKER: return "LINE_MARKER";
 		case TOKEN_ERROR: return "ERROR";
 		case TOKEN_EOF: return "EOF";
 	}

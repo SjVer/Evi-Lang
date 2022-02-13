@@ -65,7 +65,7 @@ typedef enum
 	TOKEN_TYPE,
 
 	// misc.
-	// TOKEN_NEWLINE,
+	TOKEN_LINE_MARKER,
 	TOKEN_ERROR,
 	TOKEN_EOF
 } TokenType;

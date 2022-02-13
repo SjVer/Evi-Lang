@@ -50,8 +50,8 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define EVI_VERSION_1 0
 #define EVI_VERSION_2 1
 
-// usefull macros
 #define STRINGIFY(value) #value
+#define LINE_MARKER_REGEX " ([0-9]+) \"(.+)\""
 
 #ifdef DEBUG
 #define __DEBUG_MARKER(file, line) "[debug:" file ":" STRINGIFY(line) "]"
@@ -75,22 +75,30 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define LLVM_MODULE_TOP_NAME "top"
 #define TEMP_OBJ_FILE_TEMPLATE "%s.%d.o" // format: sourcefile name and timestamp
 
+// path of c compiler used for linking
 #ifndef CC_PATH
 #pragma error "CC_PATH must be defined!"
 #endif
-#ifndef STDLIB_DIR
-#pragma error "STDLIB_DIR must be defined! (e.g. \"/usr/lib/\")"
+// directory of evi static library
+#ifndef STATICLIB_DIR
+#pragma error "STATICLIB_DIR must be defined! (e.g. \"/usr/lib/\")"
 #endif
-#define CC_ARGS CC_PATH, infile, "-o", outfile, "-L" STDLIB_DIR, "-levi"
+// c compiler invoketion args
+#define CC_ARGS CC_PATH, infile, "-o", outfile, "-L" STATICLIB_DIR, "-levi"
 #define CC_ARGC 6
+// stdlib headers directory
+#ifndef STDLIB_DIR
+#pragma error "STDLIB_DIR must be defined! (e.g. \"/usr/share/evi/\")"
+#endif
 
-#define POINTER_ALIGNMENT 8
+// #define POINTER_ALIGNMENT 8
 
 // status enum
 typedef enum
 {
 	STATUS_SUCCESS = 0,
 	STATUS_CLI_ERROR = 64,
+	STATUS_PREPROCESS_ERROR = 65,
 	STATUS_PARSE_ERROR = 65,
 	STATUS_TYPE_ERROR = 65,
 	STATUS_CODEGEN_ERROR = 65,

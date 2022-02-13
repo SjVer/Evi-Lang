@@ -149,9 +149,9 @@ int main(int argc, char **argv)
 
 	// preprocess
 	Preprocessor* prepr = new Preprocessor();
-	status = prepr->preprocess(arguments.args[0], source);
-	if(arguments.preprocess_only) { tools::writef(arguments.outfile, source); return STATUS_SUCCESS; }
+	status = prepr->preprocess(arguments.args[0], &source);
 	if(status != STATUS_SUCCESS) { free((void*)source); return status; }
+	if(arguments.preprocess_only) { tools::writef(arguments.outfile, source); return STATUS_SUCCESS; }
 
 
 	// parse program

@@ -2,7 +2,6 @@
 #include "tools.hpp"
 
 #include <cstdlib>
-#include <exception>
 
 // ====================== errors =======================
 
@@ -45,10 +44,14 @@ void Parser::advance()
 	for (;;)
 	{
 		_current = _scanner.scanToken();
-		if (_current.type != TOKEN_ERROR)
-			break;
 
-		error_at_current(_current.start);
+		if (_current.type == TOKEN_ERROR)
+			error_at_current(_current.start);
+
+		else if(_current.type == TOKEN_LINE_MARKER)
+			_error_dispatcher.set_filename(strdup(_current.start));
+
+		else break;
 	}
 }
 

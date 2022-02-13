@@ -20,6 +20,8 @@ class ErrorDispatcher
     ErrorDispatcher(const char* source, const char* infile):
         _source(source), _infile(infile) {}
 
+    void set_filename(const char* filename);
+
     void dispatch_token_marked(Token *token);
     void dispatch_error(const char* prompt, const char* message);
     void dispatch_error_at(Token *token, const char* prompt, const char* message);

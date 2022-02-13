@@ -75,7 +75,7 @@ Status CodeGenerator::emit_binary(const char* outfile)
 	string cccommand; const char* infile = objfile;
 	for(int i = 0; i < CC_ARGC; i++) { cccommand += (const char*[]){CC_ARGS}[i]; cccommand += " "; }
 
-	DEBUG_PRINT_MSG("Invoking linker (" CC_PATH " with stdlib at " STDLIB_DIR ")");
+	DEBUG_PRINT_MSG("Invoking linker (" CC_PATH " with stdlib at " STATICLIB_DIR ")");
 	DEBUG_PRINT_F_MSG("Linker command: %s", cccommand.c_str());
 
 	int ccstatus = system(cccommand.c_str());

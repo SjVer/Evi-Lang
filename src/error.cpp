@@ -1,5 +1,11 @@
 #include "error.hpp"
 
+void ErrorDispatcher::set_filename(const char* filename)
+{
+	// just change it lmao
+	this->_infile = strdup(filename);
+}
+
 void ErrorDispatcher::dispatch_token_marked(Token *token)
 {
 	/*
@@ -96,9 +102,9 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 void ErrorDispatcher::__dispatch(bool at, Token* t, const char* c,
 								 const char* p, const char* m, uint line)
 {
-    fprintf(stderr, "[%s:%d%s] %s%s" COLOR_NONE, _infile, 
-		at ? t->line : line ? line : 0,
-		(at || line) ? "" : "\b\b", c, p);
+	if(at) 		  fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE, _infile, t->line, c, p);
+	else if(line) fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE, _infile, line, c, p);
+	else 		  fprintf(stderr, "[%s] %s%s" COLOR_NONE, _infile, c, p);
 
     if (at && t->type == TOKEN_EOF) 
 		fprintf(stderr, " at end");

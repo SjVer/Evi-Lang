@@ -1,1 +1,2 @@
-@func i32 (i32);
+\? some func lol
+@func i32 (i32) ~ $0 * 2;

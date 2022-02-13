@@ -6,12 +6,15 @@
 CC = clang++
 LLVMVERSION = 12
 CC_PATH = /usr/bin/clang
-# STATLIB_DIR = /usr/lib
-STATLIB_DIR = $(PWD)/bin
+# STATICLIB_DIR = /usr/lib/
+STATICLIB_DIR = $(PWD)/bin/
+# STDLIB_DIR = /usr/share/evi/
+STDLIB_DIR = $(PWD)/stdlib/headers/
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
-CXXFLAGS = $(MUTE) -DCOMPILER=\"$(CC)\" -DCC_PATH=\"$(CC_PATH)\" -DSTDLIB_DIR=\"$(STATLIB_DIR)\" `$(LLVMFLAGS)`
+DEFS = COMPILER=\"$(CC)\" CC_PATH=\"$(CC_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\"
+CXXFLAGS = $(MUTE) $(addprefix -D,$(DEFS)) `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 
 # Makefile settings - Can be customized.
@@ -22,8 +25,8 @@ HEADERDIR = include
 BINDIR = bin
 OBJDIR = $(BINDIR)/obj
 
-STDLIB_DIR = stdlib
-export LLVMVERSION BINDIR STDLIB_DIR
+STDLIB_SRC_DIR = stdlib
+export LLVMVERSION BINDIR STDLIB_SRC_DIR
 
 ############## Do not change anything from here downwards! #############
 SRC = $(wildcard $(SRCDIR)/*$(EXT))
@@ -77,11 +80,11 @@ pch:
 	@printf "\b\b done!\n"
 
 stdlib: makedirs
-	@$(MAKE) --no-print-directory -f $(STDLIB_DIR)/Makefile stdlib
+	@$(MAKE) --no-print-directory -f $(STDLIB_SRC_DIR)/Makefile stdlib
 
 .PHONY: clean-stdlib
 clean-stdlib:
-	@$(MAKE) --no-print-directory -f $(STDLIB_DIR)/Makefile clean
+	@$(MAKE) --no-print-directory -f $(STDLIB_SRC_DIR)/Makefile clean
 
 ################### Cleaning rules for Unix-based OS ###################
 
@@ -95,7 +98,7 @@ clean:
 .PHONY: test
 test: $(APP)
 	@printf "============= Running \"$(APP)\" =============\n\n"
-	@$(APP) $(args) test/test.evi -o bin/test && \
+	@$(APP) test/test.evi -o bin/test $(args) && \
 	\
 	printf "============= Running \"bin/test\" ===========\n\n" && \
 	bin/test && \
@@ -137,7 +140,7 @@ debug-no-fold: debug
 
 .PHONY: valgrind
 valgrind: debug $(APP)
-	@valgrind $(args) bin/evi test/test.evi -o bin/test.ll
+	@valgrind $(args) bin/evi test/test.evi -o bin/test
 
 git:
 	git add --all

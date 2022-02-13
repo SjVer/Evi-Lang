@@ -10,7 +10,8 @@
             "defines": [
                 "DEBUG",
                 "CC_PATH=\"/usr/bin/clang\"",
-                "STDLIB_DIR=\"/usr/lib/\""
+                "STATICLIB_DIR=\"/usr/lib/\"",
+                "STDLIB_DIR=\"/usr/share/evi/\""
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",

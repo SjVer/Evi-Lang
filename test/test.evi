@@ -1,15 +1,12 @@
-\ #apply "std-io"
-#apply "header"
+#apply "test/header"
 
 #flag DEBUG
 
 @main i32 ()
 {
-	func(123);
-
-	\ #ifset DEBUG
-	\ 	~ 0;
-	\ #else
-	\ 	~ 1;
-	\ #endif
+	#ifset DEBUG
+		~ func(3);
+	#else
+		~ func(0);
+	#endif
 }

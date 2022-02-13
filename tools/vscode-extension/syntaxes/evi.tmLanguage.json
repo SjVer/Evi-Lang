@@ -94,8 +94,8 @@
 				{
 					"match": "^\\s*((#)\\s*(else|endif))\\b\\s*",
 					"captures": {
-						"0": { "name": "keyword.control.directive.evi" },
-						"1": { "name": "punctuation.defenition.directive.conditional.evi" }
+						"1": { "name": "keyword.control.directive.evi" },
+						"2": { "name": "punctuation.definition.directive.conditional.evi" }
 					}
 				}
 			]
