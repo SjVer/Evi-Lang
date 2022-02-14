@@ -20,6 +20,7 @@ private:
 	typedef enum
 	{
 		DIR_APPLY,
+		DIR_INFO,
 		
 		DIR_FLAG,
 		DIR_UNFLAG,
@@ -53,8 +54,11 @@ private:
 	DirectiveHandler get_directive_handler(DirectiveType type);
 	void handle_directive(string line, uint line_idx);
 
+	bool handle_pragma(vector<string> args);
+
 	#define HANDLER(name) void handle_directive_##name(string line, uint line_idx)
 		HANDLER(apply);
+		HANDLER(info);
 
 		HANDLER(flag);
 		HANDLER(unflag);
@@ -71,6 +75,10 @@ private:
 
 	vector<string> _flags;
 	stack<bool>* _branches;
+	
+	vector<string> _applied_files;
+	uint _apply_depth;
+	bool _apply_once;
 
 	bool _had_error;
 	ErrorDispatcher _error_dispatcher;

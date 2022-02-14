@@ -91,7 +91,8 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #pragma error "STDLIB_DIR must be defined! (e.g. \"/usr/share/evi/\")"
 #endif
 
-// #define POINTER_ALIGNMENT 8
+#define POINTER_ALIGNMENT 8
+#define MAX_APPLY_DEPTH 255
 
 // status enum
 typedef enum

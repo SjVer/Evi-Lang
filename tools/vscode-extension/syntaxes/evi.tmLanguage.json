@@ -97,6 +97,26 @@
 						"1": { "name": "keyword.control.directive.evi" },
 						"2": { "name": "punctuation.definition.directive.conditional.evi" }
 					}
+				},
+				{
+					"begin": "^\\s*((#)\\s*(info))\\b\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.directive.evi"
+						},
+						"2": {
+							"name": "punctuation.definition.directive.info.evi"
+						}
+					},
+					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
+					"name": "meta.preprocessor.flag.evi",
+					"patterns": [
+						{
+							"match": "[0-z_]+",
+							"name": "punctuation.definition.directive.info.evi"
+						},
+						{ "include": "#illegals" }
+					]
 				}
 			]
 		},

@@ -12,6 +12,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	_lines = vector<string>();
 	_current_file = infile;
 	_branches = new stack<bool>();
+	_apply_depth = 0;
 	_error_dispatcher = ErrorDispatcher(*source, infile.c_str());
 	_had_error = false;
 
@@ -136,6 +137,8 @@ bool Preprocessor::consume_string(string* str, string* dest, uint line)
 Preprocessor::DirectiveType Preprocessor::get_directive_type(string str)
 {
 		 if(str == "apply")  return DIR_APPLY;
+	else if(str == "info")	 return DIR_INFO;
+
 	else if(str == "flag")	 return DIR_FLAG;
 	else if(str == "unflag") return DIR_UNFLAG;
 
@@ -153,6 +156,7 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 	switch(type)
 	{
 		CASE(DIR_APPLY, apply);
+		CASE(DIR_INFO, info);
 
 		CASE(DIR_FLAG, flag);
 		CASE(DIR_UNFLAG, unflag);
@@ -188,6 +192,23 @@ void Preprocessor::handle_directive(string line, uint line_idx)
 
 // ===============================================================
 
+bool Preprocessor::handle_pragma(vector<string> args)
+{
+	string cmd = args[0];
+	args.erase(args.begin());
+
+	if(cmd == "apply_once")
+	{
+		// file already applied?
+		if(find(_applied_files.begin(), _applied_files.end(), _current_file) != _applied_files.end())
+		{
+			// TODO: this
+		}
+	}
+}
+
+// ===============================================================
+
 #define HANDLER(name) void Preprocessor::handle_directive_##name(string line, uint line_idx)
 #define TRY_TO(code) { if(!(code)) return; }
 #define CHECK_FLAG(flag) (std::find(_flags.begin(), _flags.end(), flag) != _flags.end())
@@ -197,6 +218,8 @@ HANDLER(apply)
 	if(!IN_FALSE_BRANCH)
 	{
 		string oldfile = _current_file;
+		bool old_apply_once = _apply_once;
+		_apply_depth++;
 
 		// get filename
 		string header;
@@ -204,12 +227,19 @@ HANDLER(apply)
 
 		// find and read file
 		string path = find_header(header);
-		if(!path.length())
+
+		if(!path.length()) // find_header failed
 		{
 			ERROR_F(line_idx + 1, "Could not find header '%s'.", header.c_str());
 			return;
 		}
-		DEBUG_PRINT_F_MSG("Found header '%s' at '%s'.", header.c_str(), path.c_str());
+		else if(_apply_depth > MAX_APPLY_DEPTH) // too deep
+		{
+			ERROR_F(line_idx + 1, "Inclusion depth surpassed limit of %d.", MAX_APPLY_DEPTH);
+			return;
+		}
+		
+		// DEBUG_PRINT_F_MSG("Found header '%s' at '%s'.", header.c_str(), path.c_str());
 		string source = tools::readf(path);
 
 		// process text
@@ -218,13 +248,35 @@ HANDLER(apply)
 		vector<string> lines = tools::split_string(source, "\n");
 		LINE_MARKER(0);
 		process_lines(lines);
+		_applied_files.push_back(path);
 
 		// continue current file
 		_current_file = oldfile;
+		_apply_once = old_apply_once;
 		_error_dispatcher.set_filename(oldfile.c_str());
 		LINE_MARKER(line_idx + 1);
 	}
 	else SUBMIT_LINE("");
+}
+
+HANDLER(info)
+{
+	if(!IN_FALSE_BRANCH)
+	{
+		// get arguments and check if there are any
+		vector<string> args = tools::split_string(line, " ");
+		if(!args.size() || !args[0].length())
+		{
+			ERROR(line_idx + 1, "Expected arguments after #info.");
+			return;
+		}
+		else if(!handle_pragma(args))
+		{
+			ERROR(line_idx + 1, "Invalid #info arguments.");
+			return;
+		}
+	}
+	SUBMIT_LINE("");
 }
 
 

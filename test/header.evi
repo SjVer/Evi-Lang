@@ -1,2 +1,5 @@
+#info applied_once
+#info 
+
 \? some func lol
 @func i32 (i32) ~ $0 * 2;
