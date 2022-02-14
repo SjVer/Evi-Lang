@@ -3,5 +3,14 @@
 
 	"completions": [
 		// { "trigger": "some_trigger", "contents": "some_trigger" },
+		{ "trigger": "apply", "contents": "#apply \"$1\"" },
+		{ "trigger": "flag", "contents": "#flag ${1:DEBUG}" },
+		{ "trigger": "unflag", "contents": "#unflag ${1:DEBUG}" },
+		{ "trigger": "ifset", "contents": "#ifset ${1:DEBUG}\n\t$2\n#endif" },
+		{ "trigger": "ifnset", "contents": "#ifnset ${1:DEBUG}\n\t$2\n#endif" },
+		{ "trigger": "else", "contents": "#else\n\t$2\n#endif" },
+		{ "trigger": "endif", "contents": "#endif" },
+
+		{ "trigger": "function", "contents": "@${1:func} ${2:nll} (${3}) $4" },
 	]
 }
