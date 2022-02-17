@@ -21,7 +21,6 @@ typedef enum
 	TYPE_NONE
 } LexicalType;
 
-
 extern const char* lexical_type_strings[TYPE_NONE];
 #define GET_LEX_TYPE_STR(type) (lexical_type_strings[type])
 
@@ -60,15 +59,16 @@ public:
 	ParsedType(LexicalType lexical_type, 
 			   EviType* evi_type = nullptr,
 			   bool is_reference = false,
-			   uint pointer_depth = 0);
+			   uint pointer_depth = 0,
+			   vector<int> array_sizes = vector<int>());
 
 	// bool operator==(const ParsedType& rhs);
 	bool eq(ParsedType* rhs);
 
 	ParsedType* copy();
 	ParsedType* copy_change_lex(LexicalType type);
-	ParsedType* copy_inc_depth();
-	ParsedType* copy_dec_depth();
+	ParsedType* copy_inc_ptr_depth();
+	ParsedType* copy_dec_ptr_depth();
 
 	string to_string();
 	const char* to_c_string();
@@ -81,6 +81,7 @@ public:
 	EviType* _evi_type;
 	bool _is_reference = false;
 	bool _keep_as_reference = false;
+	vector<int> _array_sizes;
 	uint _pointer_depth = 0;
 };
 

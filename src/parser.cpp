@@ -91,6 +91,13 @@ ParsedType* Parser::consume_type(string msg)
 	type->_is_reference = true;
 	type->_pointer_depth = 0;
 
+	// get as array if applicable
+	while(match(TOKEN_PIPE))
+	{
+		if(match(TOKEN_INTEGER)) type->_array_sizes.push_back(literal()->_int_value);
+		else type->_array_sizes.push_back(-1);
+	}
+
 	// // get as pointer if applicable
 	// while(match(TOKEN_STAR)) type->_pointer_depth++;
 

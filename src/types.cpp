@@ -1,7 +1,7 @@
 #include "types.hpp"
 
 ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
-			   		   bool is_reference, uint pointer_depth)
+			   		   bool is_reference, uint pointer_depth, vector<int> array_sizes)
 {
 	_lexical_type = lexical_type;
 
@@ -18,6 +18,7 @@ ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
 
 	_is_reference = is_reference;
 	_pointer_depth = pointer_depth;
+	_array_sizes = array_sizes;
 }
 
 // bool ParsedType::operator==(const ParsedType& rhs)
@@ -25,12 +26,13 @@ bool ParsedType::eq(ParsedType* rhs)
 {
 	return _lexical_type == rhs->_lexical_type
 		&& _pointer_depth == rhs->_pointer_depth
+		&& _array_sizes == rhs->_array_sizes
 		&& _evi_type == rhs->_evi_type;
 }
 
 ParsedType* ParsedType::copy()
 {
-	ParsedType* ret = new ParsedType(_lexical_type, _evi_type, _is_reference, _pointer_depth);
+	ParsedType* ret = new ParsedType(_lexical_type, _evi_type, _is_reference, _pointer_depth, _array_sizes);
 	return ret;
 }
 
@@ -41,14 +43,14 @@ ParsedType* ParsedType::copy_change_lex(LexicalType type)
 	return ret;
 }
 
-ParsedType* ParsedType::copy_inc_depth()
+ParsedType* ParsedType::copy_inc_ptr_depth()
 {
 	ParsedType* ret = this->copy();
 	ret->_pointer_depth++;
 	return ret;
 }
 
-ParsedType* ParsedType::copy_dec_depth()
+ParsedType* ParsedType::copy_dec_ptr_depth()
 {
 	ParsedType* ret = this->copy();
 	ret->_pointer_depth--;
@@ -58,7 +60,9 @@ ParsedType* ParsedType::copy_dec_depth()
 string ParsedType::to_string()
 {
 	string ret = _evi_type->_name;
-	for(int i = 0; i < _pointer_depth; i++) ret += "*";
+	for(int i = 0; i < _array_sizes.size(); i++)
+		ret += _array_sizes[i] >= 0 ? tools::fstr("|%u", _array_sizes[i]) : "|?";
+	for(int i = 0; i < _pointer_depth; i++) ret += '*';
 	return ret;
 }
 
@@ -71,19 +75,20 @@ const char* ParsedType::to_c_string()
 llvm::Type* ParsedType::get_llvm_type()
 {
 	llvm::Type* ret = _evi_type->_llvm_type;
-	for(int i =0; i < _pointer_depth; i++) ret = ret->getPointerTo();
+	for(int i = 0; i < _array_sizes.size(); i++) ret = ret->getPointerTo(); // TODO: change?
+	for(int i = 0; i < _pointer_depth; i++) ret = ret->getPointerTo();
 	return ret;
 }
 
 bool ParsedType::is_signed()
 {
-	if(_pointer_depth) return false;
+	if(_pointer_depth || _array_sizes.size()) return false;
 	return _evi_type->_is_signed;
 }
 
 uint ParsedType::get_alignment()
 {
-	if(_pointer_depth) return POINTER_ALIGNMENT;
+	if(_pointer_depth || _array_sizes.size()) return POINTER_ALIGNMENT;
 	else return _evi_type->_alignment;
 }
 

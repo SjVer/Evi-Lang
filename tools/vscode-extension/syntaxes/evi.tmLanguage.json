@@ -316,6 +316,7 @@
 				{ "include": "#operators" },
 				{ "include": "#variables" },
 				{ "include": "#numbers" },
+				{ "include": "#arrays" },
 				{ "include": "#strings" },
 				{ "include": "#types" },
 
@@ -462,6 +463,22 @@
 				}
 			]
 		},
+		"arrays":
+		{
+			"begin": "(\\[)",
+			"beginCaptures": { "1": { "name": "punctuation.array.begin.evi" }},
+			
+			"patterns": [
+				{ "include": "#expressions" },
+				{
+					"match": ",",
+					"name": "punctuation.separator.array.evi"
+				}
+			],
+
+			"end": "(\\])",
+			"endCaptures": { "1": { "name": "punctuation.array.end.evi" }}
+		},
 		"string_escaped_char": 
 		{
 			"patterns": [
@@ -518,6 +535,15 @@
 				{
 					"name": "storage.modifier.pointer.evi",
 					"match": "\\*"
+				},
+				{
+					"begin": "(\\[)",
+					"beginCaptures": { "1": { "name": "punctuation.array.begin.evi" }},
+					
+					"patterns": [{ "include": "#numbers" }],
+
+					"end": "(\\])",
+					"endCaptures": { "1": { "name": "punctuation.array.end.evi" }}
 				}
 			]
 		},

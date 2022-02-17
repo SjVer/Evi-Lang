@@ -236,7 +236,7 @@ ParsedType* CodeGenerator::from_token_type(TokenType type)
 		case TOKEN_INTEGER:   return PTYPE(TYPE_INTEGER);
 		case TOKEN_FLOAT: 	  return PTYPE(TYPE_FLOAT);
 		case TOKEN_CHARACTER: return PTYPE(TYPE_CHARACTER);
-		case TOKEN_STRING: 	  return new ParsedType(TYPE_CHARACTER, nullptr, 1);
+		case TOKEN_STRING: 	  return new ParsedType(TYPE_CHARACTER, nullptr, false, 1);
 		default: assert(false);
 	}
 }
@@ -857,7 +857,7 @@ VISIT(LiteralNode)
 
 VISIT(ArrayNode)
 {
-	//
+	exit(1);
 }
 
 VISIT(ReferenceNode)

@@ -467,7 +467,7 @@ VISIT(UnaryNode)
 				break;
 			}
 
-			node->_expr->_cast_to = type->copy_inc_depth();
+			node->_expr->_cast_to = type->copy_inc_ptr_depth();
 			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
@@ -494,14 +494,14 @@ VISIT(UnaryNode)
 	{
 		case TOKEN_STAR:
 		{
-			node->_expr->_cast_to = type->copy_dec_depth();
+			node->_expr->_cast_to = type->copy_dec_ptr_depth();
 			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
 		}
 		case TOKEN_AND:
 		{
-			node->_expr->_cast_to = type->copy_inc_depth();
+			node->_expr->_cast_to = type->copy_inc_ptr_depth();
 			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
@@ -533,6 +533,7 @@ VISIT(GroupingNode)
 	node->_expr->accept(this);
 }
 
+
 VISIT(LiteralNode)
 {
 	switch(node->_token.type)
@@ -547,7 +548,31 @@ VISIT(LiteralNode)
 
 VISIT(ArrayNode)
 {
-	exit(1);
+	// get first expr
+	ParsedType* firsttype = nullptr;
+	if(node->_elements.size() >= 1)
+	{
+		node->_elements[0]->accept(this);
+		firsttype = pop();
+	}
+
+	for(int i = 1; i < node->_elements.size(); i++)
+	{
+		node->_elements[i]->accept(this);
+		ParsedType* exprtype = pop();
+
+		ParsedType* result = resolve_types(firsttype, exprtype);
+		node->_elements[i]->_cast_to = firsttype;
+
+		if(!can_cast_types(result ? result : exprtype, firsttype))
+			ERROR_AT(&node->_elements[i]->_token, "Cannot implicitly convert argument of type" COLOR_BOLD \
+			"'%s'" COLOR_NONE " to first element's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
+			exprtype->to_c_string(), firsttype->to_c_string());
+	}
+
+	ParsedType* arrtype = firsttype->copy();
+	arrtype->_array_sizes.push_back(node->_elements.size());
+	push(arrtype);
 }
 
 VISIT(ReferenceNode)
@@ -568,7 +593,7 @@ VISIT(CallNode)
 		node->_arguments[i]->_cast_to = argtype;
 
 		if(!can_cast_types(result ? result : exprtype, argtype)) 
-			ERROR_AT(&node->_token, "Cannot implicitly convert argument of type " COLOR_BOLD \
+			ERROR_AT(&node->_arguments[i]->_token, "Cannot implicitly convert argument of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " to parameter's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			exprtype->to_c_string(), argtype->to_c_string());
 	}
