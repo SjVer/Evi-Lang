@@ -150,14 +150,14 @@ int main(int argc, char **argv)
 	// preprocess
 	Preprocessor* prepr = new Preprocessor();
 	status = prepr->preprocess(arguments.args[0], &source);
-	if(status != STATUS_SUCCESS) { free((void*)source); return status; }
+	if(status != STATUS_SUCCESS) ABORT(status);
 	if(arguments.preprocess_only) { tools::writef(arguments.outfile, source); return STATUS_SUCCESS; }
 
 
 	// parse program
 	Parser* parser = new Parser();
 	status = parser->parse(arguments.args[0], source, &astree);
-	if(status != STATUS_SUCCESS) { free((void*)source); return status; }
+	if(status != STATUS_SUCCESS) ABORT(status);
 
 	
 	// generate visualization
@@ -170,20 +170,20 @@ int main(int argc, char **argv)
 	// type check
 	TypeChecker* checker = new TypeChecker();
 	status = checker->check(arguments.args[0], source, &astree);
-	if(status != STATUS_SUCCESS) { free((void*)source); return status; }
+	if(status != STATUS_SUCCESS) ABORT(status);
 
 
 	// codegen
 	CodeGenerator* codegen = new CodeGenerator();
 	status = codegen->generate(arguments.args[0], arguments.outfile, source, &astree);
-	if(status != STATUS_SUCCESS) { free((void*)source); return status; };
+	if(status != STATUS_SUCCESS) ABORT(status);
 
 
 	// output
 	if(arguments.compile_only && !arguments.emit_llvm) status = codegen->emit_object(arguments.outfile);
 	else if(arguments.emit_llvm) status = codegen->emit_llvm(arguments.outfile);
 	else status = codegen->emit_binary(arguments.outfile);
-	if(status != STATUS_SUCCESS) { free((void*)source); return status; };
+	if(status != STATUS_SUCCESS) ABORT(status);
 
 
 	free((void*)source);

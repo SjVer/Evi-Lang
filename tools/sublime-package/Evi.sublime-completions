@@ -12,5 +12,6 @@
 		{ "trigger": "endif", "contents": "#endif" },
 
 		{ "trigger": "function", "contents": "@${1:func} ${2:nll} (${3}) $4" },
+		{ "trigger": "variable", "contents": "%${1:var} ${2:i32}${4: };" },
 	]
 }

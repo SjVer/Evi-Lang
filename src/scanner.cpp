@@ -212,28 +212,28 @@ void Scanner::skipWhitespaces()
 			_line++;
 			advance();
 			break;
-		case '\\':
-			if (peekNext() == ':')
-			{
-				for (;;)
-				{
-					if (peek() == ':' && peekNext() == '\\')
-					{
-						advance();
-						advance();
-						break;
-					}
-					else if (isAtEnd()) break;
-					else if (peek() == '\n') _line++;
-					advance();
-				}
-			}
-			else
-			{
-				while (peek() != '\n' && !isAtEnd())
-					advance();
-			}
-			break;
+		// case '\\':
+		// 	if (peekNext() == ':')
+		// 	{
+		// 		for (;;)
+		// 		{
+		// 			if (peek() == ':' && peekNext() == '\\')
+		// 			{
+		// 				advance();
+		// 				advance();
+		// 				break;
+		// 			}
+		// 			else if (isAtEnd()) break;
+		// 			else if (peek() == '\n') _line++;
+		// 			advance();
+		// 		}
+		// 	}
+		// 	else
+		// 	{
+		// 		while (peek() != '\n' && !isAtEnd())
+		// 			advance();
+		// 	}
+		// 	break;
 		default:
 			return;
 		}

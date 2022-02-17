@@ -25,7 +25,7 @@
 	SOFTWARE.
 :\
 
-\ #info stdlib_header
+#info apply_once
 #flag __STD_IO__
 
 \? writes a character to stdout

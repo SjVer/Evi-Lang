@@ -6,16 +6,14 @@ void ErrorDispatcher::set_filename(const char* filename)
 	this->_infile = strdup(filename);
 }
 
-void ErrorDispatcher::dispatch_token_marked(Token *token)
+/* void ErrorDispatcher::dispatch_token_marked(Token *token)
 {
-	/*
 		To find out what lines to print and where those lines
 		start we first find the total offset from the start
 		of the token, then we go back char by char to find the
 		first newline, which would be the start of the line of
 		the token. Then we do the same thing but in the opposite
 		direction to find the end of the line.
-	*/
 
 	string before1 = "";
 	string tokenline = "";
@@ -56,7 +54,7 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 
 	// get line with marked token
 	{
-		/*
+		
 			Inserting the escape codes for coloring won't work, so instead we find
 			length A and B as seen below:
 
@@ -65,7 +63,7 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 
 			And use those and the info we have of the token to merge them,
 			and the escape codes together in a new string.
-		*/
+		
 
 		// find string on the token's line before and after the token itself
 		ptrdiff_t tok_ln_before_tok_len = token_offset - tok_ln_begin;
@@ -97,7 +95,87 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 	if(before1 	 != "") cerr << before1 << endl;
 	if(tokenline != "") cerr << tokenline << endl;
 	if(after1 	 != "") cerr << after1 << endl;
+} */
+
+void ErrorDispatcher::dispatch_token_marked(Token *token)
+{
+	string tokenline = "";
+	string markerline = "";
+
+	// get offset of token
+	ptrdiff_t token_offset = token->start - _source;
+
+	// find first newline before token
+	ptrdiff_t tok_ln_begin;
+	if(token->line > 1)
+	{
+		tok_ln_begin = token_offset;
+		while(tok_ln_begin > 0 && _source[tok_ln_begin] != '\n') tok_ln_begin--;
+		tok_ln_begin++; // skip newline itself
+	}
+	else tok_ln_begin = 0;
+
+	// find first newline after token
+	ptrdiff_t tok_ln_end = token_offset + token->length;
+	while(_source[tok_ln_end] != '\n' && _source[tok_ln_end] != '\0') tok_ln_end++;
+
+	ptrdiff_t tok_ln_before_tok_len; // keep for later use
+
+	// get line with marked token
+	{
+		/*
+			Inserting the escape codes for coloring won't work, so instead we find
+			length A and B as seen below:
+
+				this is an example line with a WRONG token in it.
+				<------------- A ------------->     <---- B ---->
+
+			And use those and the info we have of the token to merge them,
+			and the escape codes together in a new string.
+		*/
+
+		// find string on the token's line before and after the token itself
+		tok_ln_before_tok_len = token_offset - tok_ln_begin;
+		string tok_ln_before_tok = string(_source + tok_ln_begin, tok_ln_before_tok_len);
+
+		ptrdiff_t tok_ln_after_tok_len = tok_ln_end - token_offset - token->length;
+		string tok_ln_after_tok = string(_source + token_offset + token->length, tok_ln_after_tok_len);
+
+		// get token and its full line
+		string tok = string(token->start, token->length);
+		string tok_ln = tok_ln_before_tok + COLOR_RED + tok + COLOR_NONE + tok_ln_after_tok;
+		tokenline = tools::fstr(" %3d| %s", token->line, tok_ln.c_str());
+	}
+
+	// get the marker line
+	{
+		/*
+			Example:
+
+			 69| @this i32 WRONG ();
+			               ^~~~~
+		*/
+
+		int prefixlen = tools::fstr(" %3d| ", token->line).length();
+		for(int i = 0; i < prefixlen; i++)
+			markerline +=  ' ';
+
+		for(int i = 0; i < tok_ln_before_tok_len; i++)
+			markerline +=  _source[tok_ln_begin + i] == '\t' ? '\t' : ' ';
+
+		markerline += COLOR_RED "^";
+
+		for(int i = 0; i < token->length - 1; i++)
+			markerline += '~';
+
+		markerline += COLOR_NONE;
+	}
+
+	// print it all out
+	cerr << tokenline << endl;
+	cerr << markerline << endl;
 }
+
 
 void ErrorDispatcher::__dispatch(bool at, Token* t, const char* c,
 								 const char* p, const char* m, uint line)
@@ -139,3 +217,7 @@ void ErrorDispatcher::dispatch_warning_at(Token *token, const char* prompt, cons
     __dispatch(true, token, COLOR_PURPLE, prompt, message);
 }
 
+void ErrorDispatcher::dispatch_warning_at_ln(uint line, const char* prompt, const char* message)
+{
+    __dispatch(false, nullptr, COLOR_PURPLE, prompt, message, line);
+}

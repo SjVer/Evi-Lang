@@ -71,6 +71,8 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define DEBUG_PRINT_F_MSG(format, ...) {}
 #endif
 
+#define ABORT(status) {cerr << tools::fstr("[evi] aborted with code %d.\n", status); exit(status); }
+
 // llvm stuff
 #define LLVM_MODULE_TOP_NAME "top"
 #define TEMP_OBJ_FILE_TEMPLATE "%s.%d.o" // format: sourcefile name and timestamp

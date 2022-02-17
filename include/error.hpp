@@ -2,7 +2,6 @@
 #define EVI_ERROR_H
 
 #include "scanner.hpp"
-#include "common.hpp"
 
 class ErrorDispatcher
 {
@@ -28,6 +27,7 @@ class ErrorDispatcher
     void dispatch_error_at_ln(uint line, const char* prompt, const char* message);
     void dispatch_warning(const char* prompt, const char* message);
     void dispatch_warning_at(Token *token, const char* prompt, const char* message);
+    void dispatch_warning_at_ln(uint line, const char* prompt, const char* message);
 };
 
 #endif

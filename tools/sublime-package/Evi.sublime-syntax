@@ -214,7 +214,7 @@ contexts:
     - match: '\\:'
       scope: punctuation.definition.comment.evi
       push:
-        - meta_scope: comment.line.evi
+        - meta_scope: comment.block.evi
         - match: ':\\'
           pop: true
 
@@ -283,6 +283,16 @@ contexts:
     - match: ^\s*#(else|endif)
       scope: keyword.preprocessor.conditional.evi
       push:
+        - match: $\n?
+          pop: true
+        - include: invalids
+
+    - match: ^\s*#(info)
+      scope: keyword.preprocessor.pragma.evi
+      push:
+        - include: string-char
+        - match: '[A-Za-z_0-9]+'
+          scope: meta.preprocessor.pragma.args.evi
         - match: $\n?
           pop: true
         - include: invalids

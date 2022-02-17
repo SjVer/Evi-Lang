@@ -17,7 +17,7 @@ void Parser::error_at(Token *token, string message)
 		cerr << endl;
 	}
 
-	exit(STATUS_PARSE_ERROR);
+	ABORT(STATUS_PARSE_ERROR);
 }
 
 // displays an error at the previous token with the given message

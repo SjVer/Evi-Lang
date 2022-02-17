@@ -26,7 +26,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	DEBUG_PRINT_MSG("Preprocessor done!");
 
 	string result_source; for(string& ln : _lines) result_source += ln + "\n";
-	*source = strdup(result_source.c_str());
+	*source = strdup(remove_comments(result_source).c_str());
 
 	// DEBUG_PRINT_F_MSG("Preprocessed source:\n%s", *source);
 	return _had_error ? STATUS_PREPROCESS_ERROR : STATUS_SUCCESS;
@@ -55,6 +55,35 @@ void Preprocessor::process_lines(vector<string> lines)
 		
 		else SUBMIT_LINE(lines[line_idx]);
 	}
+}
+
+string Preprocessor::remove_comments(string src)
+{
+	for(int i = 0; i < src.length(); i++)
+	{
+		if(src[i] != '\\') continue;
+		i++;
+
+		if(src[i] == ':') // block comment
+		{
+			src[i - 1] = ' ';
+			src[i] = ' ';
+
+			i++;
+			while(i < src.length() && src[i - 1] != ':' && src[i] != '\\')
+				{ src[i] = src[i] == '\n' ? '\n' : ' '; i++; }
+			src[i] = ' ';
+			continue;
+		}
+		else
+		{
+			i--;
+			while(i < src.length() && src[i] != '\n')
+				src[i++] = ' ';
+			continue;
+		}
+	}	
+	return src;
 }
 
 string Preprocessor::find_header(string name)
@@ -192,19 +221,38 @@ void Preprocessor::handle_directive(string line, uint line_idx)
 
 // ===============================================================
 
-bool Preprocessor::handle_pragma(vector<string> args)
+bool Preprocessor::handle_pragma(vector<string> args, uint line_idx)
 {
 	string cmd = args[0];
 	args.erase(args.begin());
 
 	if(cmd == "apply_once")
 	{
-		// file already applied?
-		if(find(_applied_files.begin(), _applied_files.end(), _current_file) != _applied_files.end())
-		{
-			// TODO: this
-		}
+		_blocked_files.push_back(_current_file);
+		return args.size() == 0;
 	}
+	else if(cmd == "error")
+	{
+		string msg;
+		consume_string(&args[0], &msg, line_idx + 1);
+
+		if(args.size() != 1) return false;
+
+		ERROR(line_idx + 1, msg.c_str());
+		return true;
+	}
+	else if(cmd == "warning")
+	{
+		string msg;
+		consume_string(&args[0], &msg, line_idx + 1);
+
+		if(args.size() != 1) return false;
+
+		_error_dispatcher.dispatch_warning_at_ln(line_idx + 1, "Preprocessor Warning", msg.c_str());
+		return true;
+	}
+
+	return false;
 }
 
 // ===============================================================
@@ -218,7 +266,6 @@ HANDLER(apply)
 	if(!IN_FALSE_BRANCH)
 	{
 		string oldfile = _current_file;
-		bool old_apply_once = _apply_once;
 		_apply_depth++;
 
 		// get filename
@@ -231,6 +278,12 @@ HANDLER(apply)
 		if(!path.length()) // find_header failed
 		{
 			ERROR_F(line_idx + 1, "Could not find header '%s'.", header.c_str());
+			return;
+		}
+		else if(find(_blocked_files.begin(), _blocked_files.end(), path) != _blocked_files.end())
+		{
+			// file #info apply_once'd
+			SUBMIT_LINE("");
 			return;
 		}
 		else if(_apply_depth > MAX_APPLY_DEPTH) // too deep
@@ -248,11 +301,9 @@ HANDLER(apply)
 		vector<string> lines = tools::split_string(source, "\n");
 		LINE_MARKER(0);
 		process_lines(lines);
-		_applied_files.push_back(path);
 
 		// continue current file
 		_current_file = oldfile;
-		_apply_once = old_apply_once;
 		_error_dispatcher.set_filename(oldfile.c_str());
 		LINE_MARKER(line_idx + 1);
 	}
@@ -270,9 +321,9 @@ HANDLER(info)
 			ERROR(line_idx + 1, "Expected arguments after #info.");
 			return;
 		}
-		else if(!handle_pragma(args))
+		else if(!handle_pragma(args, line_idx))
 		{
-			ERROR(line_idx + 1, "Invalid #info arguments.");
+			ERROR_F(line_idx + 1, "Invalid arguments for '#info %s'.", args[0].c_str());
 			return;
 		}
 	}

@@ -44,6 +44,7 @@ private:
 		line, ERR_PROMPT, tools::fstr(format, __VA_ARGS__).c_str()); _had_error = true; }
 
 	void process_lines(vector<string> lines);
+	string remove_comments(string source);
 	string find_header(string name);
 
 	string strip_start(string str);
@@ -54,7 +55,7 @@ private:
 	DirectiveHandler get_directive_handler(DirectiveType type);
 	void handle_directive(string line, uint line_idx);
 
-	bool handle_pragma(vector<string> args);
+	bool handle_pragma(vector<string> args, uint line_idx);
 
 	#define HANDLER(name) void handle_directive_##name(string line, uint line_idx)
 		HANDLER(apply);
@@ -76,9 +77,8 @@ private:
 	vector<string> _flags;
 	stack<bool>* _branches;
 	
-	vector<string> _applied_files;
+	vector<string> _blocked_files;
 	uint _apply_depth;
-	bool _apply_once;
 
 	bool _had_error;
 	ErrorDispatcher _error_dispatcher;
