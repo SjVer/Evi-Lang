@@ -38,7 +38,7 @@ term			: factor (("-" | "+") factor)*
 factor			: unary (("/" | "*") unary)*
 unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | primary
 primary			: NUMBER | CHAR | STRING | "(" expression ")"
-				| reference | call
+				| reference | call | "[" (expression ("," expression)*)? "]"
 
 reference		: "$" (IDENT | INTEGER)
 call			: IDENT "(" (expression ("," expression)*)? ")"

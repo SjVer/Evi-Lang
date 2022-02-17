@@ -855,6 +855,11 @@ VISIT(LiteralNode)
 	push(create_cast(constant, type->is_signed(), casttype->get_llvm_type(), casttype->is_signed()));
 }
 
+VISIT(ArrayNode)
+{
+	//
+}
+
 VISIT(ReferenceNode)
 {
 	llvm::Value* var = nullptr;

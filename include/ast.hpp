@@ -25,6 +25,7 @@ class StmtNode;
 		class GroupingNode;
 		class PrimaryNode;
 			class LiteralNode;
+			class ArrayNode;
 			class ReferenceNode;
 			class CallNode;
 
@@ -45,6 +46,7 @@ class Visitor
 		VISIT(UnaryNode);
 		VISIT(GroupingNode);
 			VISIT(LiteralNode);
+			VISIT(ArrayNode);
 			VISIT(ReferenceNode);
 			VISIT(CallNode);
 	#undef VISIT
@@ -248,6 +250,17 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 				double _float_value;
 				char _char_value;
 				string _string_value;
+			};
+
+			class ArrayNode: public PrimaryNode
+			{
+				public:
+
+				ArrayNode(Token token, vector<ExprNode*> elements):
+					PrimaryNode(token), _elements(elements) {}
+				ACCEPT
+
+				vector<ExprNode*> _elements;
 			};
 
 			class ReferenceNode: public PrimaryNode

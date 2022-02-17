@@ -545,6 +545,11 @@ VISIT(LiteralNode)
 	}
 }
 
+VISIT(ArrayNode)
+{
+	exit(1);
+}
+
 VISIT(ReferenceNode)
 {
 	node->_cast_to = node->_type;

@@ -7,6 +7,8 @@
 
 void Parser::error_at(Token *token, string message)
 {
+	if(_panic_mode) return;
+
 	_error_dispatcher.dispatch_error_at(token, "Syntax Error", message.c_str());
 
 	// print token
@@ -14,10 +16,11 @@ void Parser::error_at(Token *token, string message)
 	{
 		cerr << endl;
 		_error_dispatcher.dispatch_token_marked(token);
-		cerr << endl;
+		// cerr << endl;
 	}
 
-	ABORT(STATUS_PARSE_ERROR);
+	_had_error = true;
+	_panic_mode = true;
 }
 
 // displays an error at the previous token with the given message
@@ -198,6 +201,36 @@ void Parser::scope_down()
 	_scope_stack.pop_back();
 }
 
+void Parser::synchronize()
+{
+	_panic_mode = false;
+
+	while(!is_at_end())
+	{
+		if(_previous.type == TOKEN_SEMICOLON) return;
+		switch(_current.type)
+		{
+			case TOKEN_AT:					// func
+			case TOKEN_MODULO:				// var
+
+			case TOKEN_EQUAL:				// assign
+			case TOKEN_QUESTION_QUESTION: 	// if
+			case TOKEN_TILDE:				// return
+			case TOKEN_BANG_BANG:			// for
+			case TOKEN_LEFT_BRACE:			// block
+
+			case TOKEN_RIGHT_BRACE:	
+			case TOKEN_RIGHT_PAREN:
+				return;
+
+			default:
+				;
+		}
+
+		advance();
+	}
+}
+
 // ===================== declarations ===================
 
 StmtNode* Parser::declaration()
@@ -205,12 +238,16 @@ StmtNode* Parser::declaration()
 	// declaration		: var_decl
 	//					| statement
 
+	StmtNode* stmt = nullptr;
+
 	// if(match(TOKEN_AT)) return function_declaration();
 	if(match(TOKEN_AT)) error("Function declaration is not allowed here.");
-	else if(match(TOKEN_MODULO))  return variable_declaration();
-	else return statement();
+	else if(match(TOKEN_MODULO)) stmt = variable_declaration();
+	else stmt = statement();
 
-	return nullptr;
+	if(_panic_mode) synchronize();
+
+	return stmt;
 }
 
 StmtNode* Parser::function_declaration()
@@ -635,68 +672,109 @@ ExprNode* Parser::unary()
 ExprNode* Parser::primary()
 {
 	// primary		: NUMBER | CHAR | STRING | "(" expression ")"
-	//				| reference | call
+	//				| reference | call | "[" (expression ("," expression)*)? "]"
 
 	// reference	: "$" (IDENT | INTEGER)
 	// call			: IDENT "(" (expression ("," expression)*)? ")"
 	
 	// literals
-	if(match(TOKEN_INTEGER))
-	{
-		int base = 0;
-		string tok = PREV_TOKEN_STR;
-		
-			 if(tok.size() > 2 && tolower(tok[1]) == 'b') base = 2;
-		else if(tok.size() > 2 && tolower(tok[1]) == 'c') base = 8;
-		else if(tok.size() > 2 && tolower(tok[1]) == 'x') base = 16;
-		else base = 10;
-
-		long intval = strtol(tok.c_str() + (base != 10 ? 2 : 0), NULL, base);
-		return new LiteralNode(_previous, intval);
-	}
-	else if(match(TOKEN_FLOAT))
-	{
-		string tok = PREV_TOKEN_STR;
-
-		double doubleval = strtod(tok.c_str(), NULL);
-		return new LiteralNode(_previous, doubleval);
-	}
-	else if(match(TOKEN_CHARACTER))
-	{
-		// DEBUG_PRINT_VAR(PREV_TOKEN_STR.c_str(), %s);
-		string tok = PREV_TOKEN_STR;
-		char ch;
-
-		if(tok[1] == '\\') ch = tools::escchr(tok[2]);
-		else ch = tok[1];
-
-		return new LiteralNode(_previous, ch);
-	}
-	else if(match(TOKEN_STRING))
-	{
-		//
-		return new LiteralNode(_previous, string(_previous.start + 1, _previous.length - 2));
-	}
+	if(match(TOKEN_INTEGER) || match(TOKEN_FLOAT)
+	|| match(TOKEN_CHARACTER) || match(TOKEN_STRING))
+		return literal();
 
 	// grouping
 	else if(match(TOKEN_LEFT_PAREN))
 	{
-		
-
 		Token tok = _previous;
 		ExprNode* expr = expression();
 		consume(TOKEN_RIGHT_PAREN, "Expected ')' after parenthesized expression.");
 		return new GroupingNode(tok, expr);
 	}
 
+	// array
+	else if(match(TOKEN_LEFT_B_BRACE))
+		return array();
+
 	// references
-	else if(match(TOKEN_VARIABLE_REF))
+	else if(match(TOKEN_VARIABLE_REF) || match(TOKEN_PARAMETER_REF))
+		return reference();
+
+	// calls
+	else if (match(TOKEN_IDENTIFIER))
+		return call();
+
+	error_at_current("Expected expression.");
+	return nullptr;
+}
+
+// ===================== primaries =====================
+
+LiteralNode* Parser::literal()
+{
+	switch(_previous.type)
+	{
+		case TOKEN_INTEGER:
+		{
+			int base = 0;
+			string tok = PREV_TOKEN_STR;
+			
+				 if(tok.size() > 2 && tolower(tok[1]) == 'b') base = 2;
+			else if(tok.size() > 2 && tolower(tok[1]) == 'c') base = 8;
+			else if(tok.size() > 2 && tolower(tok[1]) == 'x') base = 16;
+			else base = 10;
+
+			long intval = strtol(tok.c_str() + (base != 10 ? 2 : 0), NULL, base);
+			return new LiteralNode(_previous, intval);
+		}
+		case TOKEN_FLOAT:
+		{
+			string tok = PREV_TOKEN_STR;
+			double doubleval = strtod(tok.c_str(), NULL);
+			return new LiteralNode(_previous, doubleval);
+		}
+		case TOKEN_CHARACTER:
+		{
+			string tok = PREV_TOKEN_STR;
+			char ch;
+
+			if(tok[1] == '\\') ch = tools::escchr(tok[2]);
+			else ch = tok[1];
+
+			return new LiteralNode(_previous, ch);
+		}
+		case TOKEN_STRING:
+		{
+			//
+			return new LiteralNode(_previous, string(_previous.start + 1, _previous.length - 2));
+		}
+		default: assert(false);
+	}
+}
+
+ArrayNode* Parser::array()
+{
+	Token tok = _previous;
+
+	vector<ExprNode*> elements;
+	if(!check(TOKEN_RIGHT_B_BRACE)) do
+	{
+		// simple expression
+		elements.push_back(expression());
+	} while(match(TOKEN_COMMA));
+
+	consume(TOKEN_RIGHT_B_BRACE, "Expected ']' after elements.");
+	return new ArrayNode(tok, elements);
+}
+
+ReferenceNode* Parser::reference()
+{
+	if(_previous.type == TOKEN_VARIABLE_REF)
 	{
 		string name = PREV_TOKEN_STR.erase(0, 1);
 		if(!check_variable(name)) error("Variable doesn't exist in current scope.");
 		return new ReferenceNode(_previous, name, -1, get_variable_type(name));
 	}
-	else if(match(TOKEN_PARAMETER_REF))
+	else if(_previous.type == TOKEN_PARAMETER_REF)
 	{
 		int intval = strtol(PREV_TOKEN_STR.erase(0, 1).c_str(), NULL, 10);
 		
@@ -707,37 +785,35 @@ ExprNode* Parser::primary()
 		type->_is_reference = true;
 		return new ReferenceNode(_previous, "", intval, type);
 	}
+	assert(false);
+}
 
-	// calls
-	else if (match(TOKEN_IDENTIFIER))
+CallNode* Parser::call()
+{
+	Token tok = _previous;
+	string name = PREV_TOKEN_STR;
+
+	consume(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
+	if(!check_function(name)) error_at(&tok, "Function does not exist in current scope.");
+
+	vector<ExprNode*> args;
+	FuncProperties funcprops = get_function_props(name);
+	
+	if(!check(TOKEN_RIGHT_PAREN)) do
 	{
-		Token tok = _previous;
-		string name = PREV_TOKEN_STR;
-		if(!check_function(name)) error("Function does not exist in current scope.");
+		args.push_back(expression());
+		if(args.size() > funcprops.params.size()) break;
+	
+	} while(match(TOKEN_COMMA));
 
-		vector<ExprNode*> args;
-		FuncProperties funcprops = get_function_props(name);
-		
-		consume(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
-		if(!check(TOKEN_RIGHT_PAREN)) do
-		{
-			args.push_back(expression());
-			if(args.size() > funcprops.params.size()) break;
-		
-		} while(match(TOKEN_COMMA));
+	if(args.size() != funcprops.params.size())
+		error(tools::fstr("Expected %d argument%s, not %d.",
+			funcprops.params.size(), funcprops.params.size() == 1 ? "" : "s", args.size()));
+	
+	consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
 
-		if(args.size() != funcprops.params.size())
-			error(tools::fstr("Expected %d argument%s, not %d.",
-				funcprops.params.size(), funcprops.params.size() == 1 ? "" : "s", args.size()));
-		
-		consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
-
-		vector<ParsedType*> lexparams; for(ParsedType*& p : funcprops.params) lexparams.push_back(p);
-		return new CallNode(tok, name, args, funcprops.ret_type, lexparams);
-	}
-
-	error_at_current("Expected expression.");
-	return nullptr;
+	vector<ParsedType*> lexparams; for(ParsedType*& p : funcprops.params) lexparams.push_back(p);
+	return new CallNode(tok, name, args, funcprops.ret_type, lexparams);
 }
 
 // ======================= misc. =======================
@@ -753,6 +829,8 @@ Status Parser::parse(string infile, const char* source, AST* astree)
 	_scope_stack = vector<Scope>();
 	_current_scope = Scope{0, map<string, ParsedType*>(), {}, map<string, FuncProperties>()};
 
+	_had_error = false;
+	_panic_mode = false;
 	_error_dispatcher = ErrorDispatcher(source, infile.c_str());
 
 	advance();
@@ -761,8 +839,10 @@ Status Parser::parse(string infile, const char* source, AST* astree)
 		if(match(TOKEN_MODULO))  _astree->push_back(variable_declaration());
 		else if(match(TOKEN_AT)) _astree->push_back(function_declaration());
 		else error_at_current("Expected declaration at top-level code.");
-	}
 
+		if(_panic_mode) synchronize();
+	}
 	DEBUG_PRINT_MSG("Parsing complete!");
-	return STATUS_SUCCESS;
+
+	return _had_error ? STATUS_PARSE_ERROR : STATUS_SUCCESS;
 }

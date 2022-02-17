@@ -266,8 +266,8 @@ Token Scanner::scanToken()
 		case ')': return makeToken(TOKEN_RIGHT_PAREN);
 		case '{': return makeToken(TOKEN_LEFT_BRACE);
 		case '}': return makeToken(TOKEN_RIGHT_BRACE);
-		// case '[': return makeToken(TOKEN_LEFT_B_BRACE);
-		// case ']': return makeToken(TOKEN_RIGHT_B_BRACE);
+		case '[': return makeToken(TOKEN_LEFT_B_BRACE);
+		case ']': return makeToken(TOKEN_RIGHT_B_BRACE);
 		case ',': return makeToken(TOKEN_COMMA);
 		case '*': return makeToken(TOKEN_STAR);
 		case '%': return makeToken(TOKEN_MODULO);
@@ -340,6 +340,8 @@ char *getTokenStr(TokenType type)
 		case TOKEN_RIGHT_PAREN: return "RIGHT_PAREN";
 		case TOKEN_LEFT_BRACE: return "LEFT_BRACE";
 		case TOKEN_RIGHT_BRACE: return "RIGHT_BRACE";
+		case TOKEN_LEFT_B_BRACE: return "LEFT_B_BRACE";
+		case TOKEN_RIGHT_B_BRACE: return "RIGHT_B_BRACE";
 		case TOKEN_SLASH: return "SLASH";
 		case TOKEN_COMMA: return "COMMA";
 		case TOKEN_SEMICOLON: return "SEMICOLON";

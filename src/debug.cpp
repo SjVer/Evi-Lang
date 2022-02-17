@@ -142,7 +142,7 @@ VISIT(BlockNode)
 		_stream << tools::fstr("\tnode%d [label=\"\", shape=\"none\", width=0, height=0]\n", _nodecount);
 		thisnode = _nodecount++;
 	}
-	else thisnode = ADD_NODE("{}");
+	else thisnode = ADD_NODE("{ }");
 
 	for(auto& subnode : node->_statements)
 	{
@@ -263,6 +263,18 @@ VISIT(LiteralNode)
 			break;
 		}
 		default: assert(false);
+	}
+}
+
+VISIT(ArrayNode)
+{
+	int thisnode = ADD_NODE("[ ]");
+
+	for(auto& subnode : node->_elements)
+	{
+		// node id will be _nodecount
+		CONNECT_NODES(thisnode, _nodecount);
+		subnode->accept(this);
 	}
 }
 

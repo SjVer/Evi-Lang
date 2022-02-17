@@ -87,6 +87,11 @@ private:
 			ExprNode* unary();
 			ExprNode* primary();
 
+	LiteralNode* literal();
+	ArrayNode* array();
+	ReferenceNode* reference();
+	CallNode* call();
+
 	// members
 
 	Scanner _scanner;
@@ -97,6 +102,8 @@ private:
 	vector<Scope> _scope_stack;
 	Scope _current_scope;
 
+	bool _had_error;
+	bool _panic_mode;
 	ErrorDispatcher _error_dispatcher;
 
 	#define PREV_TOKEN_STR std::string(_previous.start, _previous.length)

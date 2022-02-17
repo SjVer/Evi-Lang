@@ -1,7 +1,9 @@
-#apply "std-io"
+\ #apply "std-io"
 
-@main i32 ()
-{
-	printi(123); wee \\ lol
-	~ 0;
-}
+\ @main i32 ()
+\ {
+\ 	printi(123);
+\ 	~ 0;
+\ }
+
+%arr i32[] [1, 2, 3, 4];
