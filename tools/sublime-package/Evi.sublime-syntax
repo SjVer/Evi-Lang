@@ -3,7 +3,7 @@
 ---
 
 name: Evi
-file_extensions: [evi]
+file_extensions: [evi, evii]
 fileTypes: [evi]
 scope: source.evi
 

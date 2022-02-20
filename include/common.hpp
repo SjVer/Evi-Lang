@@ -50,6 +50,8 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define EVI_VERSION_1 0
 #define EVI_VERSION_2 1
 
+// macros
+#pragma region macros
 #define STRINGIFY(value) #value
 #define LINE_MARKER_REGEX " ([0-9]+) \"(.+)\""
 
@@ -72,26 +74,32 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #endif
 
 #define ABORT(status) {cerr << tools::fstr("[evi] aborted with code %d.\n", status); exit(status); }
+#pragma endregion
 
 // llvm stuff
 #define LLVM_MODULE_TOP_NAME "top"
 #define TEMP_OBJ_FILE_TEMPLATE "%s.%d.o" // format: sourcefile name and timestamp
 
+// internal shit
+#pragma region internal shit
 // path of c compiler used for linking
-#ifndef CC_PATH
-#pragma error "CC_PATH must be defined!"
+#ifndef LD_PATH
+#error "LD_PATH must be defined! (e.g. \"/usr/bin/ld\")"
 #endif
 // directory of evi static library
 #ifndef STATICLIB_DIR
-#pragma error "STATICLIB_DIR must be defined! (e.g. \"/usr/lib/\")"
+#error "STATICLIB_DIR must be defined! (e.g. \"/usr/lib/\")"
 #endif
-// c compiler invoketion args
-#define CC_ARGS CC_PATH, infile, "-o", outfile, "-L" STATICLIB_DIR, "-levi"
-#define CC_ARGC 6
+// ld args
+#include "ld_args.h"
+// // c compiler invoketion args
+// #define CC_ARGS CC_PATH, infile, "-o", outfile, "-L" STATICLIB_DIR, "-levi"
+// #define CC_ARGC 6
 // stdlib headers directory
 #ifndef STDLIB_DIR
-#pragma error "STDLIB_DIR must be defined! (e.g. \"/usr/share/evi/\")"
+#error "STDLIB_DIR must be defined! (e.g. \"/usr/share/evi/\")"
 #endif
+#pragma endregion
 
 #define POINTER_ALIGNMENT 8
 #define MAX_APPLY_DEPTH 255

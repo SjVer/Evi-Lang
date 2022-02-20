@@ -5,11 +5,12 @@
             "includePath": [
                 "${default}",
                 "${workspaceFolder}/include",
-                ""
+                "",
+                "${workspaceFolder}/include/x86_64-linux-gnu"
             ],
             "defines": [
                 "DEBUG",
-                "CC_PATH=\"/usr/bin/clang\"",
+                "LD_PATH=\"/usr/bin/ld\"",
                 "STATICLIB_DIR=\"/usr/lib/\"",
                 "STDLIB_DIR=\"/usr/share/evi/\""
             ],

@@ -6,14 +6,16 @@
 CC = clang++
 LLVMVERSION = 12
 CC_PATH = /usr/bin/clang
+LD_PATH = /usr/bin/ld
 # STATICLIB_DIR = /usr/lib/
 STATICLIB_DIR = $(PWD)/bin/
 # STDLIB_DIR = /usr/share/evi/
 STDLIB_DIR = $(PWD)/stdlib/headers/
+TARGET = x86_64-linux-gnu
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
-DEFS = COMPILER=\"$(CC)\" CC_PATH=\"$(CC_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\"
+DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\"
 CXXFLAGS = $(MUTE) $(addprefix -D,$(DEFS)) `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 
@@ -62,14 +64,14 @@ all: $(APP) stdlib
 # Builds the app
 $(APP): $(OBJ) | makedirs
 	@printf "[final] compiling final product $(notdir $@)..."
-	@$(CC) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+	@$(CC) $(CXXFLAGS) -I$(HEADERDIR)/$(TARGET) -o $@ $^ $(LDFLAGS)
 	@printf "\b\b done!\n"
 
 # Building rule for .o files and its .c/.cpp in combination with all .h
 # $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
-	@$(CC) $(CXXFLAGS) $(INC_PHC_FLAG) -I $(HEADERDIR) -o $@ -c $<
+	@$(CC) $(CXXFLAGS) -I$(HEADERDIR)/$(TARGET) $(INC_PHC_FLAG) -I $(HEADERDIR) -o $@ -c $<
 	@printf "\b\b done!\n"
 	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
 

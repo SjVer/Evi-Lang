@@ -71,17 +71,17 @@ Status CodeGenerator::emit_binary(const char* outfile)
 	if(objstatus != STATUS_SUCCESS) return objstatus; 
 
 	// object file written, now invoke llc
-	// int ccstatus = execl(CC_PATH, CC_ARGS, NULL);
+	// int ccstatus = execl(LD_PATH, CC_ARGS, NULL);
 	string cccommand; const char* infile = objfile;
-	for(int i = 0; i < CC_ARGC; i++) { cccommand += (const char*[]){CC_ARGS}[i]; cccommand += " "; }
+	for(int i = 0; i < LD_ARGC; i++) { cccommand += (const char*[]){LD_ARGS}[i]; cccommand += " "; }
 
-	DEBUG_PRINT_MSG("Invoking linker (" CC_PATH " with stdlib at " STATICLIB_DIR ")");
+	DEBUG_PRINT_MSG("Invoking linker (" LD_PATH " with stdlib at " STATICLIB_DIR ")");
 	DEBUG_PRINT_F_MSG("Linker command: %s", cccommand.c_str());
 
 	int ccstatus = system(cccommand.c_str());
 	if(ccstatus)
 	{
-		_error_dispatcher.dispatch_error("Linking Error", "Linking with " CC_PATH " failed");
+		_error_dispatcher.dispatch_error("Linking Error", "Linking with " LD_PATH " failed");
 		remove(objfile);
 		return STATUS_OUTPUT_ERROR;
 	}
