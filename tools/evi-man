@@ -31,8 +31,8 @@ Compile and assemble but do not link.
 
 .INDENT 0.0
 .TP
-.B \--c-flags
-Display the flags passed to the c compiler for linkage.
+.B \--ld-flags
+Display the flags passed to the linker.
 .UNINDENT
 
 .INDENT 0.0

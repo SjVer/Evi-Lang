@@ -159,19 +159,20 @@ int main(int argc, char **argv)
 	status = parser->parse(arguments.args[0], source, &astree);
 	if(status != STATUS_SUCCESS) ABORT(status);
 
-	
-	// generate visualization
-	if(arguments.generate_ast)
-	{
-		ASTVisualizer().visualize(string(arguments.args[0]) + ".svg", &astree);
-		cout << "[evi] AST image written to \"" + string(arguments.args[0]) + ".svg\"." << endl;
-	}	
 
 	// type check
 	TypeChecker* checker = new TypeChecker();
 	status = checker->check(arguments.args[0], source, &astree);
 	if(status != STATUS_SUCCESS) ABORT(status);
+	
 
+	// generate visualization
+	if(arguments.generate_ast)
+	{
+		ASTVisualizer().visualize(string(arguments.args[0]) + ".svg", &astree);
+		cout << "[evi] AST image written to \"" + string(arguments.args[0]) + ".svg\"." << endl;
+		exit(STATUS_SUCCESS);
+	}	
 
 	// codegen
 	CodeGenerator* codegen = new CodeGenerator();

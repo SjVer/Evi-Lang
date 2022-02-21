@@ -236,7 +236,7 @@ ParsedType* CodeGenerator::from_token_type(TokenType type)
 		case TOKEN_INTEGER:   return PTYPE(TYPE_INTEGER);
 		case TOKEN_FLOAT: 	  return PTYPE(TYPE_FLOAT);
 		case TOKEN_CHARACTER: return PTYPE(TYPE_CHARACTER);
-		case TOKEN_STRING: 	  return new ParsedType(TYPE_CHARACTER, nullptr, false, 1);
+		case TOKEN_STRING: 	  return PTYPE(TYPE_CHARACTER)->copy_pointer_to();
 		default: assert(false);
 	}
 }
@@ -753,8 +753,7 @@ VISIT(UnaryNode)
 		case TOKEN_STAR:
 		{
 			// if(casttype->isPointerTy())
-				value = _builder->CreateLoad(casttype->getPointerTo(), value,
-					tools::fstr("predtmp_%d_", parsedtype->_pointer_depth));
+				value = _builder->CreateLoad(casttype->getPointerTo(), value, "predtmp");
 			push(_builder->CreateLoad(casttype, value, "dereftmp"));
 			break;
 		}

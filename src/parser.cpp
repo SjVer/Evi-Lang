@@ -85,21 +85,36 @@ ParsedType* Parser::consume_type(string msg)
 	string typestr = PREV_TOKEN_STR;
 	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
 
-	ParsedType* type = new ParsedType();
-	type->_evi_type = GET_EVI_TYPE(typestr);
-	type->_lexical_type = type->_evi_type->_default_type;
-	type->_is_reference = true;
-	type->_pointer_depth = 0;
+	ParsedType* type = PTYPE(
+		GET_EVI_TYPE(typestr)->_default_type,
+		GET_EVI_TYPE(typestr));
 
-	// get as array if applicable
-	while(match(TOKEN_PIPE))
+	// can be array, pointer, etc
+	while(check(TOKEN_STAR) || check(TOKEN_PIPE) || check(TOKEN_PIPE_PIPE))
 	{
-		if(match(TOKEN_INTEGER)) type->_array_sizes.push_back(literal()->_int_value);
-		else type->_array_sizes.push_back(-1);
-	}
+		if(match(TOKEN_STAR)) type = type->copy_pointer_to();
+		else if(match(TOKEN_PIPE))
+		{
+			bool first = true;
+			while(first || match(TOKEN_PIPE_PIPE))
+			{
+				first = false;
 
-	// // get as pointer if applicable
-	// while(match(TOKEN_STAR)) type->_pointer_depth++;
+				// int must follow
+				if(!check(TOKEN_INTEGER) && !check(TOKEN_PIPE) && !check(TOKEN_PIPE_PIPE))
+				{
+					error_at_current("Expected size or '|' after '|'.");
+					type = PTYPE(TYPE_NONE);
+				}
+
+				type = type->copy_array_of(match(TOKEN_INTEGER) ? literal()->_int_value : -1);
+			}
+
+			consume(TOKEN_PIPE, _previous.type == TOKEN_INTEGER ? 
+				"Expected '|' afer size." : "Expected '|' or size after '|'.");
+		}
+		else if(match(TOKEN_PIPE_PIPE)) type = type->copy_array_of(-1);
+	}
 
 	return type;
 }

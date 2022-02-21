@@ -13,7 +13,7 @@ STATICLIB_DIR = $(PWD)/bin/
 STDLIB_DIR = $(PWD)/stdlib/headers/
 TARGET = x86_64-linux-gnu
 
-MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function
+MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -Wno-comment
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
 DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\"
 CXXFLAGS = $(MUTE) $(addprefix -D,$(DEFS)) `$(LLVMFLAGS)`

@@ -1,7 +1,7 @@
 #include "types.hpp"
 
 ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
-			   		   bool is_reference, uint pointer_depth, vector<int> array_sizes)
+			   		   bool is_reference, SubType subtypetype, ParsedType* subtype)
 {
 	_lexical_type = lexical_type;
 
@@ -13,26 +13,20 @@ ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
 		case TYPE_INTEGER: 	 _evi_type = GET_EVI_TYPE("i32"); break;
 		case TYPE_FLOAT: 	 _evi_type = GET_EVI_TYPE("flt"); break;
 		case TYPE_VOID: 	 _evi_type = GET_EVI_TYPE("nll"); break;
+		case TYPE_NONE:		 break;
 		default: assert(false);
 	}
 
 	_is_reference = is_reference;
-	_pointer_depth = pointer_depth;
-	_array_sizes = array_sizes;
-}
-
-// bool ParsedType::operator==(const ParsedType& rhs)
-bool ParsedType::eq(ParsedType* rhs)
-{
-	return _lexical_type == rhs->_lexical_type
-		&& _pointer_depth == rhs->_pointer_depth
-		&& _array_sizes == rhs->_array_sizes
-		&& _evi_type == rhs->_evi_type;
+	_subtypetype = subtypetype;
+	_subtype = subtype;
 }
 
 ParsedType* ParsedType::copy()
 {
-	ParsedType* ret = new ParsedType(_lexical_type, _evi_type, _is_reference, _pointer_depth, _array_sizes);
+	ParsedType* ret = new ParsedType(
+		_lexical_type, _evi_type, _is_reference,
+		_subtypetype, _subtype);
 	return ret;
 }
 
@@ -43,27 +37,40 @@ ParsedType* ParsedType::copy_change_lex(LexicalType type)
 	return ret;
 }
 
-ParsedType* ParsedType::copy_inc_ptr_depth()
+ParsedType* ParsedType::copy_pointer_to()
 {
 	ParsedType* ret = this->copy();
-	ret->_pointer_depth++;
+	ret->_subtype = this->copy();
+	ret->_subtypetype = SUBTYPE_POINTER;
 	return ret;
 }
 
-ParsedType* ParsedType::copy_dec_ptr_depth()
+ParsedType* ParsedType::copy_array_of(int len)
 {
 	ParsedType* ret = this->copy();
-	ret->_pointer_depth--;
+	ret->_subtype = this->copy();
+	ret->_subtypetype = SUBTYPE_ARRAY;
+	ret->_evi_type = (EviType*)((long)len);
 	return ret;
 }
+
+ParsedType* ParsedType::copy_element_of()
+{
+	assert(_subtypetype != SUBTYPE_NONE);
+	return _subtype->copy();
+}
+
 
 string ParsedType::to_string()
 {
-	string ret = _evi_type->_name;
-	for(int i = 0; i < _array_sizes.size(); i++)
-		ret += _array_sizes[i] >= 0 ? tools::fstr("|%u", _array_sizes[i]) : "|?";
-	for(int i = 0; i < _pointer_depth; i++) ret += '*';
-	return ret;
+	if(_subtypetype == SUBTYPE_ARRAY && (long)_evi_type < 0)
+		return _subtype->to_string() + "|?|";
+	else if(_subtypetype == SUBTYPE_ARRAY)
+		return _subtype->to_string() + tools::fstr("|%u|", (long)_evi_type);
+	else if(_subtypetype == SUBTYPE_POINTER)
+		return _subtype->to_string() + '*';
+	else
+		return _evi_type->_name;
 }
 
 const char* ParsedType::to_c_string()
@@ -74,30 +81,79 @@ const char* ParsedType::to_c_string()
 
 llvm::Type* ParsedType::get_llvm_type()
 {
-	llvm::Type* ret = _evi_type->_llvm_type;
-	for(int i = 0; i < _array_sizes.size(); i++) ret = ret->getPointerTo(); // TODO: change?
-	for(int i = 0; i < _pointer_depth; i++) ret = ret->getPointerTo();
-	return ret;
+	if(_subtypetype == SUBTYPE_ARRAY)
+		return llvm::ArrayType::get(_subtype->get_llvm_type(), (long)_evi_type);
+	else if(_subtypetype == SUBTYPE_POINTER)
+		return _subtype->get_llvm_type()->getPointerTo();
+	else return _evi_type->_llvm_type;
 }
 
-bool ParsedType::is_signed()
+
+bool ParsedType::eq(ParsedType* rhs)
 {
-	if(_pointer_depth || _array_sizes.size()) return false;
-	return _evi_type->_is_signed;
+	if(_subtypetype != rhs->_subtypetype) return false;
+
+	if(_subtypetype != SUBTYPE_NONE)
+	{
+		return _subtypetype == rhs->_subtypetype
+			&& get_depth() == rhs->get_depth()
+			&& _subtype->eq(rhs->_subtype);
+	}
+
+	return _lexical_type == rhs->_lexical_type
+		&& _evi_type->eq(rhs->_evi_type);
 }
 
 uint ParsedType::get_alignment()
 {
-	if(_pointer_depth || _array_sizes.size()) return POINTER_ALIGNMENT;
+	if(_subtypetype != SUBTYPE_NONE) return POINTER_ALIGNMENT;
 	else return _evi_type->_alignment;
+}
+
+uint ParsedType::get_depth()
+{
+	if(_subtypetype != SUBTYPE_NONE)
+		return _subtype->get_depth() + 1;
+	else return 0;
+}
+
+int ParsedType::get_array_size()
+{
+	assert(_subtypetype == SUBTYPE_ARRAY);
+	return (long)_evi_type;
+}
+
+void ParsedType::set_array_size(int size)
+{
+	assert(_subtypetype == SUBTYPE_ARRAY);
+	_evi_type = (EviType*)((long)size);
+}
+
+bool ParsedType::is_array()
+{
+	// ez
+	return _subtypetype == SUBTYPE_ARRAY;
+}
+
+bool ParsedType::is_pointer()
+{
+	// ez
+	return _subtypetype == SUBTYPE_POINTER;
+}
+
+bool ParsedType::is_signed()
+{
+	if(_subtypetype != SUBTYPE_NONE) return false;
+	return _evi_type->_is_signed;
 }
 
 
 
-bool EviType::operator==(const EviType& rhs)
+bool EviType::eq(EviType* rhs)
 {
+	assert(rhs);
 	// name is enough
-	return _name == rhs._name;
+	return _name == rhs->_name;
 }
 
 

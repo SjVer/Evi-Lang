@@ -36,7 +36,7 @@ public:
 	int _alignment;
 	bool _is_signed;
 
-	bool operator==(const EviType& rhs);
+	bool eq(EviType* rhs);
 	string to_string();
 };
 
@@ -54,35 +54,51 @@ static bool __evi_builtin_types_initialized = false;
 
 class ParsedType
 {
+private:
+	// holds array length if _subtypetype == SUBTYPE_ARRAY
+	EviType* _evi_type;
+
+	enum SubType
+	{
+		SUBTYPE_ARRAY,
+		SUBTYPE_POINTER,
+		SUBTYPE_NONE
+	};
+
 public:
+
 	ParsedType() {};
 	ParsedType(LexicalType lexical_type, 
 			   EviType* evi_type = nullptr,
 			   bool is_reference = false,
-			   uint pointer_depth = 0,
-			   vector<int> array_sizes = vector<int>());
-
-	// bool operator==(const ParsedType& rhs);
-	bool eq(ParsedType* rhs);
+			   SubType subtypetype = SUBTYPE_NONE,
+			   ParsedType* subtype = nullptr);
 
 	ParsedType* copy();
 	ParsedType* copy_change_lex(LexicalType type);
-	ParsedType* copy_inc_ptr_depth();
-	ParsedType* copy_dec_ptr_depth();
+	ParsedType* copy_pointer_to();
+	ParsedType* copy_array_of(int len);
+	ParsedType* copy_element_of();
 
 	string to_string();
 	const char* to_c_string();
-
 	llvm::Type* get_llvm_type();
-	bool is_signed();
+
+	bool eq(ParsedType* rhs);
 	uint get_alignment();
+	uint get_depth();
+	int get_array_size();
+	void set_array_size(int size);
+	bool is_array();
+	bool is_pointer();
+	bool is_signed();
 
 	LexicalType _lexical_type;
-	EviType* _evi_type;
 	bool _is_reference = false;
 	bool _keep_as_reference = false;
-	vector<int> _array_sizes;
-	uint _pointer_depth = 0;
+
+	SubType _subtypetype = SUBTYPE_NONE;
+	ParsedType* _subtype = nullptr;
 };
 
 #define PTYPE(...) (new ParsedType(__VA_ARGS__))

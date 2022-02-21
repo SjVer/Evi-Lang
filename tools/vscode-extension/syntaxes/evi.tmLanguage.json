@@ -359,6 +359,19 @@
 					"match": "\\*|/|-|\\+"
 				},
 				{
+					"begin": "\\?",
+					"beginCaptures": { "0": { "name": "keyword.operator.ternary.evi" } },
+					
+					"patterns": [ { "include": "#expressions" } ],
+
+					"end": ":",
+					"endCaptures": { "0": { "name": "keyword.operator.ternary.evi" } }
+				},
+				{
+					"name": "punctuation.definition.accessor.evi",
+					"match": "@"
+				},
+				{
 					"begin": "\\(",
 					"name": "meta.expression-grouping.evi",
 
@@ -379,7 +392,7 @@
 				},
 				{
 					"name": "variable.parameter.evi",
-					"match": "(\\$)([0-0]+)"
+					"match": "(\\$)([0-9]+)"
 				},
 				{
 					"begin": "([A-z_]+[0-z_]*)\\s*\\(",
@@ -468,12 +481,14 @@
 			"begin": "(\\[)",
 			"beginCaptures": { "1": { "name": "punctuation.array.begin.evi" }},
 			
+			"name": "meta.array.value.evi",
 			"patterns": [
-				{ "include": "#expressions" },
 				{
 					"match": ",",
 					"name": "punctuation.separator.array.evi"
-				}
+				},
+				{ "include": "#expressions" },
+				{ "include": "#illegals" }
 			],
 
 			"end": "(\\])",
@@ -537,13 +552,17 @@
 					"match": "\\*"
 				},
 				{
-					"begin": "(\\[)",
-					"beginCaptures": { "1": { "name": "punctuation.array.begin.evi" }},
+					"begin": "(\\|)",
+					"beginCaptures": { "1": { "name": "punctuation.definition.array.begin.evi" }},
 					
-					"patterns": [{ "include": "#numbers" }],
-
-					"end": "(\\])",
-					"endCaptures": { "1": { "name": "punctuation.array.end.evi" }}
+					"name": "meta.array.type.evi",
+					"patterns": [
+						{ "include": "#numbers" },
+						{ "include": "#illegals" }
+					],
+	
+					"end": "(\\|)",
+					"endCaptures": { "1": { "name": "punctuation.definition.array.end.evi" }}
 				}
 			]
 		},

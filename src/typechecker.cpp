@@ -26,7 +26,7 @@ void TypeChecker::error_at(Token *token, string message)
 	_error_dispatcher.dispatch_token_marked(token);
 	cerr << endl;
 	
-	exit(STATUS_TYPE_ERROR);
+	ABORT(STATUS_TYPE_ERROR);
 }
 
 void TypeChecker::warning_at(Token *token, string message)
@@ -54,12 +54,16 @@ ParsedType* TypeChecker::pop()
 // returns a nullptr if invalid
 ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 {
-	// DEBUG_PRINT_F_MSG("resolve_types(%s, %s) (%s)", left->to_c_string(), right->to_c_string(),
-	// 												left->eq(right) ? "same" : "different");
+	DEBUG_PRINT_F_MSG("resolve_types(%s, %s) (%s)", left->to_c_string(), right->to_c_string(),
+													left->eq(right) ? "same" : "different");
+
+	// if a|?| with b|x| than a|x|
+	if(left->is_array() && right->is_array() && left->get_array_size() < 0)
+		left->set_array_size(right->get_array_size());
 
 	if(left->eq(right)) return left->copy();
 
-	if(left->_pointer_depth == right->_pointer_depth)
+	if(left->get_depth() == right->get_depth())
 	{
 		if(left->_lexical_type == right->_lexical_type) return left->copy();
 
@@ -106,7 +110,7 @@ ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 			default: return nullptr;
 		}
 	}
-	else if(left->_pointer_depth < right->_pointer_depth)
+	else if(left->get_depth() < right->get_depth())
 	{
 		// e.g. "int* a = int** b" is basically "int a = int* b"
 		// so relative to left, right is a pointer
@@ -121,7 +125,7 @@ ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 			default: return nullptr;
 		}
 	}
-	else if(left->_pointer_depth > right->_pointer_depth)
+	else if(left->get_depth() > right->get_depth())
 	{
 		// e.g. "int** a = int* b" is basically "int* a = int b"
 		// so relative to right, left is a pointer
@@ -142,10 +146,13 @@ ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 
 bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 {
+	DEBUG_PRINT_F_MSG("can_cast_types(%s, %s) (%s)", from->to_c_string(), to->to_c_string(),
+													 from->eq(to) ? "same" : "different");
+
 	if(!from) return false;
 	if(from->eq(to)) return true;
 
-	if(from->_pointer_depth == to->_pointer_depth)
+	if(from->get_depth() == to->get_depth())
 	{
 		// just check their types
 		switch(AS_LEX(from))
@@ -187,8 +194,9 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 			default: return false;
 		}
 	}
-	else if(from->_pointer_depth < to->_pointer_depth)
+	else if(from->get_depth() < to->get_depth())
 	{
+		DEBUG_PRINT_LINE();
 		// to = ptr relative to from
 		switch(from->_lexical_type)
 		{
@@ -450,7 +458,7 @@ VISIT(UnaryNode)
 	node->_expr->accept(this);
 	ParsedType* type = pop();
 
-	if(type->_pointer_depth == 0) switch(node->_optype)
+	if(type->is_array() || type->is_pointer()) switch(node->_optype)
 	{
 		case TOKEN_STAR:
 		{
@@ -467,7 +475,7 @@ VISIT(UnaryNode)
 				break;
 			}
 
-			node->_expr->_cast_to = type->copy_inc_ptr_depth();
+			node->_expr->_cast_to = type->copy_pointer_to();
 			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
@@ -494,14 +502,14 @@ VISIT(UnaryNode)
 	{
 		case TOKEN_STAR:
 		{
-			node->_expr->_cast_to = type->copy_dec_ptr_depth();
+			node->_expr->_cast_to = type->copy_element_of();
 			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
 		}
 		case TOKEN_AND:
 		{
-			node->_expr->_cast_to = type->copy_inc_ptr_depth();
+			node->_expr->_cast_to = type->copy_pointer_to();
 			node->_expr->_cast_to->_keep_as_reference = true;
 			push(node->_expr->_cast_to);
 			break;
@@ -518,7 +526,7 @@ VISIT(UnaryNode)
 		case TOKEN_MINUS_MINUS:
 		{
 			// pointer arithmetic :(
-			node->_expr->_cast_to = PTYPE(TYPE_BOOL);
+			node->_expr->_cast_to = PTYPE(TYPE_INTEGER);
 			push(node->_expr->_cast_to);
 			CONVERSION_WARNING_AT(&node->_token, type, node->_expr->_cast_to);
 			break;
@@ -541,7 +549,8 @@ VISIT(LiteralNode)
 		case TOKEN_INTEGER: 	node->_cast_to = PTYPE(TYPE_INTEGER);      push(node->_cast_to); break;
 		case TOKEN_FLOAT: 		node->_cast_to = PTYPE(TYPE_FLOAT); 	   push(node->_cast_to); break;
 		case TOKEN_CHARACTER: 	node->_cast_to = PTYPE(TYPE_CHARACTER);    push(node->_cast_to); break;
-		case TOKEN_STRING: 		node->_cast_to = new ParsedType(TYPE_CHARACTER, nullptr, 1); push(node->_cast_to); break;
+		case TOKEN_STRING: 		node->_cast_to = PTYPE(TYPE_CHARACTER)->copy_array_of(node->_string_value.length()); 
+								push(node->_cast_to); break;
 		default: assert(false);
 	}
 }
@@ -549,7 +558,7 @@ VISIT(LiteralNode)
 VISIT(ArrayNode)
 {
 	// get first expr
-	ParsedType* firsttype = nullptr;
+	ParsedType* firsttype = PTYPE(TYPE_NONE);
 	if(node->_elements.size() >= 1)
 	{
 		node->_elements[0]->accept(this);
@@ -570,8 +579,7 @@ VISIT(ArrayNode)
 			exprtype->to_c_string(), firsttype->to_c_string());
 	}
 
-	ParsedType* arrtype = firsttype->copy();
-	arrtype->_array_sizes.push_back(node->_elements.size());
+	ParsedType* arrtype = firsttype->copy_array_of(node->_elements.size());
 	push(arrtype);
 }
 
