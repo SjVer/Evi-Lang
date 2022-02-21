@@ -16,7 +16,7 @@ static char args_doc[] = "file...";
 #define ARGS_COUNT 1
 #define ARG_EMIT_LLVM 1
 #define ARG_GEN_AST 2
-#define ARG_C_FLAGS 3
+#define ARG_LD_FLAGS 3
 
 /* This structure is used by main to communicate with parse_opt. */
 struct arguments
@@ -39,7 +39,7 @@ static struct argp_option options[] =
 	{"compile-only", 'c', 0, 0, "Compile and assemble but do not link."},
 	{"emit-llvm",  ARG_EMIT_LLVM, 0, 0, "Emit llvm IR instead of an executable."},
 	{"generate-ast",  ARG_GEN_AST, 0, 0, "Generate AST image (for debugging purposes)."},
-	{"c-flags",  ARG_C_FLAGS, 0, 0, "Display the flags passed to the c compiler for linkage."},
+	{"ld-flags",  ARG_LD_FLAGS, 0, 0, "Display the flags passed to the linker."},
 	{0}
 };
 
@@ -71,12 +71,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arguments->generate_ast = true;
 		break;
 
-	case ARG_C_FLAGS:
+	case ARG_LD_FLAGS:
 	{
 		const char* infile = "<object-file>";
 		const char* outfile = "<output-file>";
 		string cccommand;
-		for(int i = 0; i < CC_ARGC; i++) { cccommand += (const char*[]){CC_ARGS}[i]; cccommand += " "; }
+		for(int i = 0; i < LD_ARGC; i++) { cccommand += (const char*[]){LD_ARGS}[i]; cccommand += " "; }
 		cout << cccommand << endl;
 		exit(0);
 		break;
