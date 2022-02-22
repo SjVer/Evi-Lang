@@ -101,7 +101,7 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #endif
 #pragma endregion
 
-#define POINTER_ALIGNMENT 8
+#define POINTER_ALIGNMENT 16
 #define MAX_APPLY_DEPTH 255
 
 // status enum

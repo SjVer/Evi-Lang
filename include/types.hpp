@@ -79,6 +79,7 @@ public:
 	ParsedType* copy_pointer_to();
 	ParsedType* copy_array_of(int len);
 	ParsedType* copy_element_of();
+	void set_lex_type(LexicalType type);
 
 	string to_string();
 	const char* to_c_string();

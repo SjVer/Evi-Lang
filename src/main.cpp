@@ -164,7 +164,6 @@ int main(int argc, char **argv)
 	TypeChecker* checker = new TypeChecker();
 	status = checker->check(arguments.args[0], source, &astree);
 	if(status != STATUS_SUCCESS) ABORT(status);
-	
 
 	// generate visualization
 	if(arguments.generate_ast)

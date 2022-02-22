@@ -49,93 +49,114 @@ ParsedType* TypeChecker::pop()
 	return type;
 }
 
-// check if right is compatible with left and return
-// "compromise" decided by left
+// check if right is compatible with from and return
+// "compromise" decided by original
 // returns a nullptr if invalid
-ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
+ParsedType* TypeChecker::resolve_types(ParsedType* original, ParsedType* adapted)
 {
-	DEBUG_PRINT_F_MSG("resolve_types(%s, %s) (%s)", left->to_c_string(), right->to_c_string(),
-													left->eq(right) ? "same" : "different");
+	// DEBUG_PRINT_F_MSG("resolve_types(%s, %s) (%s)", original->to_c_string(), adapted->to_c_string(),
+	// 												original->eq(adapted) ? "same" : "different");
 
-	// if a|?| with b|x| than a|x|
-	if(left->is_array() && right->is_array() && left->get_array_size() < 0)
-		left->set_array_size(right->get_array_size());
+	// // if a|?| with b|x| than a|x|
+	// if(original->is_array() && adapted->is_array() && original->get_array_size() < 0)
+	// 	original->set_array_size(adapted->get_array_size());
 
-	if(left->eq(right)) return left->copy();
+	if(original->eq(adapted)) return original->copy();
 
-	if(left->get_depth() == right->get_depth())
+	if(original->get_depth() == adapted->get_depth())
 	{
-		if(left->_lexical_type == right->_lexical_type) return left->copy();
+		if(original->_lexical_type == adapted->_lexical_type) return original->copy();
 
 		// just check their types
-		switch(AS_LEX(left))
+		switch(AS_LEX(original))
 		{
-			case TYPE_BOOL: switch(AS_LEX(right))
+			case TYPE_BOOL: switch(AS_LEX(adapted))
 			{
 				case TYPE_CHARACTER:
 				case TYPE_INTEGER:
-					return left->copy_change_lex(TYPE_INTEGER);
+					return original->copy_change_lex(TYPE_INTEGER);
 				case TYPE_FLOAT:
-					return left->copy_change_lex(TYPE_FLOAT);
+					return original->copy_change_lex(TYPE_FLOAT);
 				default: return nullptr;
 			}
-			case TYPE_CHARACTER: switch(AS_LEX(right))
+			case TYPE_CHARACTER: switch(AS_LEX(adapted))
 			{
 				case TYPE_BOOL:
 				case TYPE_INTEGER:
-					return left->copy_change_lex(TYPE_INTEGER);
+					return original->copy_change_lex(TYPE_INTEGER);
 				case TYPE_FLOAT:
-					return left->copy_change_lex(TYPE_FLOAT);
-				default: return nullptr;
-				
-			}
-			case TYPE_INTEGER: switch(AS_LEX(right))
-			{
-				case TYPE_BOOL:
-				case TYPE_CHARACTER:
-					return left->copy_change_lex(TYPE_INTEGER);
-				case TYPE_FLOAT:
-					return left->copy_change_lex(TYPE_FLOAT);
+					return original->copy_change_lex(TYPE_FLOAT);
 				default: return nullptr;
 				
 			}
-			case TYPE_FLOAT: switch(AS_LEX(right))
+			case TYPE_INTEGER: switch(AS_LEX(adapted))
+			{
+				case TYPE_BOOL:
+				case TYPE_CHARACTER:
+					return original->copy_change_lex(TYPE_INTEGER);
+				case TYPE_FLOAT:
+					return original->copy_change_lex(TYPE_FLOAT);
+				default: return nullptr;
+				
+			}
+			case TYPE_FLOAT: switch(AS_LEX(adapted))
 			{
 				case TYPE_BOOL:
 				case TYPE_INTEGER:
 				case TYPE_CHARACTER:
-					return left->copy_change_lex(TYPE_FLOAT);
+					return original->copy_change_lex(TYPE_FLOAT);
 				default: return nullptr;
 			}
 			default: return nullptr;
 		}
 	}
-	else if(left->get_depth() < right->get_depth())
+	else if(original->get_depth())
 	{
-		// e.g. "int* a = int** b" is basically "int a = int* b"
-		// so relative to left, right is a pointer
-		switch (left->_lexical_type)
+		// both arrays/ptrs, compare elements
+		if(adapted->get_depth())
 		{
-			case TYPE_BOOL:
-			case TYPE_INTEGER:
-			case TYPE_CHARACTER:
-			case TYPE_FLOAT:
-				return left->copy_change_lex(TYPE_INTEGER);
-
-			default: return nullptr;
+			if(original->is_array())
+				return resolve_types(
+					original->copy_element_of(),
+					adapted->copy_element_of()
+				)->copy_array_of(original->get_array_size());
+			else
+				return resolve_types(
+					original->copy_element_of(),
+					adapted->copy_element_of()
+				)->copy_pointer_to();
 		}
+		else if(original->is_pointer())
+		{
+			// original = ptr or array, adapted = value
+			switch (adapted->_lexical_type)
+			{
+				case TYPE_BOOL:
+				case TYPE_INTEGER:
+				case TYPE_CHARACTER:
+					return original->copy_change_lex(TYPE_INTEGER);
+
+				default: return nullptr;
+			}
+		}
+		else if(original->is_array())
+		{
+			// >:(
+			return nullptr;
+		}
+		assert(false);
 	}
-	else if(left->get_depth() > right->get_depth())
+	else if(adapted->get_depth())
 	{
 		// e.g. "int** a = int* b" is basically "int* a = int b"
 		// so relative to right, left is a pointer
-		switch (right->_lexical_type)
+		switch (adapted->_lexical_type)
 		{
 			case TYPE_BOOL:
 			case TYPE_INTEGER:
 			case TYPE_CHARACTER:
 			case TYPE_FLOAT:
-				return right->copy_change_lex(TYPE_INTEGER);
+				return adapted->copy_change_lex(TYPE_INTEGER);
 
 			default: return nullptr;
 		}
@@ -146,8 +167,8 @@ ParsedType* TypeChecker::resolve_types(ParsedType* left, ParsedType* right)
 
 bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 {
-	DEBUG_PRINT_F_MSG("can_cast_types(%s, %s) (%s)", from->to_c_string(), to->to_c_string(),
-													 from->eq(to) ? "same" : "different");
+	// DEBUG_PRINT_F_MSG("can_cast_types(%s, %s) (%s)", from->to_c_string(), to->to_c_string(),
+	// 												 from->eq(to) ? "same" : "different");
 
 	if(!from) return false;
 	if(from->eq(to)) return true;
@@ -216,12 +237,12 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 	else if(to->get_depth())
 	{
 		// cast from ... to array or ptr
-		switch(to->_lexical_type)
+		switch(from->_lexical_type)
 		{
 			case TYPE_BOOL:
 			case TYPE_CHARACTER:
 			case TYPE_INTEGER:
-				return true;
+				return !to->is_array();
 			default:
 				return false;
 		}
@@ -265,12 +286,21 @@ VISIT(VarDeclNode)
 	{
 		node->_expr->accept(this);
 		ParsedType* exprtype = pop();
-		ParsedType* result = resolve_types(vartype, exprtype);
+		// DEBUG_PRINT_F_MSG("popped: %s (%s)", exprtype->to_c_string(), GET_LEX_TYPE_STR(exprtype->_lexical_type));
 
-		if(!can_cast_types(result ? result : exprtype, vartype))
+		ParsedType* result = resolve_types(vartype, exprtype);
+		// if(result) DEBUG_PRINT_F_MSG("result: %s (%s)", result->to_c_string(), GET_LEX_TYPE_STR(result->_lexical_type));
+		// else DEBUG_PRINT_MSG("result: n/a");
+
+		bool cancast = can_cast_types(result ? result : exprtype, vartype);
+		// DEBUG_PRINT_F_MSG("cast? %s", cancast ? "yes" : "no");
+
+		if(!cancast)
 			ERROR_AT(&node->_token, "Cannot initialize variable of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			vartype->to_c_string(), exprtype->to_c_string());
+		else if(!exprtype->eq(vartype))
+			CONVERSION_WARNING_AT(&node->_token, exprtype, vartype);			
 
 		node->_expr->_cast_to = vartype;
 	}
@@ -290,6 +320,8 @@ VISIT(AssignNode)
 		ERROR_AT(&node->_token, "Cannot implicitly convert expression of type " COLOR_BOLD \
 		"'%s'" COLOR_NONE " to variable's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 		exprtype->to_c_string(), vartype->to_c_string());
+	else if(!exprtype->eq(vartype))
+		CONVERSION_WARNING_AT(&node->_token, exprtype, vartype);
 
 	push(nullptr);
 }
@@ -568,8 +600,9 @@ VISIT(LiteralNode)
 		case TOKEN_INTEGER: 	node->_cast_to = PTYPE(TYPE_INTEGER);      push(node->_cast_to); break;
 		case TOKEN_FLOAT: 		node->_cast_to = PTYPE(TYPE_FLOAT); 	   push(node->_cast_to); break;
 		case TOKEN_CHARACTER: 	node->_cast_to = PTYPE(TYPE_CHARACTER);    push(node->_cast_to); break;
-		case TOKEN_STRING: 		node->_cast_to = PTYPE(TYPE_CHARACTER)->copy_array_of(node->_string_value.length()); 
-								push(node->_cast_to); break;
+		case TOKEN_STRING: 		
+			node->_cast_to = PTYPE(TYPE_CHARACTER)->copy_array_of(node->_string_value.length()); 
+			push(node->_cast_to); break;
 		default: assert(false);
 	}
 }
@@ -599,6 +632,7 @@ VISIT(ArrayNode)
 	}
 
 	ParsedType* arrtype = firsttype->copy_array_of(node->_elements.size());
+	node->_cast_to = arrtype;
 	push(arrtype);
 }
 

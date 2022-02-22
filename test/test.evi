@@ -1,12 +1,17 @@
 \ #apply "std-io"
 
-\ @main i32 (i32 chr**)
-\ {
-\ 	printi($0);
-\ 	\ prints($1@0);
-\ 	~ 0;
-\ }
+@printintarr nll (i32 i32|4|);
+\ @printstrarr nll (i32 chr**);
 
-\ %arr i32|| [1, 2, 3, 4];
+\ @f i32 () ~ 123;
+
+@main i32 (i32 chr**)
+{
+	\ printi($0);
+	\ prints($1@0);
+	\ %arr i32|| [1, f(), 3, 4];
+	printintarr(4, [1,2,3,4]);
+	\ ~ 0;
+}
+
 \ %arr2 i32|3| [1, 2];
-%arr3 i32|4| 0.5;

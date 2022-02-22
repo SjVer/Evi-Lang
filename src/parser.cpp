@@ -90,28 +90,29 @@ ParsedType* Parser::consume_type(string msg)
 		GET_EVI_TYPE(typestr));
 
 	// can be array, pointer, etc
-	while(check(TOKEN_STAR) || check(TOKEN_PIPE) || check(TOKEN_PIPE_PIPE))
+	while(check(TOKEN_STAR) || check(TOKEN_PIPE)  )// || check(TOKEN_PIPE_PIPE))
 	{
 		if(match(TOKEN_STAR)) type = type->copy_pointer_to();
 		else if(match(TOKEN_PIPE))
 		{
 			bool first = true;
-			while(first || match(TOKEN_PIPE_PIPE))
+			while(first  )// || match(TOKEN_PIPE_PIPE))
 			{
 				first = false;
 
 				// int must follow
-				if(!check(TOKEN_INTEGER) && !check(TOKEN_PIPE) && !check(TOKEN_PIPE_PIPE))
+				if(!check(TOKEN_INTEGER) && !check(TOKEN_PIPE)  )// && !check(TOKEN_PIPE_PIPE))
 				{
 					error_at_current("Expected size or '|' after '|'.");
-					type = PTYPE(TYPE_NONE);
+					return PTYPE(TYPE_NONE);
 				}
 
 				type = type->copy_array_of(match(TOKEN_INTEGER) ? literal()->_int_value : -1);
 			}
 
 			consume(TOKEN_PIPE, _previous.type == TOKEN_INTEGER ? 
-				"Expected '|' afer size." : "Expected '|' or size after '|'.");
+				// "Expected '|' afer size." : "Expected '|' or size after '|'.");
+				"Expected '|' afer size." : "Expected size after '|'.");
 		}
 		else if(match(TOKEN_PIPE_PIPE)) type = type->copy_array_of(-1);
 	}
@@ -242,7 +243,7 @@ void Parser::synchronize()
 			case TOKEN_LEFT_BRACE:			// block
 
 			case TOKEN_RIGHT_BRACE:	
-			case TOKEN_RIGHT_PAREN:
+			// case TOKEN_RIGHT_PAREN:
 				return;
 
 			default:
@@ -290,10 +291,15 @@ StmtNode* Parser::function_declaration()
 
 	// get parameters
 	vector<ParsedType*> params;
-	while(!check(TOKEN_RIGHT_PAREN)) do
+	while(!check(TOKEN_RIGHT_PAREN) && !_panic_mode) do
 	{
 		if (params.size() >= 255) error_at_current("Parameter count exceeded limit of 255.");
-		params.push_back(consume_type("Expected parameter."));
+		else
+		{
+			ParsedType* type = consume_type("Expected parameter.");
+			if(_panic_mode) break;
+			params.push_back(type);
+		}
 
 	} while (check(TOKEN_TYPE));
 

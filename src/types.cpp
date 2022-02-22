@@ -26,14 +26,16 @@ ParsedType* ParsedType::copy()
 {
 	ParsedType* ret = new ParsedType(
 		_lexical_type, _evi_type, _is_reference,
-		_subtypetype, _subtype);
+		_subtypetype, nullptr);
+	if(_subtypetype != SUBTYPE_NONE)
+		ret->_subtype = _subtype->copy();
 	return ret;
 }
 
 ParsedType* ParsedType::copy_change_lex(LexicalType type)
 {
 	ParsedType* ret = this->copy();
-	ret->_lexical_type = type;
+	set_lex_type(type);
 	return ret;
 }
 
@@ -58,6 +60,13 @@ ParsedType* ParsedType::copy_element_of()
 {
 	assert(_subtypetype != SUBTYPE_NONE);
 	return _subtype->copy();
+}
+
+void ParsedType::set_lex_type(LexicalType type)
+{
+	_lexical_type = type;
+	if(_subtypetype != SUBTYPE_NONE)
+		_subtype->set_lex_type(type);
 }
 
 
@@ -106,7 +115,8 @@ bool ParsedType::eq(ParsedType* rhs)
 
 uint ParsedType::get_alignment()
 {
-	if(_subtypetype != SUBTYPE_NONE) return POINTER_ALIGNMENT;
+	if(_subtypetype == SUBTYPE_ARRAY) return _subtype->get_alignment() * (long)_evi_type;
+	else if(_subtypetype == SUBTYPE_POINTER) return POINTER_ALIGNMENT;
 	else return _evi_type->_alignment;
 }
 

@@ -27,3 +27,15 @@ uint64_t scani()
 	scanf("%d", &ret);
 	return ret;
 }
+
+void printstrarr(uint64_t len, char** arr)
+{
+	for(int i = 0; i < len; i++)
+		prints(arr[i]);
+}
+
+void printintarr(uint64_t len, int32_t* arr)
+{
+	for(int i = 0; i < len; i++)
+		printi(arr[i]);
+}

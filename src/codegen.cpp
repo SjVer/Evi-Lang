@@ -3,7 +3,7 @@
 
 CodeGenerator::CodeGenerator()
 {
-	_llvm_errstream = new llvm::raw_os_ostream(_errstream);
+	_errstream = new llvm::raw_os_ostream(cerr);
 
 	// target machine stuff
 	llvm::InitializeAllTargetInfos();
@@ -18,7 +18,7 @@ CodeGenerator::CodeGenerator()
 
 	string error;
 	const llvm::Target* target = llvm::TargetRegistry::lookupTarget(_target_triple, error);
-	if (!target) { cerr << error; exit(STATUS_CODEGEN_ERROR); }
+	if (!target) { cerr << error; ABORT(STATUS_CODEGEN_ERROR); }
 
 	llvm::TargetOptions opt;
 	auto rm = llvm::Optional<llvm::Reloc::Model>();
@@ -43,7 +43,7 @@ Status CodeGenerator::emit_object(const char* outfile)
 	{
 		_error_dispatcher.dispatch_error("Code Generation Error", 
 			tools::fstr("Could not open file \"%s\": %s.", outfile, errcode.message().c_str()).c_str());
-		exit(STATUS_CODEGEN_ERROR);
+		ABORT(STATUS_CODEGEN_ERROR);
 	}
 
 	llvm::legacy::PassManager pass;
@@ -54,7 +54,7 @@ Status CodeGenerator::emit_object(const char* outfile)
 		_error_dispatcher.dispatch_error("Code Generation Error",
 			"Target machine incompatible with object file type.");
 		remove(outfile);
-		exit(STATUS_CODEGEN_ERROR);
+		ABORT(STATUS_CODEGEN_ERROR);
 	}
 
 	pass.run(*_top_module);
@@ -140,20 +140,24 @@ void CodeGenerator::finish()
 		_builder->SetInsertPoint(_global_init_func_block);
 		_builder->CreateRetVoid();
 
-		if(llvm::verifyFunction(*_global_init_func_block->getParent(), _llvm_errstream))
+		if(llvm::verifyFunction(*_global_init_func_block->getParent(), nullptr))
 		{
-			_error_dispatcher.dispatch_error("Code Generation Error",
-			"LLVM verification of globals initialization function failed.");
-			// exit(STATUS_CODEGEN_ERROR);
+			_error_dispatcher.dispatch_error("Code Generation Error", 
+				"LLVM verification of globals initialization function failed: ");
+			llvm::verifyFunction(*_global_init_func_block->getParent(), _errstream);
+			cerr << endl << endl;
+			// ABORT(STATUS_CODEGEN_ERROR);
 			invalid = true;
 		}
 	}
-
+	
 	// verify module
-	if(llvm::verifyModule(*_top_module, _llvm_errstream))
+	if(llvm::verifyModule(*_top_module, nullptr))
 	{
-		_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed.");
-		// exit(STATUS_CODEGEN_ERROR);
+		_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed: ");
+		llvm::verifyModule(*_top_module, _errstream);
+		cerr << endl << endl;
+		// ABORT(STATUS_CODEGEN_ERROR);
 		invalid = true;
 	}
 
@@ -164,7 +168,7 @@ void CodeGenerator::finish()
 	file_stream.flush();
 	#endif
 
-	if(invalid) ABORT(STATUS_CODEGEN_ERROR);
+	// if(invalid) ABORT(STATUS_CODEGEN_ERROR);
 }
 
 // =========================================
@@ -178,7 +182,7 @@ void CodeGenerator::error_at(Token *token, string message)
 	_error_dispatcher.dispatch_token_marked(token);
 	cerr << endl;
 	
-	exit(STATUS_CODEGEN_ERROR);
+	ABORT(STATUS_CODEGEN_ERROR);
 }
 
 void CodeGenerator::warning_at(Token *token, string message)
@@ -205,10 +209,16 @@ llvm::Value* CodeGenerator::pop()
 
 // =========================================
 
-llvm::AllocaInst* CodeGenerator::create_entry_block_alloca(llvm::Function *function, llvm::Value* value)
+llvm::AllocaInst* CodeGenerator::create_entry_block_alloca(llvm::Type* ty, string name)
 {
-	llvm::IRBuilder<> TmpB(&function->getEntryBlock(), function->getEntryBlock().begin());
-	return TmpB.CreateAlloca(value->getType(), 0, value->getName());
+	#ifdef DEBUG_NO_FOLD
+	llvm::IRBuilder<llvm::NoFolder> TmpB(&_builder->GetInsertBlock()->getParent()->getEntryBlock(), 
+		_builder->GetInsertBlock()->getParent()->getEntryBlock().begin());
+	#else
+	llvm::IRBuilder<> TmpB(&_builder->GetInsertBlock()->getParent()->getEntryBlock(), 
+		_builder->GetInsertBlock()->getParent()->getEntryBlock().begin());
+	#endif
+	return TmpB.CreateAlloca(ty, 0, name);
 }
 
 llvm::Value* CodeGenerator::to_bool(llvm::Value* value)
@@ -282,7 +292,7 @@ VISIT(FuncDeclNode)
 			llvm::Argument* arg = func->getArg(i);
 
 			// // Create an alloca for this variable.
-			llvm::AllocaInst* alloca = create_entry_block_alloca(func, arg);
+			llvm::AllocaInst* alloca = create_entry_block_alloca(arg->getType(), arg->getName().str());
 
 			// // Store the initial value into the alloca.
 			_builder->CreateStore(arg, alloca);
@@ -313,7 +323,7 @@ VISIT(FuncDeclNode)
 		//			
 		// 	cerr << _errstream.str() << endl;
 		//	
-		// 	// exit(STATUS_CODEGEN_ERROR);
+		// 	// ABORT(STATUS_CODEGEN_ERROR);
 		// }
 	}
 }
@@ -368,8 +378,7 @@ VISIT(VarDeclNode)
 	
 		init = create_cast(init, true, node->_type->get_llvm_type(), node->_type->is_signed());
 		
-		llvm::AllocaInst* alloca = _builder->CreateAlloca(node->_type->get_llvm_type(), 0, node->_identifier);
-		// _builder->CreateAlignedStore(init, alloca, llvm::MaybeAlign(node->_type->_alignment));
+		llvm::AllocaInst* alloca = create_entry_block_alloca(node->_type->get_llvm_type(), node->_identifier);
 		_builder->CreateStore(init, alloca);
 	
 		_named_values[node->_identifier].first = alloca;
@@ -860,7 +869,36 @@ VISIT(LiteralNode)
 
 VISIT(ArrayNode)
 {
-	exit(1);
+	// alloca array
+	llvm::AllocaInst* arr = new llvm::AllocaInst(
+		node->_cast_to->get_llvm_type(), 0, string("arrtmp"), _builder->GetInsertBlock());
+	arr->setAlignment(llvm::Align(node->_cast_to->get_alignment()));
+
+	// get base pointer to array
+	llvm::ConstantInt* idx0 = llvm::ConstantInt::get(__context, llvm::APInt(64, 0, false));
+	llvm::Value* ptr = _builder->CreateInBoundsGEP(
+		node->_cast_to->get_llvm_type(), arr, (llvm::Value*[2]){idx0, idx0}, "geptmp");
+
+	// iterate over elements
+	vector<llvm::Constant*> elements = vector<llvm::Constant*>();
+	for(int i = 0; i < node->_elements.size(); i++)
+	{
+		ExprNode* element = node->_elements[i];
+		element->accept(this);
+		// llvm::Value* val = create_cast(pop(), false, element->_cast_to->get_llvm_type(), 
+		// 							   element->_cast_to->is_signed());
+		llvm::Value* val = pop();
+		
+		_builder->CreateStore(val, ptr);
+		
+		// move pointer one up (so to next element)
+		if(i + 1 < node->_elements.size())
+			ptr = _builder->CreateInBoundsGEP(ptr, (llvm::Value*[1]){
+				llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false))
+			}, "geptmp");
+	}
+
+	push(arr);
 }
 
 VISIT(ReferenceNode)

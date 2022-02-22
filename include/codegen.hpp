@@ -45,8 +45,7 @@ class CodeGenerator: public Visitor
 	char* _infile;
 	char* _outfile;
 	ErrorDispatcher _error_dispatcher;
-	stringstream _errstream;
-	llvm::raw_os_ostream* _llvm_errstream;
+	llvm::raw_os_ostream* _errstream;
 
 	#ifdef DEBUG_NO_FOLD
 	unique_ptr<llvm::IRBuilder<llvm::NoFolder>> _builder;
@@ -71,7 +70,7 @@ class CodeGenerator: public Visitor
 	llvm::Value* pop();
 
 	llvm::AllocaInst* create_entry_block_alloca(
-		llvm::Function *function, llvm::Value* value);
+		llvm::Type* ty, string name);
 	llvm::Value* to_bool(llvm::Value* value);
 	llvm::Value* create_cast(llvm::Value* srcval, bool srcsigned, 
 							 llvm::Type* desttype, bool destsigned);
