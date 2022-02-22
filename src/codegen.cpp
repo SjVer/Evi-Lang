@@ -133,6 +133,8 @@ void CodeGenerator::prepare()
 
 void CodeGenerator::finish()
 {
+	bool invalid = false;
+
 	if(_global_init_func_block)
 	{
 		_builder->SetInsertPoint(_global_init_func_block);
@@ -140,20 +142,20 @@ void CodeGenerator::finish()
 
 		if(llvm::verifyFunction(*_global_init_func_block->getParent(), _llvm_errstream))
 		{
-			cerr << endl;
 			_error_dispatcher.dispatch_error("Code Generation Error",
 			"LLVM verification of globals initialization function failed.");
-			exit(STATUS_CODEGEN_ERROR);
+			// exit(STATUS_CODEGEN_ERROR);
+			invalid = true;
 		}
 	}
 
-	// // verify module
-	// if(llvm::verifyModule(*_top_module, _llvm_errstream))
-	// {
-	// 	cerr << endl;
-	// 	_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed.");
-	// 	exit(STATUS_CODEGEN_ERROR);
-	// }
+	// verify module
+	if(llvm::verifyModule(*_top_module, _llvm_errstream))
+	{
+		_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed.");
+		// exit(STATUS_CODEGEN_ERROR);
+		invalid = true;
+	}
 
 	#ifdef DEBUG
 	DEBUG_PRINT_MSG("Generated LLVM IR:");
@@ -161,6 +163,8 @@ void CodeGenerator::finish()
 	_top_module->print(file_stream, nullptr);
 	file_stream.flush();
 	#endif
+
+	if(invalid) ABORT(STATUS_CODEGEN_ERROR);
 }
 
 // =========================================

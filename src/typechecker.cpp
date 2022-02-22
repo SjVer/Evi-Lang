@@ -194,17 +194,36 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 			default: return false;
 		}
 	}
-	else if(from->get_depth() < to->get_depth())
+	else if(from->get_depth())
 	{
-		DEBUG_PRINT_LINE();
-		// to = ptr relative to from
-		switch(from->_lexical_type)
+		// both arrays/ptrs, compare elements
+		if(to->get_depth()) return can_cast_types(
+			from->copy_element_of(),
+			to->copy_element_of());
+
+		// cast array or ptr to ...
+		switch(to->_lexical_type)
+		{
+			case TYPE_BOOL:
+			case TYPE_CHARACTER:
+			case TYPE_INTEGER:
+			case TYPE_FLOAT:
+				return true;
+			default:
+				return false;
+		}
+	}
+	else if(to->get_depth())
+	{
+		// cast from ... to array or ptr
+		switch(to->_lexical_type)
 		{
 			case TYPE_BOOL:
 			case TYPE_CHARACTER:
 			case TYPE_INTEGER:
 				return true;
-			default: return false;
+			default:
+				return false;
 		}
 	}
 
