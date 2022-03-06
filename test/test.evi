@@ -17,6 +17,7 @@
 \ \ %arr2 i32|3| [1, 2];
 
 #line 200
+#file "lmao"
 
 #apply "std-io"
 #apply "header"

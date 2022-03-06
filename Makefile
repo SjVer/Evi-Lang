@@ -142,7 +142,7 @@ debug-no-fold: debug
 
 .PHONY: valgrind
 valgrind: debug $(APP)
-	@valgrind $(args) bin/evi test/test.evi -o bin/test
+	@valgrind bin/evi test/test.evi -o bin/test $(args)
 
 git:
 	git add --all

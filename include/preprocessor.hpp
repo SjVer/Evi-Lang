@@ -15,7 +15,8 @@ class Preprocessor
 public:
 	Preprocessor():
 		_current_file(),
-		_had_error(false) {}
+		_had_error(false),
+		_error_dispatcher() {}
 	Status preprocess(string infile, const char** source);
 
 private:
@@ -24,6 +25,8 @@ private:
 	{
 		DIR_APPLY,
 		DIR_INFO,
+		DIR_FILE,
+		DIR_LINE,
 		
 		DIR_FLAG,
 		DIR_UNFLAG,
@@ -53,6 +56,7 @@ private:
 	string strip_start(string str);
 	bool consume_identifier(string* str, string* dest, uint line);
 	bool consume_string(string* str, string* dest, uint line);
+	bool consume_integer(string* str, uint* dest, uint line);
 
 	DirectiveType get_directive_type(string str);
 	DirectiveHandler get_directive_handler(DirectiveType type);
@@ -60,9 +64,11 @@ private:
 
 	bool handle_pragma(vector<string> args, uint line_idx);
 
-	#define HANDLER(name) void handle_directive_##name(string line, uint line_idx)
+	#define HANDLER(name) void handle_directive_##name(string line, uint line_no)
 		HANDLER(apply);
 		HANDLER(info);
+		HANDLER(file);
+		HANDLER(line);
 
 		HANDLER(flag);
 		HANDLER(unflag);
@@ -76,6 +82,7 @@ private:
 	// members
 	vector<string> _lines;
 	string _current_file;
+	uint _current_line_no;
 
 	vector<string> _flags;
 	stack<bool>* _branches;

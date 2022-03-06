@@ -14,6 +14,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	// prepare sum shit
 	_lines = vector<string>();
 	_current_file = infile;
+	_current_line_no = 0;
 	_branches = new stack<bool>();
 	_apply_depth = 0;
 	_error_dispatcher = ErrorDispatcher(*source, infile.c_str());
@@ -22,15 +23,14 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	vector<string> lines = tools::split_string(string(*source), "\n");
 
 	// do the actual preprocessing
-	LINE_MARKER(0);
+	LINE_MARKER(_current_line_no);
 	process_lines(lines);
 
 	// finish up
-	DEBUG_PRINT_MSG("Preprocessor done!");
-
 	string result_source; for(string& ln : _lines) result_source += ln + "\n";
 	*source = strdup(remove_comments(result_source).c_str());
 
+	DEBUG_PRINT_MSG("Preprocessor done!");
 	// DEBUG_PRINT_F_MSG("Preprocessed source:\n%s", *source);
 	return _had_error ? STATUS_PREPROCESS_ERROR : STATUS_SUCCESS;
 }
@@ -41,20 +41,14 @@ void Preprocessor::process_lines(vector<string> lines)
 {
 	for(int line_idx = 0; line_idx < lines.size(); line_idx++)
 	{
+		_current_line_no++;
+
 		string line_str = strip_start(lines[line_idx]);
 		
 		if(line_str[0] == '#') // handle directives
-		{
-			// DEBUG_PRINT_F_MSG("processing line %2d: %s", line_idx + 1, line_str.c_str());
-			handle_directive(strip_start(line_str.erase(0, 1)), line_idx);
-		}
-		
+			handle_directive(strip_start(line_str.erase(0, 1)), _current_line_no);
 		else if(IN_FALSE_BRANCH)
-		{
-			// empty line or commented source line?
 			SUBMIT_LINE("");
-			// SUBMIT_LINE("\\ " + line_str);
-		}
 		
 		else SUBMIT_LINE(lines[line_idx]);
 	}
@@ -141,6 +135,7 @@ bool Preprocessor::consume_identifier(string* str, string* dest, uint line)
 
 	// get identifier and finish
 	*dest = string(*str, 0, i);
+	str->erase(0, i);
 	return true;
 }
 
@@ -169,6 +164,33 @@ bool Preprocessor::consume_string(string* str, string* dest, uint line)
 
 	// get identifier and finish
 	*dest = string(*str, 1, --i);
+	str->erase(0, i + 2);
+	return true;
+}
+
+// errors handled in the function
+bool Preprocessor::consume_integer(string* str, uint* dest, uint line)
+{
+	*str = strip_start(*str);
+
+	int i = 0;
+
+	// get digits
+	while(isdigit((*str)[i])) i++;
+
+	// check if correct
+	if(i != str->length() && (*str)[i] != ' ')
+	{
+		ERROR_F(line, "Expected integer, not '%s'.", str->substr(0, str->find(' ')).c_str());
+		return false;
+	}
+
+	// get integer and finish
+	string intstr = string(*str, 0, i);
+	*dest = strtol(intstr.c_str(), NULL, 10);
+	// DEBUG_PRINT_F_MSG("int consumed: %d", *dest);
+
+	str->erase(0, i);
 	return true;
 }
 
@@ -178,6 +200,8 @@ Preprocessor::DirectiveType Preprocessor::get_directive_type(string str)
 {
 		 if(str == "apply")  return DIR_APPLY;
 	else if(str == "info")	 return DIR_INFO;
+	else if(str == "file")	 return DIR_FILE;
+	else if(str == "line")	 return DIR_LINE;
 
 	else if(str == "flag")	 return DIR_FLAG;
 	else if(str == "unflag") return DIR_UNFLAG;
@@ -197,6 +221,8 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 	{
 		CASE(DIR_APPLY, apply);
 		CASE(DIR_INFO, info);
+		CASE(DIR_FILE, file);
+		CASE(DIR_LINE, line);
 
 		CASE(DIR_FLAG, flag);
 		CASE(DIR_UNFLAG, unflag);
@@ -268,165 +294,196 @@ bool Preprocessor::handle_pragma(vector<string> args, uint line_idx)
 
 // ===============================================================
 
-#define HANDLER(name) void Preprocessor::handle_directive_##name(string line, uint line_idx)
+#define HANDLER(name) void Preprocessor::handle_directive_##name(string line, uint line_no)
 #define TRY_TO(code) { if(!(code)) return; }
 #define CHECK_FLAG(flag) (std::find(_flags.begin(), _flags.end(), flag) != _flags.end())
+#define ASSERT_END_OF_LINE() { if(strip_start(line).length()) ERROR(line_no, "Expected newline"); return; }
 
 HANDLER(apply)
 {
-	if(!IN_FALSE_BRANCH)
+	if(IN_FALSE_BRANCH) { SUBMIT_LINE(""); return; }
+
+	string oldfile = _current_file;
+	uint old_lineno = _current_line_no;
+	_apply_depth++;
+
+	// get filename
+	string header;
+	TRY_TO(consume_string(&line, &header, line_no));
+
+	// find and read file
+	string path = find_header(header);
+
+	if(!path.length()) // find_header failed
 	{
-		string oldfile = _current_file;
-		_apply_depth++;
-
-		// get filename
-		string header;
-		TRY_TO(consume_string(&line, &header, line_idx + 1));
-
-		// find and read file
-		string path = find_header(header);
-
-		if(!path.length()) // find_header failed
-		{
-			ERROR_F(line_idx + 1, "Could not find header '%s'.", header.c_str());
-			return;
-		}
-		else if(find(_blocked_files.begin(), _blocked_files.end(), path) != _blocked_files.end())
-		{
-			// file #info apply_once'd
-			SUBMIT_LINE("");
-			return;
-		}
-		else if(_apply_depth > MAX_APPLY_DEPTH) // too deep
-		{
-			ERROR_F(line_idx + 1, "Inclusion depth surpassed limit of %d.", MAX_APPLY_DEPTH);
-			return;
-		}
-		
-		// DEBUG_PRINT_F_MSG("Found header '%s' at '%s'.", header.c_str(), path.c_str());
-		string source = tools::readf(path);
-
-		// process text
-		_current_file = path;
-		_error_dispatcher.set_filename(path.c_str());
-		vector<string> lines = tools::split_string(source, "\n");
-		LINE_MARKER(0);
-		process_lines(lines);
-
-		// continue current file
-		_current_file = oldfile;
-		_error_dispatcher.set_filename(oldfile.c_str());
-		LINE_MARKER(line_idx + 1);
+		ERROR_F(line_no, "Could not find header '%s'.", header.c_str());
+		return;
 	}
-	else SUBMIT_LINE("");
+	else if(find(_blocked_files.begin(), _blocked_files.end(), path) != _blocked_files.end())
+	{
+		// file #info apply_once'd
+		SUBMIT_LINE("");
+		return;
+	}
+	else if(_apply_depth > MAX_APPLY_DEPTH) // too deep
+	{
+		ERROR_F(line_no, "Inclusion depth surpassed limit of %d.", MAX_APPLY_DEPTH);
+		return;
+	}
+	
+	// DEBUG_PRINT_F_MSG("Found header '%s' at '%s'.", header.c_str(), path.c_str());
+	string source = tools::readf(path);
+
+	// process text
+	_current_file = path;
+	_error_dispatcher.set_filename(path.c_str());
+	vector<string> lines = tools::split_string(source, "\n");
+	LINE_MARKER(0);
+	process_lines(lines);
+
+	// continue current file
+	_current_file = oldfile;
+	_current_line_no = old_lineno;
+	_error_dispatcher.set_filename(oldfile.c_str());
+	LINE_MARKER(line_no);
+
+	ASSERT_END_OF_LINE();
 }
 
 HANDLER(info)
 {
-	if(!IN_FALSE_BRANCH)
-	{
-		// get arguments and check if there are any
-		vector<string> args = tools::split_string(line, " ");
-		if(!args.size() || !args[0].length())
-		{
-			ERROR(line_idx + 1, "Expected arguments after #info.");
-			return;
-		}
-		else if(!handle_pragma(args, line_idx))
-		{
-			ERROR_F(line_idx + 1, "Invalid arguments for '#info %s'.", args[0].c_str());
-			return;
-		}
-	}
 	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) return;
+
+	// get arguments and check if there are any
+	vector<string> args = tools::split_string(line, " ");
+	if(!args.size() || !args[0].length())
+	{
+		ERROR(line_no, "Expected arguments after #info.");
+		return;
+	}
+	else if(!handle_pragma(args, line_no))
+	{
+		ERROR_F(line_no, "Invalid arguments for '#info %s'.", args[0].c_str());
+		return;
+	}
+}
+
+HANDLER(file)
+{
+	if(IN_FALSE_BRANCH) { SUBMIT_LINE(""); return; }
+
+	// get filename
+	TRY_TO(consume_string(&line, &_current_file, line_no));
+	// DEBUG_PRINT_F_MSG("Set filename to '%s'.", _current_file.c_str());
+	LINE_MARKER(line_no);
+
+	ASSERT_END_OF_LINE();
+}
+
+HANDLER(line)
+{
+	if(IN_FALSE_BRANCH) { SUBMIT_LINE(""); return; }
+
+	// get lineno
+	TRY_TO(consume_integer(&line, &_current_line_no, line_no));
+	LINE_MARKER(_current_line_no);
+
+	ASSERT_END_OF_LINE();
 }
 
 
 HANDLER(flag)
 {
-	if(!IN_FALSE_BRANCH)
-	{
-		string flag;
-		TRY_TO(consume_identifier(&line, &flag, line_idx + 1));
-
-		if(CHECK_FLAG(flag))
-		{
-			ERROR_F(line_idx + 1, "Flag '%s' is already set.", flag.c_str());
-			return;
-		}
-		
-		_flags.push_back(flag);
-		// DEBUG_PRINT_F_MSG("Set flag '%s'", flag.c_str());
-	}
 	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) return;
+
+	string flag;
+	TRY_TO(consume_identifier(&line, &flag, line_no));
+
+	if(CHECK_FLAG(flag))
+	{
+		ERROR_F(line_no, "Flag '%s' is already set.", flag.c_str());
+		return;
+	}
+	
+	_flags.push_back(flag);
+	// DEBUG_PRINT_F_MSG("Set flag '%s'", flag.c_str());
+
+	ASSERT_END_OF_LINE();
 }
 
 HANDLER(unflag)
 {
-	if(!IN_FALSE_BRANCH)
-	{
-		string flag;
-		TRY_TO(consume_identifier(&line, &flag, line_idx + 1));
-
-		if(!CHECK_FLAG(flag))
-		{
-			ERROR_F(line_idx + 1, "Flag '%s' is not set.", flag.c_str());
-			return;
-		}
-		
-		_flags.erase(find(_flags.begin(), _flags.end(), flag));
-		// DEBUG_PRINT_F_MSG("Unset flag '%s'", flag.c_str());
-	}
 	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) return;
+
+	string flag;
+	TRY_TO(consume_identifier(&line, &flag, line_no));
+
+	if(!CHECK_FLAG(flag))
+	{
+		ERROR_F(line_no, "Flag '%s' is not set.", flag.c_str());
+		return;
+	}
+	
+	_flags.erase(find(_flags.begin(), _flags.end(), flag));
+	// DEBUG_PRINT_F_MSG("Unset flag '%s'", flag.c_str());
+
+	ASSERT_END_OF_LINE();
 }
 
 
 HANDLER(ifset)
 {
-	if(!IN_FALSE_BRANCH)
-	{
-		string flag;
-		TRY_TO(consume_identifier(&line, &flag, line_idx + 1));
-		// DEBUG_PRINT_F_MSG("Started if-branch with '%s'", flag.c_str());
-		_branches->push(CHECK_FLAG(flag));
-	}
-	else _branches->push(false);
 	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) { _branches->push(false); return; }
+
+	string flag;
+	TRY_TO(consume_identifier(&line, &flag, line_no));
+	// DEBUG_PRINT_F_MSG("Started if-branch with '%s'", flag.c_str());
+	_branches->push(CHECK_FLAG(flag));
+	
+	ASSERT_END_OF_LINE();
 }
 
 HANDLER(ifnset)
 {
-	if(!IN_FALSE_BRANCH)
-	{
-		string flag;
-		TRY_TO(consume_identifier(&line, &flag, line_idx + 1));
-		// DEBUG_PRINT_F_MSG("Started if-not-branch with '%s'", flag.c_str());
-		_branches->push(!CHECK_FLAG(flag));
-	}
-	else _branches->push(false);
 	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) { _branches->push(false); return; }
+
+	string flag;
+	TRY_TO(consume_identifier(&line, &flag, line_no));
+	// DEBUG_PRINT_F_MSG("Started if-not-branch with '%s'", flag.c_str());
+	_branches->push(!CHECK_FLAG(flag));
+
+	ASSERT_END_OF_LINE();
 }
 
 HANDLER(else)
 {
 	if(!_branches->size())
 	{
-		ERROR(line_idx + 1, "Stray '#else'.");
+		ERROR(line_no, "Stray '#else'.");
 		return;
 	}
 	_branches->top() = !_branches->top();
 	SUBMIT_LINE("");
+
+	ASSERT_END_OF_LINE();
 }
 
 HANDLER(endif)
 {
 	if(!_branches->size())
 	{
-		ERROR(line_idx + 1, "Stray '#endif'.");
+		ERROR(line_no, "Stray '#endif'.");
 		return;
 	}
 	_branches->pop();
 	SUBMIT_LINE("");
+
+	ASSERT_END_OF_LINE();
 }
 
 #undef SUBMIT_LINE
@@ -435,3 +492,4 @@ HANDLER(endif)
 #undef HANDLER
 #undef TRY_TO
 #undef CHECK_FLAG
+#undef ASSERT_END_OF_LINE
