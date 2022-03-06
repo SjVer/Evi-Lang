@@ -5,6 +5,9 @@
 #include "error.hpp"
 #include "scanner.hpp"
 
+extern int include_paths_count;
+extern char* include_paths[MAX_INCLUDE_PATHS];
+
 // ==== ============= ====
 
 class Preprocessor

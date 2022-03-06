@@ -63,7 +63,8 @@
         "iosfwd": "cpp",
         "mutex": "cpp",
         "thread": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "evi-man": "plain-text"
     },
     "makefile.launchConfigurations": [
         {

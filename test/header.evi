@@ -1,4 +1,4 @@
 #info apply_once
 
-\? some func lol
-@func i32 (i32) ~ $0 * 2;
+\? doubles an int
+@double i32 (i32) ~ $0 * 2;

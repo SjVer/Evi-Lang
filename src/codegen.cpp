@@ -62,7 +62,7 @@ Status CodeGenerator::emit_object(const char* outfile)
 	return STATUS_SUCCESS;
 }
 
-Status CodeGenerator::emit_binary(const char* outfile)
+Status CodeGenerator::emit_binary(const char* outfile, const char** linked, int linkedc)
 {
 	// write to temporary object file
 	const char* objfile = strdup(tools::fstr(TEMP_OBJ_FILE_TEMPLATE, _infile, time(0)).c_str());
@@ -71,22 +71,25 @@ Status CodeGenerator::emit_binary(const char* outfile)
 	if(objstatus != STATUS_SUCCESS) return objstatus; 
 
 	// object file written, now invoke llc
-	// int ccstatus = execl(LD_PATH, CC_ARGS, NULL);
-	string cccommand; const char* infile = objfile;
-	for(int i = 0; i < LD_ARGC; i++) { cccommand += (const char*[]){LD_ARGS}[i]; cccommand += " "; }
+	// int ldstatus = execl(LD_PATH, CC_ARGS, NULL);
+	string ldcommand; const char* infile = objfile;
+	for(int i = 0; i < LD_ARGC; i++) { ldcommand += (const char*[]){LD_ARGS}[i]; ldcommand += " "; }
+	for(int i = 0; i < linkedc; i++) ldcommand += string(linked[i]) + " ";
 
 	DEBUG_PRINT_MSG("Invoking linker (" LD_PATH " with stdlib at " STATICLIB_DIR ")");
-	DEBUG_PRINT_F_MSG("Linker command: %s", cccommand.c_str());
+	DEBUG_PRINT_F_MSG("Linker command: %s", ldcommand.c_str());
 
-	int ccstatus = system(cccommand.c_str());
-	if(ccstatus)
+	int ldstatus = system(ldcommand.c_str());
+	if(ldstatus)
 	{
-		_error_dispatcher.dispatch_error("Linking Error", "Linking with " LD_PATH " failed");
+		_error_dispatcher.dispatch_error("Linking Error", tools::fstr(
+			"Linking with " LD_PATH " failed with code %d.", ldstatus).c_str());
 		remove(objfile);
 		return STATUS_OUTPUT_ERROR;
 	}
 
 	// clean up
+	DEBUG_PRINT_F_MSG("Cleaning up object file... (%s)", objfile);
 	remove(objfile);
 	free((void*)objfile);
 	return STATUS_SUCCESS;

@@ -72,6 +72,40 @@
 					]
 				},
 				{
+					"begin": "^\\s*((#)\\s*(line))\\b\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.directive.evi"
+						},
+						"2": {
+							"name": "punctuation.definition.directive.line.evi"
+						}
+					},
+					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
+					"name": "meta.preprocessor.line.evi",
+					"patterns": [
+						{ "include": "#numbers" },
+						{ "include": "#illegals" }
+					]
+				},
+				{
+					"begin": "^\\s*((#)\\s*(file))\\b\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.directive.evi"
+						},
+						"2": {
+							"name": "punctuation.definition.directive.file.evi"
+						}
+					},
+					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
+					"name": "meta.preprocessor.file.evi",
+					"patterns": [
+						{ "match": "\".*\"", "name": "string.quoted.double.evi" },
+						{ "include": "#illegals" }
+					]
+				},
+				{
 					"begin": "^\\s*((#)\\s*(ifset|ifnset))\\b\\s*",
 					"beginCaptures": {
 						"1": {
@@ -117,6 +151,15 @@
 						},
 						{ "include": "#illegals" }
 					]
+				},
+				{
+					"match": "^\\s*(#) ?([0-9]+)? ?(\".*\")?$",
+					"captures": {
+						"1": { "name": "keyword.control.directive.evi" },
+						"2": { "name": "constant.numeric.decimal.evi" },
+						"3": { "name": "string.quoted.double.evi" }
+					},
+					"name": "meta.preprocessor.linemarker.evi"
 				}
 			]
 		},
@@ -158,31 +201,12 @@
 		"vardeclarations":
 		{
 			"name": "meta.declaration.variable.evi",
-			"begin": "(%)\\s*",
-			"beginCaptures": { "0": { "name": "keyword.declaration.variable.evi" } },
-			
-			"patterns": [
-				{ "include": "#variable-name" },
-				{ "include": "#illegals" }
-			],
-
-			"end": ";|$"
-		},
-		"variable-name": 
-		{
-			"name": "meta.declaration.variable.name.evi",
-			"begin": "([A-z_]+[0-z_]*)(?:\\s*,\\s*([A-z_]+[0-z_]*))*",
-			"beginCaptures": { 
-				"0": { "name": "entity.name.variable.evi" },
-				"1": { "name": "entity.name.variable.evi" }
-			},
-
-			"patterns": [
-				{ "include": "#variable-initializer" },
-				{ "include": "#illegals" }
-			],
-
-			"end": ";|$"
+			"match": "(%)\\s*(?:([A-z_]+[0-z_]*)(?:\\s*,\\s*([A-z_]+[0-z_]*))*)?",
+			"captures": { 
+				"1": { "name": "keyword.declaration.variable.evi" },
+				"2": { "name": "entity.name.variable.evi" },
+				"3": { "name": "entity.name.variable.evi" }
+			}
 		},
 		"variable-initializer":
 		{

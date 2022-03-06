@@ -9,27 +9,33 @@
 
 using namespace std;
 
-// compiler name
+// c++ compiler name
 #ifndef COMPILER
 #define COMPILER "unknown"
 #endif
 
-// OS_NAME name
+// OS_NAME specific
+#pragma region
 #ifdef _WIN32
-#define OS_NAME "Windows 32-bit"
+	#define OS_NAME "Windows 32-bit"
+	#define PATH_SEPARATOR "\\"
 #elif _WIN64
-#define OS_NAME "Windows 64-bit"
+	#define OS_NAME "Windows 64-bit"
+	#define PATH_SEPARATOR "\\"
 #elif __APPLE__ || __MACH__
-#define OS_NAME "Mac OS_NAMEX"
+	#define OS_NAME "Mac OS_NAMEX"
+	#define PATH_SEPARATOR "/"
 #elif __linux__
-#define OS_NAME "Linux"
-#elif __FreeBSD__
-#define OS_NAME "FreeBSD"
+	#define OS_NAME "Linux"
+	#define PATH_SEPARATOR "/"
 #elif __unix || __unix__
-#define OS_NAME "Unix"
+	#define OS_NAME "Unix"
+	#define PATH_SEPARATOR "/"
 #else
-#define OS_NAME "Other"
+	#define OS_NAME "Unknown OS"
+	#define PATH_SEPARATOR "/"
 #endif
+#pragma endregion
 
 #define COLOR_RED "\x1b[1;31m"
 #define COLOR_PURPLE "\x1b[1;35m"
@@ -37,6 +43,7 @@ using namespace std;
 #define COLOR_BOLD "\x1b[1m"
 
 // app info
+#pragma region
 #define APP_NAME "evi"
 #define APP_VERSION "0.0.1"
 #define APP_DOC "%s -- The Evi compiler.\nWritten by Sjoerd Vermeulen (%s)\v\
@@ -49,9 +56,10 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define EVI_VERSION_0 0
 #define EVI_VERSION_1 0
 #define EVI_VERSION_2 1
+#pragma endregion
 
 // macros
-#pragma region macros
+#pragma region
 #define STRINGIFY(value) #value
 #define LINE_MARKER_REGEX " ([0-9]+) \"(.+)\""
 
@@ -73,7 +81,7 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define DEBUG_PRINT_F_MSG(format, ...) {}
 #endif
 
-#define ABORT(status) {cerr << tools::fstr("[evi] aborted with code %d.\n", status); exit(status); }
+#define ABORT(status) {cerr << tools::fstr("[evi] Aborted with code %d.\n", status); exit(status); }
 #pragma endregion
 
 // llvm stuff
@@ -81,7 +89,7 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define TEMP_OBJ_FILE_TEMPLATE "%s.%d.o" // format: sourcefile name and timestamp
 
 // internal shit
-#pragma region internal shit
+#pragma region
 // path of c compiler used for linking
 #ifndef LD_PATH
 #error "LD_PATH must be defined! (e.g. \"/usr/bin/ld\")"
@@ -92,17 +100,17 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #endif
 // ld args
 #include "ld_args.h"
-// // c compiler invoketion args
-// #define CC_ARGS CC_PATH, infile, "-o", outfile, "-L" STATICLIB_DIR, "-levi"
-// #define CC_ARGC 6
 // stdlib headers directory
 #ifndef STDLIB_DIR
 #error "STDLIB_DIR must be defined! (e.g. \"/usr/share/evi/\")"
 #endif
+
 #pragma endregion
 
 #define POINTER_ALIGNMENT 16
 #define MAX_APPLY_DEPTH 255
+
+#define MAX_INCLUDE_PATHS 0xff
 
 // status enum
 typedef enum

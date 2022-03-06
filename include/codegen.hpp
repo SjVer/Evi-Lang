@@ -17,7 +17,7 @@ class CodeGenerator: public Visitor
 
 	Status emit_llvm(const char* filename);
 	Status emit_object(const char* filename);
-	Status emit_binary(const char* filename);
+	Status emit_binary(const char* filename, const char** linked, int linkedc);
 
 	#define VISIT(_node) void visit(_node* node)
 	VISIT(FuncDeclNode);

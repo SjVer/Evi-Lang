@@ -55,6 +55,18 @@ Generate AST image (for debugging purposes).
 
 .INDENT 0.0
 .TP
+.B \-i, --include=DIRECTORY
+Add DIRECTORY to include search path.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \-l, --link=FILE
+Link with FILE.
+.UNINDENT
+
+.INDENT 0.0
+.TP
 .B \-o, --output=OUTFILE
 Output to OUTFILE instead of to standard output.
 .UNINDENT
@@ -67,8 +79,8 @@ Produce verbose output.
 
 .INDENT 0.0
 .TP
-.B \-?, --help
-Give a help list
+.B \-h, --help
+Display a help message.
 .UNINDENT
 
 .INDENT 0.0
@@ -87,12 +99,23 @@ Print program version
 
 .SH FILES
 .TP
+man page
 .I
 /usr/share/man/man1/evi.1.gz
 .TP
+bash autocomplete
 .I
 /usr/share/bash-completion/completions/evi
 .TP
+stdlib headers
+.I
+/usr/share/evi/**/*
+.TP
+stdlib static library
+.I
+/usr/lib/libevi.a
+.TP
+compiler
 .I
 /usr/bin/evi
 
@@ -112,7 +135,7 @@ Invalid command line arguments
 .TP
 .B
 65
-Parse, type, codegen or output error
+Error occured during preprocessing, parsing, typechecking or code generation.
 
 
 .SH BUGS

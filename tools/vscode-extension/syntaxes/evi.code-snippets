@@ -11,28 +11,40 @@
 		"prefix": ["#flag", "flag"],
 		"body": "#flag $1"
 	},
+	"line":
+	{
+		"scope": "evi",
+		"prefix": ["#line", "line"],
+		"body": "#line ${1:$TM_LINE_NUMBER}"
+	},
+	"file":
+	{
+		"scope": "evi",
+		"prefix": ["#file", "file"],
+		"body": "#file \"${1:$TM_FILENAME}\""
+	},
 	"loop":
 	{
 		"scope": "evi",
-		"prefix": "!!",
+		"prefix": "for",
 		"body": "!!($1;$2;$3;) $4"
 	},
 	"if":
 	{
 		"scope": "evi",
-		"prefix": "??",
+		"prefix": "if",
 		"body": "??($1) $2 :: $3"
 	},
 	"func":
 	{
 		"scope": "evi",
-		"prefix": "@",
-		"body": "@${1:func} ${2:i32} ($3) $4"
+		"prefix": "func",
+		"body": "@${1:func} ${2:i32} ($3)\n"
 	},
 	"var":
 	{
 		"scope": "evi",
-		"prefix": "%",
-		"body": "%${1:var} ${2:i32} $4"
+		"prefix": "var",
+		"body": "%${1:var} ${2:i32}"
 	}
 }

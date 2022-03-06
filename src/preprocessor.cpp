@@ -1,6 +1,9 @@
 #include "preprocessor.hpp"
 #include "tools.hpp"
 
+int include_paths_count = 0;
+char* include_paths[MAX_INCLUDE_PATHS] = {};
+
 #define SUBMIT_LINE(line) _lines.push_back(line)
 #define SUBMIT_LINE_F(format, ...) _lines.push_back(tools::fstr(format, __VA_ARGS__))
 #define IN_FALSE_BRANCH (_branches->size() && !_branches->top())
@@ -90,9 +93,17 @@ string Preprocessor::find_header(string name)
 {
 	name += ".evi";
 
-	// first look in include path
+	// first look in current directory
 	if(ifstream(name).is_open())
 		return name;
+
+	// look in each include path
+	for(int i = 0; i < include_paths_count; i++)
+	{
+		string path = include_paths[i] + (PATH_SEPARATOR + name);
+		if(ifstream(path).is_open())
+			return path;
+	}
 
 	// otherwise look in stdlib
 	if(ifstream(STDLIB_DIR + name).is_open())

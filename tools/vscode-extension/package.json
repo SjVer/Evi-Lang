@@ -19,7 +19,7 @@
         "languages": [{
             "id": "evi",
             "aliases": ["Evi", "evi"],
-            "extensions": [".evi"],
+            "extensions": [".evi", ".evii"],
             "configuration": "./syntaxes/language-configuration.json"
         }],
         "grammars": [{

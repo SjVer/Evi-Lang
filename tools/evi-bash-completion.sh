@@ -1,12 +1,20 @@
 # evi(1) completion                                        -*- shell-script -*-
 
-_evi()
+_evi_autocomplete()
 {
     local cur prev words cword split
     _init_completion -s || return
 
     case $prev in
-        -'?'|--help|--usage|-V|--version)
+        -h|--help|--usage|-V|--version)
+            return
+            ;;
+        -l|--link)
+            _filedir
+            return
+            ;;
+        -i|--include)
+            _filedir '@'
             return
             ;;
     esac
@@ -21,6 +29,4 @@ _evi()
 
     _filedir '@(evi)'
 } &&
-complete -F _evi evi
-
-# ex: filetype=sh
+complete -F _evi_autocomplete evi
