@@ -1,0 +1,13 @@
+Package: {{package-name}}
+Version: {{version}}
+Section: utils
+Priority: optional
+Architecture: {{architecture}}
+Essential: no
+Maintainer: Sjoerd Vermeulen {{email}}
+Source: {{website}}
+Homepage: {{website}}
+Depends: llvm-12
+Description: The Evi compiler
+ More information at https://github.com/SjVer/Evi-Lang.
+ 

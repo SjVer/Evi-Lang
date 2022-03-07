@@ -9,7 +9,7 @@ CC_PATH = /usr/bin/clang
 LD_PATH = /usr/bin/ld
 # STATICLIB_DIR = /usr/lib/
 STATICLIB_DIR = $(PWD)/bin/
-# STDLIB_DIR = /usr/share/evi/
+# STDLIB_DIR = /usr/share/evi/stdlib
 STDLIB_DIR = $(PWD)/stdlib/headers/
 TARGET = x86_64-linux-gnu
 
@@ -163,4 +163,5 @@ man:
 
 
 deb: $(APP) stdlib man
-	@python3 tools/debian-package/generate-deb.py
+	@test $(target) || ( echo "target not given! ('make newfile target=TARGET')"; false )
+	@python3 tools/debian-package/generate-deb.py $(target) $(BINDIR)

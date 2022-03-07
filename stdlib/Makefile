@@ -21,10 +21,10 @@ STDLIB_OBJCOUNT = $(foreach v,$(STDLIB_OBJCOUNT_NOPAD),$(shell printf '%02d' $(v
 # STDLIB_SYSOBJ = $(STDLIB_SYSSRC:$(STDLIB_SRCDIR)/%.s=$(STDLIB_SYSBINDIR)/%.o)
 
 .PRECIOUS: $(STDLIB_OBJ)
+SHELL := /bin/bash
 
 stdlib: $(STDLIB_OBJ) | makedirs
 	@$(AR) $(ARFLAGS) -c $(STDLIB_LIB) $(STDLIB_OBJ)
-	@echo "[stdlib] standard library compiled!"
 
 # $(STDLIB_OBJDIR)/%.o: $(STDLIB_SRCDIR)/%$(STDLIB_EXT) | makedirs
 $(STDLIB_OBJ): $(STDLIB_SRC) | makedirs
@@ -32,6 +32,7 @@ $(STDLIB_OBJ): $(STDLIB_SRC) | makedirs
 	@$(STDLIB_CC) $(STDLIB_CXXFLAGS) -o $@ -c $< -fmodule-name=$($<:$(STDLIB_EXT)=.evi)
 	@printf "\b\b done!\n"
 	$(eval STDLIB_OBJCOUNT = $(filter-out $(word 1,$(STDLIB_OBJCOUNT)),$(STDLIB_OBJCOUNT)))
+	@[ "$(word $(words $(STDLIB_OBJ)), $(STDLIB_OBJ))" == "$@" ] && echo "[stdlib] standard library compiled!"
 
 # $(STDLIB_SYSOBJ): $(STDLIB_SYSSRC) | makedirs
 # 	@printf "[stdlib] compiling $(notdir $<) into $(notdir $@)..."
