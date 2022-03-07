@@ -109,7 +109,7 @@ bash autocomplete
 .TP
 stdlib headers
 .I
-/usr/share/evi/**/*
+/usr/share/evi/*
 .TP
 stdlib static library
 .I

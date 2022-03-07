@@ -1,0 +1,9 @@
+Package: {{package-name}}
+Version: {{version}}
+Section: utils
+Priority: optional
+Architecture: {{architecture}}
+Essential: no
+Installed-Size: {{installed-size}}
+Maintainer: sjoerd@marsenaar.com
+Description: {{description}}

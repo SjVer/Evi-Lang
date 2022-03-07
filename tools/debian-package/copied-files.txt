@@ -1,0 +1,5 @@
+ROOT_DIR|bin|evi-man.gz -> DEB_DIR|usr|share|man|man1|evi.1.gz
+ROOT_DIR|tools|evi-bash-completion.sh -> DEB_DIR|usr|share|bash-completion|completions|evi
+ROOT_DIR|stdlib|headers -> DEB_DIR|usr|share|evi|stdlib
+ROOT_DIR|bin|libevi.a -> DEB_DIR|usr|lib|libevi.a
+ROOT_DIR|bin|evi -> DEB_DIR|usr|bin|evi

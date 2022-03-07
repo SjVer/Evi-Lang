@@ -59,7 +59,7 @@ SHELL := /bin/bash
 ########################################################################
 
 .MAIN: $(APP)
-all: $(APP) stdlib
+all: $(APP) stdlib man deb
 
 # Builds the app
 $(APP): $(OBJ) | makedirs
@@ -159,4 +159,8 @@ man:
 	@cp tools/evi-man tools/evi-man.tmp
 	@DATE=$$(date +"%a %d, %Y") && sed -i -e "s/<<<DATE>>>/$$DATE/g" tools/evi-man.tmp
 	@gzip tools/evi-man.tmp
-	@sudo mv tools/evi-man.tmp.gz /usr/share/man/man1/evi.1.gz
+	@mv tools/evi-man.tmp.gz $(BINDIR)/evi-man.gz
+
+
+deb: $(APP) stdlib man
+	@python3 tools/debian-package/generate-deb.py
