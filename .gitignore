@@ -5,3 +5,4 @@ bin/
 **/*.svg
 **/*.o
 **/*.evii
+**/__pycache__/
