@@ -27,7 +27,7 @@ class ASTVisualizer: public Visitor
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
 			VISIT(ReferenceNode);
-			VISIT(CallNode);
+	VISIT(FlagNode);
 	#undef VISIT
 
 	private:

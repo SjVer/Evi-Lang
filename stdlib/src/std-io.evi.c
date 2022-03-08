@@ -16,6 +16,11 @@ uint8_t printd(double d)
 	return printf("%g\n", d);
 }
 
+uint8_t printg(float f)
+{
+	return printf("%f\n", f);
+}
+
 uint8_t prints(char* str)
 {
 	return printf("%s\n", str);

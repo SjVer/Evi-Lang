@@ -83,6 +83,7 @@ private:
 	vector<string> _lines;
 	string _current_file;
 	uint _current_line_no;
+	PrepFlags _current_flags;
 
 	vector<string> _flags;
 	stack<bool>* _branches;

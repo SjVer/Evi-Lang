@@ -11,7 +11,7 @@ ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
 		case TYPE_BOOL: 	 _evi_type = GET_EVI_TYPE("bln"); break;
 		case TYPE_CHARACTER: _evi_type = GET_EVI_TYPE("chr"); break;
 		case TYPE_INTEGER: 	 _evi_type = GET_EVI_TYPE("i32"); break;
-		case TYPE_FLOAT: 	 _evi_type = GET_EVI_TYPE("flt"); break;
+		case TYPE_FLOAT: 	 _evi_type = GET_EVI_TYPE("dbl"); break;
 		case TYPE_VOID: 	 _evi_type = GET_EVI_TYPE("nll"); break;
 		case TYPE_NONE:		 break;
 		default: assert(false);

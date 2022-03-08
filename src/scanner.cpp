@@ -196,6 +196,47 @@ Token Scanner::reference()
 	else return errorToken("Expected identifier or integer.");
 }
 
+Token Scanner::directive()
+{
+	// get line
+	// ptrdiff_t start = (ptrdiff_t)_start;
+	while(peek() != '\n' && !isAtEnd()) advance();
+	std::string line = std::string(_start + 1, _current);
+
+	// check it
+	cmatch match; // index 0 is whole match
+	if(regex_match(line.c_str(), match, regex(FLAG_MARKER_REGEX)))
+	{
+		// flag
+		int flags = stoi(match[1].str(), 0, 10);
+		return Token{
+			/*type  */ TOKEN_FLAG_MARKER,
+			/*start */ 0,
+			/*length*/ flags,
+			/*line  */ _line
+		};
+	}
+	else if(regex_match(line.c_str(), match, regex(LINE_MARKER_REGEX)))
+	{
+		// marker
+
+		int lineno = stoi(match[1].str(), 0, 10);
+		_line = lineno;
+
+		// // clear line marker for neatness' sake
+		// std::string new_line = std::string(' ', line.length() + 1);
+		// _src_start[start] = ' '; // remove '\0'
+
+		// return token
+		return Token{
+			/*type  */ TOKEN_LINE_MARKER,
+			/*start */ strdup(match[2].str().c_str()),
+			/*length*/ (int)match[2].length(),
+		};
+	}
+	else return errorToken("Preprocessed code corrupted. (Line or flag marker invalid.)");
+}
+
 void Scanner::skipWhitespaces()
 {
 	for (;;)
@@ -295,32 +336,7 @@ Token Scanner::scanToken()
 		case '"': return string();
 		case '\'': return character();
 
-		case '#':
-		{
-			// get line marker
-			// ptrdiff_t start = (ptrdiff_t)_start;
-			while(peek() != '\n' && !isAtEnd()) advance();
-			std::string line = std::string(_start + 1, _current);
-			
-			// check it
-			cmatch match; // index 0 is whole match
-			if(!regex_match(line.c_str(), match, regex(LINE_MARKER_REGEX)))
-				return errorToken("Preprocessed code corrupted. (Line marker invalid.)");
-
-			int lineno = stoi(match[1].str(), 0, 10);
-			_line = lineno;
-
-			// // clear line marker for neatness' sake
-			// std::string new_line = std::string(' ', line.length() + 1);
-			// _src_start[start] = ' '; // remove '\0'
-
-			// return token
-			return Token{
-				/*type  */ TOKEN_LINE_MARKER,
-				/*start */ strdup(match[2].str().c_str()),
-				/*length*/ (int)match[2].length(),
-				/*line  */ _line};
-		}
+		case '#': return directive();
 	}
 
 	char* errstr = new char[25]; // just above what's needed
@@ -392,6 +408,7 @@ char *getTokenStr(TokenType type)
 
 		// misc.
 		case TOKEN_LINE_MARKER: return "LINE_MARKER";
+		case TOKEN_FLAG_MARKER: return "FLAG_MARKER";
 		case TOKEN_ERROR: return "ERROR";
 		case TOKEN_EOF: return "EOF";
 	}

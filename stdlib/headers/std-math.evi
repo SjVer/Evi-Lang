@@ -1,5 +1,5 @@
 \:
-	Evi standard library header "std-io"
+	Evi standard library header "std-math"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License
@@ -27,31 +27,30 @@
 
 #info apply_once
 #info suppress_warnings
-#flag __STD_IO__
+#flag __STD_MATH__
+
+\ =================================== Constants ====================================
+
+%PI dbl 3.141592653589793238462643383279502884; 
 
 \ =================================== Functions ====================================
 
-\? writes a character to stdout
-\? @param 0 the character to print out
-\? @ret the printed character cast to an i8 or EOF if printc failed
-@printc i8 (chr);
+\? returns the square root of a given value
+\? @param 0 the value
+\? @ret the square root of the given value
+@sqrt dbl (dbl);
 
-\? writes an integer to stdout
-\? @param 0 the integer to print out
-\? @ret the amount of printed characters or a negative number if printi failed
-@printi i8 (i64);
+\? returns the sine of a given value
+\? @param 0 the value
+\? @ret the sine of the given value
+@sin dbl (dbl);
 
-\? writes a double to stdout
-\? @param 0 the double to print out
-\? @ret the amount of printed characters or a negative number if printd failed
-@printd i8 (dbl);
-@printg i8 (flt);
+\? returns the cosine of a given value
+\? @param 0 the value
+\? @ret the cosine of the given value
+@cos dbl (dbl);
 
-\? writes a string to stdout
-\? @param 0 the string to print out
-\? @ret the amount of printed characters or a negative number if prints failed
-@prints i8 (chr*);
-
-\? tries to read an integer from stdin (without detecting invalid input)
-\? @ret the scanned integer
-@scani i64 ();
+\? returns the tangent of a given value
+\? @param 0 the value
+\? @ret the tangent of the given value
+@tan dbl (dbl);

@@ -662,6 +662,19 @@ VISIT(CallNode)
 	push(node->_ret_type);
 }
 
+// =============
+
+VISIT(FlagNode)
+{
+	switch(node->_flags)
+	{
+		case PREPFLAG_NONE: break;
+		case PREPFLAG_SUPPRESS_WARNINGS:
+			{}
+		default: assert(false);
+	}
+}
+
 #undef VISIT
 #undef ERROR_AT
 #undef CANNOT_CONVERT_ERROR_AT

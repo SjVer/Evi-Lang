@@ -26,18 +26,13 @@ SHELL := /bin/bash
 stdlib: $(STDLIB_OBJ) | makedirs
 	@$(AR) $(ARFLAGS) -c $(STDLIB_LIB) $(STDLIB_OBJ)
 
-# $(STDLIB_OBJDIR)/%.o: $(STDLIB_SRCDIR)/%$(STDLIB_EXT) | makedirs
-$(STDLIB_OBJ): $(STDLIB_SRC) | makedirs
+$(STDLIB_OBJDIR)/%.o: $(STDLIB_SRCDIR)/%$(STDLIB_EXT) | makedirs
+# $(STDLIB_OBJ): $(STDLIB_SRC) | makedirs
 	@printf "[$(word 1,$(STDLIB_OBJCOUNT))/$(words $(STDLIB_OBJ))] compiling $(notdir $<) into $(notdir $@)..."
 	@$(STDLIB_CC) $(STDLIB_CXXFLAGS) -o $@ -c $< -fmodule-name=$($<:$(STDLIB_EXT)=.evi)
 	@printf "\b\b done!\n"
 	$(eval STDLIB_OBJCOUNT = $(filter-out $(word 1,$(STDLIB_OBJCOUNT)),$(STDLIB_OBJCOUNT)))
-	@[ "$(word $(words $(STDLIB_OBJ)), $(STDLIB_OBJ))" == "$@" ] && echo "[stdlib] standard library compiled!"
-
-# $(STDLIB_SYSOBJ): $(STDLIB_SYSSRC) | makedirs
-# 	@printf "[stdlib] compiling $(notdir $<) into $(notdir $@)..."
-# 	@$(STDLIB_CC) $(STDLIB_SYSCXXFLAGS) -o $@ -c $<
-# 	@printf "\b\b done!\n"
+	@([ "$(word $(words $(STDLIB_OBJ)), $(STDLIB_OBJ))" == "$@" ] && echo "[stdlib] standard library compiled!") || true
 
 .PHONY: clean
 clean:

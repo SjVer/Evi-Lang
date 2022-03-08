@@ -28,6 +28,7 @@ class TypeChecker: public Visitor
 			VISIT(ArrayNode);
 			VISIT(ReferenceNode);
 			VISIT(CallNode);
+	VISIT(FlagNode);
 	#undef VISIT
 
 	private:

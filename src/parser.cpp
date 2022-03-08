@@ -54,6 +54,9 @@ void Parser::advance()
 		else if(_current.type == TOKEN_LINE_MARKER)
 			_error_dispatcher.set_filename(strdup(_current.start));
 
+		else if(_current.type == TOKEN_FLAG_MARKER)
+			{}
+
 		else break;
 	}
 }

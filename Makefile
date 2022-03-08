@@ -15,7 +15,7 @@ TARGET = x86_64-linux-gnu
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -Wno-comment
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
-DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\"
+DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\" LIBC_VERSION=\"$(shell gcc -dumpversion)\"
 CXXFLAGS = $(MUTE) $(addprefix -D,$(DEFS)) `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 
@@ -60,6 +60,7 @@ SHELL := /bin/bash
 
 .MAIN: $(APP)
 all: $(APP) stdlib man deb
+.DEFAULT_GOAL := $(APP)
 
 # Builds the app
 $(APP): $(OBJ) | makedirs
@@ -134,7 +135,7 @@ printdebug:
 # .PHONY: debug
 debug: CXXFLAGS += $(DEBUGDEFS)
 debug: printdebug
-debug: all
+debug: $(APP)
 
 .PHONY: debug-no-fold
 debug-no-fold: CXXFLAGS += -D DEBUG_NO_FOLD

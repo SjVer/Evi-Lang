@@ -62,6 +62,7 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #pragma region
 #define STRINGIFY(value) #value
 #define LINE_MARKER_REGEX " ([0-9]+) \"(.+)\""
+#define FLAG_MARKER_REGEX " f ([0-9]+)"
 
 #ifdef DEBUG
 #define __DEBUG_MARKER(file, line) "[debug:" file ":" STRINGIFY(line) "]"
@@ -111,6 +112,13 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define MAX_APPLY_DEPTH 255
 
 #define MAX_INCLUDE_PATHS 0xff
+
+// preprocessor flags enum
+typedef enum
+{
+	PREPFLAG_NONE,
+	PREPFLAG_SUPPRESS_WARNINGS
+} PrepFlags;
 
 // status enum
 typedef enum

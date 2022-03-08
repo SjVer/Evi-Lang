@@ -66,6 +66,7 @@ typedef enum
 
 	// misc.
 	TOKEN_LINE_MARKER,
+	TOKEN_FLAG_MARKER,
 	TOKEN_ERROR,
 	TOKEN_EOF
 } TokenType;
@@ -107,6 +108,7 @@ private:
 	Token character();
 	Token number();
 	Token reference();
+	Token directive();
 	Token type_or_identifier();
 	void skipWhitespaces();
 };
