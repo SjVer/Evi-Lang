@@ -193,6 +193,7 @@
 				{ "include": "#vardeclarations" },
 				{ "include": "#funcdeclarations" },
 				{ "include": "#statements" },
+				{ "include": "#separators" },
 
 				{ "include": "#illegals" }
 			]
@@ -220,7 +221,10 @@
 				{ "include": "#illegals" }
 			],
 			
-			"end": ";|$"
+			"end": "(;)|$",
+			"endCaptures": {
+				"1": { "name": "punctuation.terminator.evi" }
+			}
 		},
 		
 		"funcdeclarations": 
@@ -425,7 +429,10 @@
 					},
 					"contentName": "meta.call.arguments.evi",
 					
-					"patterns": [{ "include": "#expressions" }],
+					"patterns": [
+						{ "match": ",", "name": "punctuation.separator.evi" },
+						{ "include": "#expressions" }
+					],
 
 					"end": "\\)"
 				}

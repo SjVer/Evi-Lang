@@ -1,13 +1,6 @@
 #apply "std-io"
 
-\ @printc i8 (chr);
-@printi i8 (i64);
-@prints i8 (chr*);
-@scani i64 ();
-
 @fib i32 () {
-	%i, n i32;
-
 	\ initialize first and second terms
 	%t1, t2 i32 0, 1;
 
@@ -15,18 +8,17 @@
 	%tn i32 $t1 + $t2;
 
 	\ get no. of terms from user
-	prints("Enter the number of terms: ");
-	=n scani();
-	\ =n prompti("Enter the number of terms:");
+	\ prints("Enter the number of terms: ");
+	%n i32 scani();
 
 	\ print the first two terms t1 and t2
-	prints("Fibbonaci Series: ");
+	\ printf("Fibonacci Series: %d, %d, ", $t1, $t2);
+	\ prints("Fibbonaci Series: ");
 	printi($t1);
 	printi($t2);
-	\ printf("Fibonacci Series: %d, %d, ", $t1, $t2);
 
 	\ print 3rd to nth terms
-  	!!(=i 3; $i <= $n; =i ++$i;) {
+  	!!(%i i32 3; $i <= $n; =i ++$i;) {
 	    printi($tn);
 	    \ printf("%d, ", $tn);
 	    =t1 $t2;

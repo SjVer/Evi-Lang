@@ -41,7 +41,7 @@ Status CodeGenerator::emit_object(const char* outfile)
 
 	if (errcode)
 	{
-		_error_dispatcher.dispatch_error("Code Generation Error", 
+		_error_dispatcher.error("Code Generation Error", 
 			tools::fstr("Could not open file \"%s\": %s.", outfile, errcode.message().c_str()).c_str());
 		ABORT(STATUS_CODEGEN_ERROR);
 	}
@@ -51,7 +51,7 @@ Status CodeGenerator::emit_object(const char* outfile)
 
 	if (_target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype))
 	{
-		_error_dispatcher.dispatch_error("Code Generation Error",
+		_error_dispatcher.error("Code Generation Error",
 			"Target machine incompatible with object file type.");
 		remove(outfile);
 		ABORT(STATUS_CODEGEN_ERROR);
@@ -82,7 +82,7 @@ Status CodeGenerator::emit_binary(const char* outfile, const char** linked, int 
 	int ldstatus = system(ldcommand.c_str());
 	if(ldstatus)
 	{
-		_error_dispatcher.dispatch_error("Linking Error", tools::fstr(
+		_error_dispatcher.error("Linking Error", tools::fstr(
 			"Linking with " LD_PATH " failed with code %d.", ldstatus).c_str());
 		remove(objfile);
 		return STATUS_OUTPUT_ERROR;
@@ -99,7 +99,7 @@ Status CodeGenerator::generate(const char* infile, const char* outfile, const ch
 {
 	_outfile = strdup(outfile);
 	_infile = strdup(infile);
-	_error_dispatcher = ErrorDispatcher(source, _infile);
+	_error_dispatcher = ErrorDispatcher();
 
 	prepare();
 
@@ -145,7 +145,7 @@ void CodeGenerator::finish()
 
 		if(llvm::verifyFunction(*_global_init_func_block->getParent(), nullptr))
 		{
-			_error_dispatcher.dispatch_error("Code Generation Error", 
+			_error_dispatcher.error("Code Generation Error", 
 				"LLVM verification of globals initialization function failed: ");
 			llvm::verifyFunction(*_global_init_func_block->getParent(), _errstream);
 			cerr << endl << endl;
@@ -157,7 +157,7 @@ void CodeGenerator::finish()
 	// verify module
 	if(llvm::verifyModule(*_top_module, nullptr))
 	{
-		_error_dispatcher.dispatch_error("Code Generation Error", "LLVM module verification failed: ");
+		_error_dispatcher.error("Code Generation Error", "LLVM module verification failed: ");
 		llvm::verifyModule(*_top_module, _errstream);
 		cerr << endl << endl;
 		// ABORT(STATUS_CODEGEN_ERROR);
@@ -178,11 +178,11 @@ void CodeGenerator::finish()
 
 void CodeGenerator::error_at(Token *token, string message)
 {
-	_error_dispatcher.dispatch_error_at(token, "Code Generation Error", message.c_str());
+	_error_dispatcher.error_at_token(token, "Code Generation Error", message.c_str());
 
 	// print token
 	cerr << endl;
-	_error_dispatcher.dispatch_token_marked(token);
+	_error_dispatcher.print_token_marked(token, COLOR_RED);
 	cerr << endl;
 	
 	ABORT(STATUS_CODEGEN_ERROR);
@@ -191,7 +191,7 @@ void CodeGenerator::error_at(Token *token, string message)
 void CodeGenerator::warning_at(Token *token, string message)
 {
 	// just a lil warnign
-	_error_dispatcher.dispatch_warning_at(token, "Code Generation Warning", message.c_str());
+	_error_dispatcher.warning_at_token(token, "Code Generation Warning", message.c_str());
 }
 
 // =========================================
@@ -752,6 +752,13 @@ VISIT(BinaryNode)
 		
 		default: assert(false);
 	}
+}
+
+VISIT(CastNode)
+{
+	node->_expr->accept(this);
+	llvm::Value* val = pop();
+	push(create_cast(val, false, node->_type->get_llvm_type(), node->_type->is_signed()));
 }
 
 VISIT(UnaryNode)

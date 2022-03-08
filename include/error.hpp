@@ -7,27 +7,32 @@ class ErrorDispatcher
 {
     private:
 
-    const char* _source;
-    const char* _infile;
+    typedef const char* ccp;
+    // ccp _source;
 
-    void __dispatch(bool at, Token* t, const char* c, 
-                    const char* p, const char* m, uint line = 0);
+    // void __dispatch(bool at, Token* t, ccp c, 
+    //                 ccp p, ccp m,
+    //                 uint line = 0, ccp file = NULL);
+
+    void __dispatch(ccp color, ccp prompt, ccp message);
+    void __dispatch_at_token(ccp color, Token *token, ccp prompt, ccp message);
+    void __dispatch_at_line(ccp color, uint line, ccp filename, ccp prompt, ccp message);    
 
     public:
 
     ErrorDispatcher() {}
-    ErrorDispatcher(const char* source, const char* infile):
-        _source(source), _infile(infile) {}
+    // ErrorDispatcher(ccp source):
+    //     _source(source) {}
 
-    void set_filename(const char* filename);
+    void print_token_marked(Token *token, ccp color);
 
-    void dispatch_token_marked(Token *token);
-    void dispatch_error(const char* prompt, const char* message);
-    void dispatch_error_at(Token *token, const char* prompt, const char* message);
-    void dispatch_error_at_ln(uint line, const char* prompt, const char* message);
-    void dispatch_warning(const char* prompt, const char* message);
-    void dispatch_warning_at(Token *token, const char* prompt, const char* message);
-    void dispatch_warning_at_ln(uint line, const char* prompt, const char* message);
+    void error(ccp prompt, ccp message);
+    void error_at_token(Token *token, ccp prompt, ccp message);
+    void error_at_line(uint line, ccp filename, ccp prompt, ccp message);
+
+    void warning(ccp prompt, ccp message);
+    void warning_at_token(Token *token, ccp prompt, ccp message);
+    void warning_at_line(uint line, ccp filename, ccp prompt, ccp message);
 };
 
 #endif

@@ -209,6 +209,17 @@ VISIT(BinaryNode)
 	node->_right->accept(this);
 }
 
+VISIT(CastNode)
+{
+	int thisnode = ADD_NODE("->");
+
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_expr->accept(this);
+
+	CONNECT_NODES(thisnode, _nodecount);
+	ADD_NODE(node->_type->to_c_string());
+}
+
 VISIT(UnaryNode)
 {
 	int thisnode;

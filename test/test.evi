@@ -3,7 +3,6 @@
 
 @main i32 ()
 {
-    printg($PI);
-    printg(sin($PI));
+    printg(pow(2, 3));
     ~ 0;
 }

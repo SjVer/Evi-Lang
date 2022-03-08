@@ -59,7 +59,7 @@ private:
 	void add_function(Token* identtoken, FuncProperties properties);
 	void scope_up();
 	void scope_down();
-	void synchronize();
+	void synchronize(bool toplevel);
 
 	StmtNode* statement();
 		StmtNode* declaration();
@@ -84,6 +84,7 @@ private:
 			ExprNode* bitwise_shift();
 			ExprNode* term();
 			ExprNode* factor();
+			ExprNode* cast();
 			ExprNode* unary();
 			ExprNode* primary();
 

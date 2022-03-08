@@ -98,7 +98,7 @@ llvm::Type* ParsedType::get_llvm_type()
 }
 
 
-bool ParsedType::eq(ParsedType* rhs)
+bool ParsedType::eq(ParsedType* rhs, bool simple)
 {
 	if(_subtypetype != rhs->_subtypetype) return false;
 
@@ -110,7 +110,7 @@ bool ParsedType::eq(ParsedType* rhs)
 	}
 
 	return _lexical_type == rhs->_lexical_type
-		&& _evi_type->eq(rhs->_evi_type);
+		&& (simple || _evi_type->eq(rhs->_evi_type));
 }
 
 uint ParsedType::get_alignment()

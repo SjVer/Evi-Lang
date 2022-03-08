@@ -53,6 +53,7 @@ typedef enum
 	TOKEN_SLASH_EQUAL,
 	TOKEN_GREATER_EQUAL,
 	TOKEN_LESS_EQUAL,
+	TOKEN_ARROW,
 
 	// Literals.
 	TOKEN_VARIABLE_REF,
@@ -66,7 +67,6 @@ typedef enum
 
 	// misc.
 	TOKEN_LINE_MARKER,
-	TOKEN_FLAG_MARKER,
 	TOKEN_ERROR,
 	TOKEN_EOF
 } TokenType;
@@ -76,9 +76,11 @@ char *getTokenStr(TokenType type);
 typedef struct
 {
 	TokenType type;
+	const char *source;
 	const char *start;
 	int length;
 	int line;
+	string* file;
 } Token;
 
 class Scanner
@@ -94,6 +96,8 @@ private:
 	const char *_start;
 	const char *_current;
 	int _line;
+
+	string* _filename;
 
 	bool isAtEnd();
 	bool isDigit(char c);

@@ -26,7 +26,6 @@
 :\
 
 #info apply_once
-#info suppress_warnings
 #flag __STD_IO__
 
 \ =================================== Functions ====================================

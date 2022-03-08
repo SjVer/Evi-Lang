@@ -9,13 +9,13 @@ void Parser::error_at(Token *token, string message)
 {
 	if(_panic_mode) return;
 
-	_error_dispatcher.dispatch_error_at(token, "Syntax Error", message.c_str());
+	_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
 
 	// print token
 	if(token->type != TOKEN_ERROR)
 	{
 		cerr << endl;
-		_error_dispatcher.dispatch_token_marked(token);
+		_error_dispatcher.print_token_marked(token, COLOR_RED);
 		// cerr << endl;
 	}
 
@@ -52,9 +52,7 @@ void Parser::advance()
 			error_at_current(_current.start);
 
 		else if(_current.type == TOKEN_LINE_MARKER)
-			_error_dispatcher.set_filename(strdup(_current.start));
-
-		else if(_current.type == TOKEN_FLAG_MARKER)
+			// _error_dispatcher.set_filename(strdup(_current.start));
 			{}
 
 		else break;
@@ -227,13 +225,38 @@ void Parser::scope_down()
 	_scope_stack.pop_back();
 }
 
-void Parser::synchronize()
+void Parser::synchronize(bool toplevel)
 {
 	_panic_mode = false;
+	
+	if(_current.type == TOKEN_SEMICOLON)
+	{
+		advance();
+		return;
+	}
 
+	/*
+	if(toplevel) while(!is_at_end())
+	{
+		if(_previous.type == TOKEN_SEMICOLON) return;
+		switch(_current.type)
+		{
+			case TOKEN_AT:					// func
+			case TOKEN_MODULO:				// var
+				return;
+			
+			default:
+				;
+		}
+
+		advance();
+	}
+	else
+	*/
 	while(!is_at_end())
 	{
 		if(_previous.type == TOKEN_SEMICOLON) return;
+
 		switch(_current.type)
 		{
 			case TOKEN_AT:					// func
@@ -271,7 +294,7 @@ StmtNode* Parser::declaration()
 	else if(match(TOKEN_MODULO)) stmt = variable_declaration();
 	else stmt = statement();
 
-	if(_panic_mode) synchronize();
+	if(_panic_mode) synchronize(false);
 
 	return stmt;
 }
@@ -671,15 +694,31 @@ ExprNode* Parser::term()
 
 ExprNode* Parser::factor()
 {
-	// factor		: unary (("/" | "*") unary)*
+	// factor		: cast (("/" | "*") cast)*
 
-	ExprNode* expr = unary();
+	ExprNode* expr = cast();
 	
 	while(match(TOKEN_STAR) || match(TOKEN_SLASH))
 	{
 		Token tok = _previous;
-		ExprNode* right = unary();
+		ExprNode* right = cast();
 		expr = new BinaryNode(tok, tok.type, expr, right);
+	}
+
+	return expr;
+}
+
+ExprNode* Parser::cast()
+{
+	// cast		: unary ("->" TYPE)*
+
+	ExprNode* expr = unary();
+
+	while(match(TOKEN_ARROW))
+	{
+		Token tok = _previous;
+		ParsedType* type = consume_type("Expected type after '->'.");
+		expr = new CastNode(tok, expr, type);
 	}
 
 	return expr;
@@ -862,16 +901,17 @@ Status Parser::parse(string infile, const char* source, AST* astree)
 
 	_had_error = false;
 	_panic_mode = false;
-	_error_dispatcher = ErrorDispatcher(source, infile.c_str());
+	// _error_dispatcher = ErrorDispatcher(source, infile.c_str());
+	_error_dispatcher = ErrorDispatcher();
 
 	advance();
-	while (!match(TOKEN_EOF))
+	while (!is_at_end())
 	{
 		if(match(TOKEN_MODULO))  _astree->push_back(variable_declaration());
 		else if(match(TOKEN_AT)) _astree->push_back(function_declaration());
 		else error_at_current("Expected declaration at top-level code.");
 
-		if(_panic_mode) synchronize();
+		if(_panic_mode) synchronize(true);
 	}
 	DEBUG_PRINT_MSG("Parsing complete!");
 

@@ -44,10 +44,10 @@ private:
 	// methods
 	#define ERR_PROMPT "Preprocessing Error"
 	#define ERROR(line, msg) { \
-		_error_dispatcher.dispatch_error_at_ln(\
-		line, ERR_PROMPT, msg); _had_error = true; }
-	#define ERROR_F(line, format, ...) { _error_dispatcher.dispatch_error_at_ln(\
-		line, ERR_PROMPT, tools::fstr(format, __VA_ARGS__).c_str()); _had_error = true; }
+		_error_dispatcher.error_at_line(\
+		line, _current_file.c_str(), ERR_PROMPT, msg); _had_error = true; }
+	#define ERROR_F(line, format, ...) { _error_dispatcher.error_at_line(\
+		line, _current_file.c_str(), ERR_PROMPT, tools::fstr(format, __VA_ARGS__).c_str()); _had_error = true; }
 
 	void process_lines(vector<string> lines);
 	string remove_comments(string source);
@@ -83,7 +83,6 @@ private:
 	vector<string> _lines;
 	string _current_file;
 	uint _current_line_no;
-	PrepFlags _current_flags;
 
 	vector<string> _flags;
 	stack<bool>* _branches;

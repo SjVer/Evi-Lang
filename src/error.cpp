@@ -1,11 +1,5 @@
 #include "error.hpp"
 
-void ErrorDispatcher::set_filename(const char* filename)
-{
-	// just change it lmao
-	this->_infile = strdup(filename);
-}
-
 /* void ErrorDispatcher::dispatch_token_marked(Token *token)
 {
 		To find out what lines to print and where those lines
@@ -20,14 +14,14 @@ void ErrorDispatcher::set_filename(const char* filename)
 	string after1 = "";
 
 	// get offset of token
-	ptrdiff_t token_offset = token->start - _source;
+	ptrdiff_t token_offset = token->start - token->source;
 
 	// find first newline before token
 	ptrdiff_t tok_ln_begin;
 	if(token->line > 1)
 	{
 		tok_ln_begin = token_offset;
-		while(tok_ln_begin > 0 && _source[tok_ln_begin] != '\n') tok_ln_begin--;
+		while(tok_ln_begin > 0 && token->source[tok_ln_begin] != '\n') tok_ln_begin--;
 		tok_ln_begin++; // skip newline itself
 	}
 	else tok_ln_begin = 0;
@@ -39,18 +33,18 @@ void ErrorDispatcher::set_filename(const char* filename)
 		if(token->line - 1 > 0)
 		{
 			bef_ln_begin = tok_ln_begin - 2;
-			while(bef_ln_begin > 0 && _source[bef_ln_begin] != '\n') bef_ln_begin--;
+			while(bef_ln_begin > 0 && token->source[bef_ln_begin] != '\n') bef_ln_begin--;
 			bef_ln_begin++; // skip newline itself
 		}
 		else bef_ln_begin = 0;
 		
-		string bef_ln = string(_source + bef_ln_begin, tok_ln_begin - bef_ln_begin - 1);
+		string bef_ln = string(token->source + bef_ln_begin, tok_ln_begin - bef_ln_begin - 1);
 		before1 = tools::fstr("       %2d| %s", token->line - 1, bef_ln.c_str());
 	}
 
 	// find first newline after token
 	ptrdiff_t tok_ln_end = token_offset + token->length;
-	while(_source[tok_ln_end] != '\n' && _source[tok_ln_end] != '\0') tok_ln_end++;
+	while(token->source[tok_ln_end] != '\n' && token->source[tok_ln_end] != '\0') tok_ln_end++;
 
 	// get line with marked token
 	{
@@ -67,10 +61,10 @@ void ErrorDispatcher::set_filename(const char* filename)
 
 		// find string on the token's line before and after the token itself
 		ptrdiff_t tok_ln_before_tok_len = token_offset - tok_ln_begin;
-		string tok_ln_before_tok = string(_source + tok_ln_begin, tok_ln_before_tok_len);
+		string tok_ln_before_tok = string(token->source + tok_ln_begin, tok_ln_before_tok_len);
 
 		ptrdiff_t tok_ln_after_tok_len = tok_ln_end - token_offset - token->length;
-		string tok_ln_after_tok = string(_source + token_offset + token->length, tok_ln_after_tok_len);
+		string tok_ln_after_tok = string(token->source + token_offset + token->length, tok_ln_after_tok_len);
 
 		// get token and its full line
 		string tok = string(token->start, token->length);
@@ -79,15 +73,15 @@ void ErrorDispatcher::set_filename(const char* filename)
 	}
 
 	// get line after token's line if and possible
-	if(_source[tok_ln_end] != '\0')
+	if(token->source[tok_ln_end] != '\0')
 	{
 		// find first newline after end of token's line;
 		ptrdiff_t af_ln_begin = tok_ln_end + 1;                 // skip prev. line's newline;
 		ptrdiff_t af_ln_end   = af_ln_begin;                    // skip prev. line's newline;
-		while(_source[af_ln_end] != '\n' && _source[af_ln_end] != '\0') af_ln_end++;
+		while(token->source[af_ln_end] != '\n' && token->source[af_ln_end] != '\0') af_ln_end++;
 
 		int af_ln_len = af_ln_end - tok_ln_end - 1; // minus trailing newline
-		string af_ln = string(_source + af_ln_begin, af_ln_len);
+		string af_ln = string(token->source + af_ln_begin, af_ln_len);
 		after1 = tools::fstr("       %2d| %s", token->line + 1, af_ln.c_str());
 	}
 
@@ -97,27 +91,25 @@ void ErrorDispatcher::set_filename(const char* filename)
 	if(after1 	 != "") cerr << after1 << endl;
 } */
 
-void ErrorDispatcher::dispatch_token_marked(Token *token)
+void ErrorDispatcher::print_token_marked(Token *token, ccp color)
 {
 	string tokenline = "";
 	string markerline = "";
 
-	// get offset of token
-	ptrdiff_t token_offset = token->start - _source;
+	// get offset of token (first char)
+	ptrdiff_t token_offset = token->start - token->source;
 
 	// find first newline before token
 	ptrdiff_t tok_ln_begin;
-	if(token->line > 1)
 	{
 		tok_ln_begin = token_offset;
-		while(tok_ln_begin > 0 && _source[tok_ln_begin] != '\n') tok_ln_begin--;
+		while(tok_ln_begin > 0 && token->source[tok_ln_begin] != '\n') tok_ln_begin--;
 		tok_ln_begin++; // skip newline itself
 	}
-	else tok_ln_begin = 0;
 
 	// find first newline after token
 	ptrdiff_t tok_ln_end = token_offset + token->length;
-	while(_source[tok_ln_end] != '\n' && _source[tok_ln_end] != '\0') tok_ln_end++;
+	while(token->source[tok_ln_end] != '\n' && token->source[tok_ln_end] != '\0') tok_ln_end++;
 
 	ptrdiff_t tok_ln_before_tok_len; // keep for later use
 
@@ -136,14 +128,14 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 
 		// find string on the token's line before and after the token itself
 		tok_ln_before_tok_len = token_offset - tok_ln_begin;
-		string tok_ln_before_tok = string(_source + tok_ln_begin, tok_ln_before_tok_len);
+		string tok_ln_before_tok = string(token->source + tok_ln_begin, tok_ln_before_tok_len);
 
 		ptrdiff_t tok_ln_after_tok_len = tok_ln_end - token_offset - token->length;
-		string tok_ln_after_tok = string(_source + token_offset + token->length, tok_ln_after_tok_len);
+		string tok_ln_after_tok = string(token->source + token_offset + token->length, tok_ln_after_tok_len);
 
 		// get token and its full line
 		string tok = string(token->start, token->length);
-		string tok_ln = tok_ln_before_tok + COLOR_RED + tok + COLOR_NONE + tok_ln_after_tok;
+		string tok_ln = tok_ln_before_tok + color + tok + COLOR_NONE + tok_ln_after_tok;
 		tokenline = tools::fstr(" %3d| %s", token->line, tok_ln.c_str());
 	}
 
@@ -161,10 +153,10 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 			markerline +=  ' ';
 
 		for(int i = 0; i < tok_ln_before_tok_len; i++)
-			markerline +=  _source[tok_ln_begin + i] == '\t' ? '\t' : ' ';
+			markerline +=  token->source[tok_ln_begin + i] == '\t' ? '\t' : ' ';
 
-		markerline += COLOR_RED "^";
 
+		markerline += string(color) + "^";
 		for(int i = 0; i < token->length - 1; i++)
 			markerline += '~';
 
@@ -176,48 +168,59 @@ void ErrorDispatcher::dispatch_token_marked(Token *token)
 	cerr << markerline << endl;
 }
 
+// void ErrorDispatcher::__dispatch(bool at, Token* t, const char* c,
+// 								const char* p, const char* m, uint line, const char* file)
+// {
+// 	if(at) 		  fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE, t->file->c_str(), t->line, c, p);
+// 	else if(line) fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE, file, line, c, p);
+// 	else if(file) fprintf(stderr, "[%s] %s%s" COLOR_NONE, file, c, p);
+// 	else		  fprintf(stderr, "[evi] %s%s" COLOR_NONE, c, p);
+//
+//     if (at && t->type == TOKEN_EOF) 
+// 		fprintf(stderr, " at end");
+// 	else if (at && t->type != TOKEN_ERROR) 
+// 		fprintf(stderr, " at " COLOR_BOLD "'%.*s'" COLOR_NONE, t->length, t->start);
+//
+//     fprintf(stderr, ": %s\n", m);
+// }
 
-void ErrorDispatcher::__dispatch(bool at, Token* t, const char* c,
-								 const char* p, const char* m, uint line)
+void ErrorDispatcher::__dispatch(ccp color, ccp prompt, ccp message)
 {
-	if(at) 		  fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE, _infile, t->line, c, p);
-	else if(line) fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE, _infile, line, c, p);
-	else 		  fprintf(stderr, "[%s] %s%s" COLOR_NONE, _infile, c, p);
-
-    if (at && t->type == TOKEN_EOF) 
-		fprintf(stderr, " at end");
-	else if (at && t->type != TOKEN_ERROR) 
-		fprintf(stderr, " at " COLOR_BOLD "'%.*s'" COLOR_NONE, t->length, t->start);
-
-    fprintf(stderr, ": %s\n", m);
+	fprintf(stderr, "[evi] %s%s" COLOR_NONE ": %s\n",
+				color, prompt, message);
 }
 
-void ErrorDispatcher::dispatch_error(const char* prompt, const char* message)
+void ErrorDispatcher::__dispatch_at_token(ccp color, Token* token, ccp prompt, ccp message)
 {
-    __dispatch(false, nullptr, COLOR_RED, prompt, message);
+	fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE ": %s\n",
+			token->file->c_str(), token->line, color, prompt, message);
 }
 
-void ErrorDispatcher::dispatch_error_at(Token *token, const char* prompt, const char* message)
+// if line == 0 lineno is omitted. likewise with filename
+void ErrorDispatcher::__dispatch_at_line(ccp color, uint line, ccp filename, ccp prompt, ccp message)
 {
-    __dispatch(true, token, COLOR_RED, prompt, message);
+	if(line) fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE ": %s\n",
+				filename ? filename : "???", line, color, prompt, message);
+
+	else fprintf(stderr, "[%s] %s%s" COLOR_NONE ": %s\n",
+				filename ? filename : "???", color, prompt, message);
 }
 
-void ErrorDispatcher::dispatch_error_at_ln(uint line, const char* prompt, const char* message)
-{
-    __dispatch(false, nullptr, COLOR_RED, prompt, message, line);
-}
 
-void ErrorDispatcher::dispatch_warning(const char* prompt, const char* message)
-{
-    __dispatch(false, nullptr, COLOR_PURPLE, prompt, message);
-}
+void ErrorDispatcher::error(ccp prompt, ccp message)
+	{ __dispatch(COLOR_RED, prompt, message); }
 
-void ErrorDispatcher::dispatch_warning_at(Token *token, const char* prompt, const char* message)
-{
-    __dispatch(true, token, COLOR_PURPLE, prompt, message);
-}
+void ErrorDispatcher::error_at_line(uint line, ccp filename, ccp prompt, ccp message)
+	{ __dispatch_at_line(COLOR_RED, line, filename, prompt, message); }
 
-void ErrorDispatcher::dispatch_warning_at_ln(uint line, const char* prompt, const char* message)
-{
-    __dispatch(false, nullptr, COLOR_PURPLE, prompt, message, line);
-}
+void ErrorDispatcher::error_at_token(Token* token, ccp prompt, ccp message)
+	{ __dispatch_at_token(COLOR_RED, token, prompt, message); }
+
+void ErrorDispatcher::warning(ccp prompt, ccp message)
+	{ __dispatch(COLOR_PURPLE, prompt, message); }
+
+void ErrorDispatcher::warning_at_line(uint line, ccp filename, ccp prompt, ccp message)
+	{ __dispatch_at_line(COLOR_PURPLE, line, filename, prompt, message); }
+
+void ErrorDispatcher::warning_at_token(Token* token, ccp prompt, ccp message)
+	{ __dispatch_at_token(COLOR_PURPLE, token, prompt, message); }

@@ -8,7 +8,6 @@ char* include_paths[MAX_INCLUDE_PATHS] = {};
 #define SUBMIT_LINE_F(format, ...) _lines.push_back(tools::fstr(format, __VA_ARGS__))
 #define IN_FALSE_BRANCH (_branches->size() && !_branches->top())
 #define LINE_MARKER(line) SUBMIT_LINE_F("# %d \"%s\"", line, _current_file.c_str())
-#define SUBMIT_FLAG(flag) SUBMIT_LINE_F("# f %d", flag);
 
 Status Preprocessor::preprocess(string infile, const char** source)
 {
@@ -18,7 +17,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	_current_line_no = 0;
 	_branches = new stack<bool>();
 	_apply_depth = 0;
-	_error_dispatcher = ErrorDispatcher(*source, infile.c_str());
+	_error_dispatcher = ErrorDispatcher();
 	_had_error = false;
 
 	vector<string> lines = tools::split_string(string(*source), "\n");
@@ -238,7 +237,7 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 	#undef CASE
 }
 
-void Preprocessor::handle_directive(string line, uint line_idx)
+void Preprocessor::handle_directive(string line, uint line_no)
 {
 	// get first word and make sure it's a valid directive
 	string first_word = line.substr(0, line.find(' '));
@@ -247,14 +246,14 @@ void Preprocessor::handle_directive(string line, uint line_idx)
  	if(dirtype == DIR_INVALID)
 	{
 		if(!IN_FALSE_BRANCH)
-			ERROR_F(line_idx + 1, "Invalid preprocessor directive: '#%s'.", first_word.c_str())
+			ERROR_F(line_no, "Invalid preprocessor directive: '#%s'.", first_word.c_str())
 		else SUBMIT_LINE("");
 		return; // report the error but keep on chuckin'
 	}
 
 	// directive is valid, so handle it
 	DirectiveHandler handler = get_directive_handler(dirtype);
-	(this->*handler)(strip_start(line.erase(0, first_word.length())), line_idx);
+	(this->*handler)(strip_start(line.erase(0, first_word.length())), line_no - 1);
 }
 
 // ===============================================================
@@ -286,13 +285,8 @@ bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
 
 		if(args.size() != 1) return false;
 
-		_error_dispatcher.dispatch_warning_at_ln(line_no, "Preprocessor Warning", msg.c_str());
+		_error_dispatcher.warning_at_line(line_no, _current_file.c_str(), "Preprocessor Warning", msg.c_str());
 		return true;
-	}
-	else if(cmd == "suppress_warnings")
-	{
-		SUBMIT_FLAG(PREPFLAG_SUPPRESS_WARNINGS);
-		return args.size() == 0;
 	}
 
 	return false;
@@ -311,7 +305,6 @@ HANDLER(apply)
 
 	string oldfile = _current_file;
 	uint old_lineno = _current_line_no;
-	PrepFlags old_flags = _current_flags;
 	_apply_depth++;
 
 	// get filename
@@ -343,19 +336,14 @@ HANDLER(apply)
 
 	// process text
 	_current_file = path;
-	_error_dispatcher.set_filename(path.c_str());
 	vector<string> lines = tools::split_string(source, "\n");
-	SUBMIT_FLAG(PREPFLAG_NONE);
 	LINE_MARKER(0);
 	process_lines(lines);
 
 	// continue current file
 	_current_file = oldfile;
 	_current_line_no = old_lineno;
-	_current_flags = old_flags;
-	_error_dispatcher.set_filename(oldfile.c_str());
-	SUBMIT_FLAG(_current_flags);
-	LINE_MARKER(line_no);
+	LINE_MARKER(_current_line_no++);
 
 	ASSERT_END_OF_LINE();
 }
@@ -499,7 +487,6 @@ HANDLER(endif)
 #undef SUBMIT_LINE
 #undef SUBMIT_LINE_F
 #undef LINE_MARKER
-#undef SUBMIT_FLAG
 #undef IN_FALSE_BRANCH
 #undef HANDLER
 #undef TRY_TO

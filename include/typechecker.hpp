@@ -22,13 +22,13 @@ class TypeChecker: public Visitor
 	VISIT(BlockNode);
 		VISIT(LogicalNode);
 		VISIT(BinaryNode);
+		VISIT(CastNode);
 		VISIT(UnaryNode);
 		VISIT(GroupingNode);
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
 			VISIT(ReferenceNode);
 			VISIT(CallNode);
-	VISIT(FlagNode);
 	#undef VISIT
 
 	private:

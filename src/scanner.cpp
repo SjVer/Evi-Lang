@@ -73,22 +73,26 @@ char Scanner::peekNext()
 
 Token Scanner::makeToken(TokenType type)
 {
-	Token token;
-	token.type = type;
-	token.start = _start;
-	token.length = (int)(_current - _start);
-	token.line = _line;
-	return token;
+	return Token{
+		/*type*/ type,
+		/*source*/ _src_start,
+		/*start*/ _start,
+		/*length*/ (int)(_current - _start),
+		/*line*/ _line,
+		/*file*/ _filename,
+	};
 }
 
 Token Scanner::errorToken(const char *message)
 {
-	Token token;
-	token.type = TOKEN_ERROR;
-	token.start = message;
-	token.length = (int)strlen(message);
-	token.line = _line;
-	return token;
+	return Token{
+		/*type*/ TOKEN_ERROR,
+		/*source*/ _src_start,
+		/*start*/ message,
+		/*length*/ (int)strlen(message),
+		/*line*/ _line,
+		/*file*/ _filename
+	};
 }
 
 Token Scanner::string()
@@ -205,23 +209,13 @@ Token Scanner::directive()
 
 	// check it
 	cmatch match; // index 0 is whole match
-	if(regex_match(line.c_str(), match, regex(FLAG_MARKER_REGEX)))
-	{
-		// flag
-		int flags = stoi(match[1].str(), 0, 10);
-		return Token{
-			/*type  */ TOKEN_FLAG_MARKER,
-			/*start */ 0,
-			/*length*/ flags,
-			/*line  */ _line
-		};
-	}
-	else if(regex_match(line.c_str(), match, regex(LINE_MARKER_REGEX)))
+	if(regex_match(line.c_str(), match, regex(LINE_MARKER_REGEX)))
 	{
 		// marker
-
+		// get lineno and filename
 		int lineno = stoi(match[1].str(), 0, 10);
 		_line = lineno;
+		_filename = new std::string(match[2].str());
 
 		// // clear line marker for neatness' sake
 		// std::string new_line = std::string(' ', line.length() + 1);
@@ -230,8 +224,11 @@ Token Scanner::directive()
 		// return token
 		return Token{
 			/*type  */ TOKEN_LINE_MARKER,
-			/*start */ strdup(match[2].str().c_str()),
-			/*length*/ (int)match[2].length(),
+			/*source */ _src_start,
+			/*start */ 0,
+			/*length*/ 0,
+			/*line  */ lineno,
+			/*file  */ _filename,
 		};
 	}
 	else return errorToken("Preprocessed code corrupted. (Line or flag marker invalid.)");
@@ -318,7 +315,7 @@ Token Scanner::scanToken()
 
 		// two-character
 		case '+': return makeToken(match('+') ? TOKEN_PLUS_PLUS   	: TOKEN_PLUS);
-		case '-': return makeToken(match('-') ? TOKEN_MINUS_MINUS  	: TOKEN_MINUS);
+		case '-': return makeToken(match('-') ? TOKEN_MINUS_MINUS  	: match('>') ? TOKEN_ARROW : TOKEN_MINUS);
 		case '/': return makeToken(match('=') ? TOKEN_SLASH_EQUAL	: TOKEN_SLASH);
 		case '=': return makeToken(match('=') ? TOKEN_EQUAL_EQUAL   : TOKEN_EQUAL);
 		case '<': return makeToken(match('=') ? TOKEN_LESS_EQUAL    : match('<') ? TOKEN_LESS_LESS 		 : TOKEN_LESS);
@@ -395,6 +392,7 @@ char *getTokenStr(TokenType type)
 		case TOKEN_SLASH_EQUAL: return "SLASH_EQUAL";
 		case TOKEN_GREATER_EQUAL: return "GREATER_EQUAL";
 		case TOKEN_LESS_EQUAL: return "LESS_EQUAL";
+		case TOKEN_ARROW: return "ARROW";
 
 		// Literals.
 		case TOKEN_IDENTIFIER: return "IDENTIFIER";
@@ -408,7 +406,6 @@ char *getTokenStr(TokenType type)
 
 		// misc.
 		case TOKEN_LINE_MARKER: return "LINE_MARKER";
-		case TOKEN_FLAG_MARKER: return "FLAG_MARKER";
 		case TOKEN_ERROR: return "ERROR";
 		case TOKEN_EOF: return "EOF";
 	}

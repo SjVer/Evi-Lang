@@ -85,7 +85,7 @@ public:
 	const char* to_c_string();
 	llvm::Type* get_llvm_type();
 
-	bool eq(ParsedType* rhs);
+	bool eq(ParsedType* rhs, bool simple = false);
 	uint get_alignment();
 	uint get_depth();
 	int get_array_size();

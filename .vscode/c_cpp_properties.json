@@ -12,7 +12,8 @@
                 "DEBUG",
                 "LD_PATH=\"/usr/bin/ld\"",
                 "STATICLIB_DIR=\"/usr/lib/\"",
-                "STDLIB_DIR=\"/usr/share/evi/\""
+                "STDLIB_DIR=\"/usr/share/evi/\"",
+                "LIBC_VERSION=8"
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",

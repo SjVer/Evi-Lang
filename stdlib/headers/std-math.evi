@@ -26,12 +26,11 @@
 :\
 
 #info apply_once
-#info suppress_warnings
 #flag __STD_MATH__
 
 \ =================================== Constants ====================================
 
-%PI dbl 3.141592653589793238462643383279502884; 
+%PI dbl 3.141592653589793238462643383279502884;
 
 \ =================================== Functions ====================================
 
@@ -54,3 +53,9 @@
 \? @param 0 the value
 \? @ret the tangent of the given value
 @tan dbl (dbl);
+
+\? returns a given value raised to a given power
+\? @param 0 the base value
+\? @param 1 the power
+\? @ret the resulting value
+@pow dbl (dbl dbl);

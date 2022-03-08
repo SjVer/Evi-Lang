@@ -22,12 +22,13 @@ class ASTVisualizer: public Visitor
 	VISIT(BlockNode);
 		VISIT(LogicalNode);
 		VISIT(BinaryNode);
+		VISIT(CastNode);
 		VISIT(UnaryNode);
 		VISIT(GroupingNode);
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
 			VISIT(ReferenceNode);
-	VISIT(FlagNode);
+			VISIT(CallNode);
 	#undef VISIT
 
 	private:

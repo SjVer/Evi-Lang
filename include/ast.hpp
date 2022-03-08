@@ -22,14 +22,13 @@ class StmtNode;
 		class LogicalNode;
 		class BinaryNode;
 		class UnaryNode;
+		class CastNode;
 		class GroupingNode;
 		class PrimaryNode;
 			class LiteralNode;
 			class ArrayNode;
 			class ReferenceNode;
 			class CallNode;
-
-	class FlagNode;
 
 // visitor class
 class Visitor
@@ -46,12 +45,12 @@ class Visitor
 		VISIT(LogicalNode);
 		VISIT(BinaryNode);
 		VISIT(UnaryNode);
+		VISIT(CastNode);
 		VISIT(GroupingNode);
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
 			VISIT(ReferenceNode);
 			VISIT(CallNode);
-	VISIT(FlagNode);
 	#undef VISIT
 };
 
@@ -226,6 +225,18 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 			ExprNode* _expr;
 		};
 
+		class CastNode: public ExprNode
+		{
+			public:
+
+			CastNode(Token token, ExprNode* expr, ParsedType* type):
+				ExprNode(token), _expr(expr), _type(type) {}
+			ACCEPT
+
+			ExprNode* _expr;
+			ParsedType* _type;
+		};
+
 		class GroupingNode: public ExprNode
 		{
 			public:
@@ -294,16 +305,6 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 				ParsedType* _ret_type;
 				vector<ParsedType*> _expected_arg_types;
 			};
-
-	class FlagNode: public StmtNode
-	{
-		public:
-
-		FlagNode(PrepFlags flags): _flags(flags) {}
-		ACCEPT
-
-		PrepFlags _flags;
-	};
 
 #undef ACCEPT
 #endif

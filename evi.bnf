@@ -35,7 +35,8 @@ equality		: comparison (("!=" | "==") comparison)*
 comparison		: bitwise_shift ((">" | ">=" | "<" | "<=") bitwise_shift)*
 bitwise_shift	: term (("<<" | ">>") term)*
 term			: factor (("-" | "+") factor)*
-factor			: unary (("/" | "*") unary)*
+factor			: cast (("/" | "*") cast)*
+cast			: unary ("->" TYPE)*
 unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | primary
 primary			: NUMBER | CHAR | STRING | "(" expression ")"
 				| reference | call | "[" (expression ("," expression)*)? "]"

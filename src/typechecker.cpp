@@ -4,7 +4,7 @@
 Status TypeChecker::check(string path, const char* source, AST* astree)
 {
 	_infile = path;
-	_error_dispatcher = ErrorDispatcher(source, path.c_str());
+	_error_dispatcher = ErrorDispatcher();
 	_type_stack = stack<ParsedType*>();
 
 	for(auto& node : *astree)
@@ -19,11 +19,11 @@ Status TypeChecker::check(string path, const char* source, AST* astree)
 
 void TypeChecker::error_at(Token *token, string message)
 {
-	_error_dispatcher.dispatch_error_at(token, "Type Error", message.c_str());
+	_error_dispatcher.error_at_token(token, "Type Error", message.c_str());
 
 	// print token
 	cerr << endl;
-	_error_dispatcher.dispatch_token_marked(token);
+	_error_dispatcher.print_token_marked(token, COLOR_RED);
 	cerr << endl;
 	
 	ABORT(STATUS_TYPE_ERROR);
@@ -32,7 +32,7 @@ void TypeChecker::error_at(Token *token, string message)
 void TypeChecker::warning_at(Token *token, string message)
 {
 	// just a lil warnign
-	_error_dispatcher.dispatch_warning_at(token, "Type Inference Warning", message.c_str());
+	_error_dispatcher.warning_at_token(token, "Type Inference Warning", message.c_str());
 }
 
 void TypeChecker::push(ParsedType* type)
@@ -176,6 +176,7 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 	if(from->get_depth() == to->get_depth())
 	{
 		// just check their types
+		if(AS_LEX(to) == AS_LEX(from)) return true;
 		switch(AS_LEX(from))
 		{
 			case TYPE_BOOL: switch(AS_LEX(to))
@@ -299,7 +300,7 @@ VISIT(VarDeclNode)
 			ERROR_AT(&node->_token, "Cannot initialize variable of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			vartype->to_c_string(), exprtype->to_c_string());
-		else if(!exprtype->eq(vartype))
+		else if(!exprtype->eq(vartype, true))
 			CONVERSION_WARNING_AT(&node->_token, exprtype, vartype);			
 
 		node->_expr->_cast_to = vartype;
@@ -320,7 +321,7 @@ VISIT(AssignNode)
 		ERROR_AT(&node->_token, "Cannot implicitly convert expression of type " COLOR_BOLD \
 		"'%s'" COLOR_NONE " to variable's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 		exprtype->to_c_string(), vartype->to_c_string());
-	else if(!exprtype->eq(vartype))
+	else if(!exprtype->eq(vartype, true))
 		CONVERSION_WARNING_AT(&node->_token, exprtype, vartype);
 
 	push(nullptr);
@@ -494,9 +495,9 @@ VISIT(BinaryNode)
 			else ERROR_AT(&node->_token, "Cannot peform binary operation on expressions of type " \
 				COLOR_BOLD "'%s'" COLOR_NONE ".", right->to_c_string());
 		}
-		if(!left->eq(result)) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
-		if(!right->eq(result)) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
-		
+		if(!left->eq(result, true)) CONVERSION_WARNING_AT(&node->_left->_token, left, result);
+		if(!right->eq(result, true)) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
+
 		node->_left->_cast_to = result;
 		node->_right->_cast_to = result;
 		node->_cast_to = result; // in case nothing else sets it
@@ -504,12 +505,23 @@ VISIT(BinaryNode)
 	}
 }
 
+VISIT(CastNode)
+{
+	node->_expr->accept(this);
+	ParsedType* type = pop();
+
+	if(!can_cast_types(type, node->_type))
+		CANNOT_CONVERT_ERROR_AT(&node->_token, type, node->_type);
+	
+	push(node->_type);
+}
+
 VISIT(UnaryNode)
 {
 	node->_expr->accept(this);
 	ParsedType* type = pop();
 
-	if(type->is_array() || type->is_pointer()) switch(node->_optype)
+	if(!type->is_array() && !type->is_pointer()) switch(node->_optype) // we're dealing with a pointer
 	{
 		case TOKEN_STAR:
 		{
@@ -549,7 +561,7 @@ VISIT(UnaryNode)
 
 		default: assert(false);
 	}
-	else switch(node->_optype) // we're dealing with a pointer
+	else switch(node->_optype)
 	{
 		case TOKEN_STAR:
 		{
@@ -660,19 +672,6 @@ VISIT(CallNode)
 	}
 
 	push(node->_ret_type);
-}
-
-// =============
-
-VISIT(FlagNode)
-{
-	switch(node->_flags)
-	{
-		case PREPFLAG_NONE: break;
-		case PREPFLAG_SUPPRESS_WARNINGS:
-			{}
-		default: assert(false);
-	}
 }
 
 #undef VISIT
