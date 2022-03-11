@@ -6,3 +6,5 @@ bin/
 **/*.o
 **/*.evii
 **/__pycache__/
+tools/vscode-extension/node_modules/
+tools/vscode-extension/out

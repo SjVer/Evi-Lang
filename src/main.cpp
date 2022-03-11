@@ -10,7 +10,7 @@
 
 // ================= arg stuff =======================
 
-const char *argp_program_version = APP_NAME " " APP_VERSION " (MIT)";
+const char *argp_program_version = APP_NAME " " APP_VERSION;
 const char *argp_program_bug_address = EMAIL;
 static char args_doc[] = "file...";
 

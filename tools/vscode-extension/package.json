@@ -3,47 +3,81 @@
     "displayName": "Evi-Lang",
     "description": "Evi syntax highlighting extension",
     "version": "0.0.1",
+    "categories": [
+        "Programming Languages",
+        "Snippets"
+    ],
     "engines": {
         "vscode": "^1.63.0"
     },
-    "dependencies": {
-        "vscode-languageclient": "^7.0.0",
-        "vscode-languageserver-textdocument": "^1.0.1"
-    },
-
-
-    "categories": [
-        "Programming Languages", "Snippets"
-    ],
     "contributes": {
-        "languages": [{
-            "id": "evi",
-            "aliases": ["Evi", "evi"],
-            "extensions": [".evi", ".evii"],
-            "configuration": "./syntaxes/language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "evi",
-            "scopeName": "source.evi",
-            "path": "./syntaxes/evi.tmLanguage.json"
-        }],
+        "languages": [
+            {
+                "id": "evi",
+                "aliases": [
+                    "Evi",
+                    "evi"
+                ],
+                "extensions": [
+                    ".evi",
+                    ".evii"
+                ],
+                "configuration": "./syntaxes/language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "evi",
+                "scopeName": "source.evi",
+                "path": "./syntaxes/evi.tmLanguage.json"
+            }
+        ],
         "snippets": [
             {
                 "language": "evi",
                 "path": "./syntaxes/evi.code-snippets"
             }
         ],
-        "configuration":[
+        "configuration": [
             {
                 "title": "Evi",
                 "properties": {
-                    "Evi.EviExecutablePath": {
+                    "evi.eviExecutablePath": {
                         "type": "string",
                         "default": "/usr/bin/evi",
                         "description": "The path to the Evi executable (/usr/bin/evi by default)"
+                    },
+                    "evi.suggestions": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable code suggestions"
                     }
                 }
             }
         ]
+    },
+    "activationEvents": [
+        "onLanguage:evi"
+    ],
+    "main": "./out/eviMain.js",
+    "scripts": {
+        "vscode:prepublish": "clear; npm run compile",
+        "compile": "clear; tsc --build",
+        "watch": "clear; tsc --build --watch ",
+        "clean": "clear; tsc --build --clean"
+    },
+    "dependencies": {
+        "gulp": "^4.0.2",
+        "vscode-nls": "^4.0.0",
+        "which": "^2.0.2"
+    },
+    "devDependencies": {
+        "@types/node": "16.x",
+        "@types/vscode": "^1.51.0",
+        "@types/which": "^2.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/SjVer/Evi-Lang.git"
     }
 }

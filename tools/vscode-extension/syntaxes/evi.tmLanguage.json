@@ -33,21 +33,7 @@
 					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
 					"name": "meta.preprocessor.apply.evi",
 					"patterns": [
-						{
-							"begin": "\"",
-							"beginCaptures": {
-								"0": {
-									"name": "punctuation.definition.string.begin.evi"
-								}
-							},
-							"end": "\"",
-							"endCaptures": {
-								"0": {
-									"name": "punctuation.definition.string.end.evi"
-								}
-							},
-							"name": "string.quoted.double.apply.evi"
-						},
+						{ "include": "#strings" },
 						{ "include": "#illegals" }
 					]
 				},
@@ -101,7 +87,7 @@
 					"end": "(?=(?://|/\\*))|(?<!\\\\)(?=\\n)",
 					"name": "meta.preprocessor.file.evi",
 					"patterns": [
-						{ "match": "\".*\"", "name": "string.quoted.double.evi" },
+						{ "include": "#strings" },
 						{ "include": "#illegals" }
 					]
 				},
@@ -153,7 +139,7 @@
 					]
 				},
 				{
-					"match": "^\\s*(#) ?([0-9]+)? ?(\".*\")?$",
+					"match": "^\\s*(#) ?([0-9]+)? ?(\"(?:\\\\?.*)\")?$",
 					"captures": {
 						"1": { "name": "keyword.control.directive.evi" },
 						"2": { "name": "constant.numeric.decimal.evi" },
@@ -230,10 +216,11 @@
 		"funcdeclarations": 
 		{
 			"name": "meta.declaration.function.evi",
-			"begin": "(@)\\s*([A-z_]+[0-z_]*)",
+
+			"begin": "(@)\\s*([A-z_]+[0-z_]*)?",
 			"beginCaptures": {
-				"0": { "name": "keyword.declaration.function.evi" },
-				"1": { "name": "entity.name.function.evi" } },
+				"1": { "name": "keyword.declaration.function.evi" },
+				"2": { "name": "entity.name.function.declaration.evi" } },
 			
 			"patterns": [
 				{ "include": "#function-type" },
@@ -245,31 +232,17 @@
 		"function-type":
 		{
 			"name": "meta.declaration.function.type.evi",
-			"begin": " ",
-
+			"begin": "\\s",
+			
 			"patterns": [
 				{ "include": "#types" },
-				{ "include": "#function-parameters" },
-				{ "include": "#blocks" },
+				{ "match": "\\(", "name": "punctuation.section.parameters.begin.evi" },
 				{ "include": "#illegals" }
 			],
-
-			"end": "\\("
+			
+			"end": "\\)",
+			"endCaptures": { "0": { "name": "punctuation.section.parameters.end.evi" } }
 		},
-		"function-parameters": 
-		{
-			"name": "meta.declaration.function.parameters.evi",
-			"begin": "\\(",	
-
-			"patterns": [
-				{ "include": "#types" },
-				{ "include": "#separators" },
-				{ "include": "#illegals" }
-			],
-
-			"end": "\\)"
-		},
-
 
 		"statements":
 		{
@@ -300,7 +273,8 @@
 				{ "include": "#illegals" }
 			],
 
-			"end": ";|$"
+			"end": "(;)|$",
+			"endCaptures": { "1": { "name": "punctuation.terminator.evi" } }
 		},
 
 		"keywords":
@@ -341,12 +315,12 @@
 				{ "include": "#pre-directives" },
 				{ "include": "#comments" },
 
+				{ "include": "#types" },
 				{ "include": "#operators" },
 				{ "include": "#variables" },
 				{ "include": "#numbers" },
 				{ "include": "#arrays" },
 				{ "include": "#strings" },
-				{ "include": "#types" },
 
 				{ "include": "#illegals" }
 			]
