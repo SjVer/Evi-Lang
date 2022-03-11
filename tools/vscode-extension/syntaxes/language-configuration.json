@@ -37,7 +37,7 @@
     },
 
     "indentationRules": {
-        "increaseIndentPattern": "{|\\(|::",
+        "increaseIndentPattern": "{",
         "decreaseIndentPattern": "}"
     },
 

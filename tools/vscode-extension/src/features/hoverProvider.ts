@@ -2,7 +2,6 @@
 import { HoverProvider, Hover, MarkedString, TextDocument, CancellationToken, Position, workspace, window } from 'vscode';
 import { textToMarkedString } from './utils/markedTextUtil';
 import eviSymbols = require('./eviSymbols');
-// import phpGlobalFunctions = require('./phpGlobalFunctions');
 
 const constantRegexes: { [regex: string]: string } = {
 	/*integers*/ "^(-?(?:0(x|X)[0-f]+)|(0(c|C)[0-7]+)|(0(b|B)[0-1]+)|([0-9]+))$": "i32",
@@ -53,7 +52,6 @@ export default class EviHoverProvider implements HoverProvider {
 				}, wordRange);
 		}
 
-		return new Hover([{ language: 'evi', value: word }, "Symbol not found."], wordRange);
-		// return undefined;
+		return wordRange ? new Hover([{ language: 'evi', value: word }, "Symbol not found."], wordRange) : undefined;
 	}
 }

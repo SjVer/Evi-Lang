@@ -1,7 +1,7 @@
 #apply "std-io"
 #apply "std-math"
 
-@main i32 (dbl)
+@main i32 ()
 {
     printg(pow(2, 3));
     ~ 0;
