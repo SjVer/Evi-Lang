@@ -1,13 +1,17 @@
 #apply "std-io"
 #apply "std-math"
 
-@main i32 ()
+@main i32 (i32 dbl)
 {
     printg(pow(2, 3));
     ~ 0;
-    
-    %var i32 123;
-    $idk;
 
-    
+    %yes1 i32;
+    {
+        %no i32;
+    }
+    {
+        %yes2 dbl;
+        
+    }
 }

@@ -1,4 +1,1 @@
-#info apply_once
-
-\? doubles an int
-@double i32 (i32) ~ $0 * 2;
+%test i32;

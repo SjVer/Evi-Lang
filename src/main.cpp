@@ -1,12 +1,16 @@
 #define ARGP_NO_EXIT
 #define ARGP_NO_HELP
 #include <argp.h>
+#include <regex>
+#include "lint.hpp"
+
 #include "common.hpp"
 #include "parser.hpp"
 #include "typechecker.hpp"
 #include "preprocessor.hpp"
 #include "codegen.hpp"
 #include "debug.hpp"
+
 
 // ================= arg stuff =======================
 
@@ -20,6 +24,8 @@ static char args_doc[] = "file...";
 #define ARG_EMIT_LLVM 1
 #define ARG_GEN_AST 2
 #define ARG_LD_FLAGS 3
+#define ARG_LINT_TYPE 4
+#define ARG_LINT_POS 5
 
 /* This structure is used by main to communicate with parse_opt. */
 struct arguments
@@ -36,6 +42,8 @@ struct arguments
 	bool output_given = false;
 };
 
+lint_args_t lint_args;
+
 static struct argp_option options[] =
 {
 	{"help", 'h', 0, 0, "Display a help message."},
@@ -48,6 +56,9 @@ static struct argp_option options[] =
 	{"emit-llvm",  ARG_EMIT_LLVM, 0, 0, "Emit llvm IR instead of an executable."},
 	{"generate-ast",  ARG_GEN_AST, 0, 0, "Generate AST image (for debugging purposes)."},
 	{"ld-flags",  ARG_LD_FLAGS, 0, 0, "Display the flags passed to the linker."},
+
+	{"lint-type", ARG_LINT_TYPE, "TYPE", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
+	{"lint-pos", ARG_LINT_POS, "POS", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
 	{0}
 };
 
@@ -131,6 +142,34 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	}
 
+	case ARG_LINT_TYPE:
+	{
+		LintType type = get_lint_type(arg);
+		if(type == LINT_NONE)
+		{
+			cerr << "[evi] CLI Error: Invalid lint type: " << arg << endl;
+			ABORT(STATUS_CLI_ERROR);
+		}
+		lint_args.lint = true;
+		lint_args.type = type;
+		break;
+	}
+	case ARG_LINT_POS:
+	{
+		cmatch match;
+		if(!regex_match(arg, match, regex(LINT_POS_REGEX)))
+		{
+			cerr << "[evi] CLI Error: Invalid lint position: " << arg << endl;
+			ABORT(STATUS_CLI_ERROR);
+		}
+
+		lint_args.pos[0] = stoi(match[1].str(), 0, 10);
+		lint_args.pos[1] = stoi(match[2].str(), 0, 10);
+		lint_args.pos_given = true;
+
+		break;
+	}
+
 	case ARGP_KEY_ARG:
 	{
 		if (state->arg_num >= ARGS_COUNT)
@@ -165,6 +204,13 @@ int main(int argc, char **argv)
 	/* Where the magic happens */
 	if(argp_parse(&argp, argc, argv, 0, 0, &arguments)) return STATUS_CLI_ERROR;
 
+	// check lint args
+	if(lint_args.lint && !lint_args.pos_given)
+	{
+		cerr << "[evi] CLI Error: Lint requires position." << endl;
+		ABORT(STATUS_CLI_ERROR);
+	}
+
 	// figure out output file name
 	if(!arguments.output_given)
 	{
@@ -198,7 +244,7 @@ int main(int argc, char **argv)
 
 	// parse program
 	Parser* parser = new Parser();
-	status = parser->parse(arguments.args[0], source, &astree);
+	status = parser->parse(arguments.args[0], source, &astree, lint_args);
 	if(status != STATUS_SUCCESS) ABORT(status);
 
 
@@ -206,6 +252,9 @@ int main(int argc, char **argv)
 	TypeChecker* checker = new TypeChecker();
 	status = checker->check(arguments.args[0], source, &astree);
 	if(status != STATUS_SUCCESS) ABORT(status);
+
+
+	if(lint_args.lint) exit(0);
 
 
 	// generate visualization

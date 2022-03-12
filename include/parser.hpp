@@ -5,6 +5,7 @@
 #include "ast.hpp"
 #include "error.hpp"
 #include "common.hpp"
+#include "lint.hpp"
 
 #include "pch.h"
 
@@ -16,7 +17,8 @@ class Parser
 {
 public:
 	Parser(): _scope_stack() {}
-	Status parse(string infile, const char* source, AST* astree);
+	Status parse(string infile, const char* source, 
+				 AST* astree, lint_args_t lint_args);
 
 private:
 
@@ -106,6 +108,9 @@ private:
 	bool _had_error;
 	bool _panic_mode;
 	ErrorDispatcher _error_dispatcher;
+
+	string _main_file;
+	lint_args_t _lint_args;
 
 	#define PREV_TOKEN_STR std::string(_previous.start, _previous.length)
 };

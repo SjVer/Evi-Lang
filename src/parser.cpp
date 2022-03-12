@@ -8,6 +8,8 @@
 void Parser::error_at(Token *token, string message)
 {
 	if(_panic_mode) return;
+	_had_error = true;
+	_panic_mode = true;
 
 	_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
 
@@ -18,9 +20,6 @@ void Parser::error_at(Token *token, string message)
 		_error_dispatcher.print_token_marked(token, COLOR_RED);
 		// cerr << endl;
 	}
-
-	_had_error = true;
-	_panic_mode = true;
 }
 
 // displays an error at the previous token with the given message
@@ -48,7 +47,54 @@ void Parser::advance()
 	{
 		_current = _scanner.scanToken();
 
-		if (_current.type == TOKEN_ERROR)
+		#pragma region lint shit
+		#define APPLICABLE (_lint_args.lint && \
+			(_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_PARAMETERS \
+			|| _lint_args.type == LINT_GET_VARIABLES))
+
+		if(APPLICABLE && *_current.file == _main_file && _current.line >= _lint_args.pos[0])
+		{
+			uint col; // get column
+			{
+				// get offset of token (first char)
+				ptrdiff_t token_offset = _current.start - _current.source;
+
+				// find first newline before token
+				ptrdiff_t tok_ln_begin = token_offset;
+				while(tok_ln_begin > 0 && _current.source[tok_ln_begin] != '\n') tok_ln_begin--;
+				tok_ln_begin++; // skip newline itself
+
+				col = token_offset - tok_ln_begin;
+			}
+
+			// at, or just after position
+			if(_current.line > _lint_args.pos[0] || col >= _lint_args.pos[1])
+			{
+				LINT_OUTPUT_START();
+
+				if(_lint_args.type == LINT_GET_FUNCTIONS)
+				{
+					
+				}
+				else if(_lint_args.type == LINT_GET_PARAMETERS)
+				{
+					for(int i = 0; i < _current_scope.func_props.params.size(); i++)
+						LINT_OUTPUT_PAIR(tools::fstr("%d", i), _current_scope.func_props.params[i]->to_c_string());
+				}
+				else if(_lint_args.type == LINT_GET_VARIABLES)
+				{
+					
+				}
+
+				LINT_OUTPUT_END();
+				cout << lint_output;
+				exit(0);
+			}
+		}
+		#undef APPLICABLE
+		#pragma endregion
+
+		else if (_current.type == TOKEN_ERROR)
 			error_at_current(_current.start);
 
 		else if(_current.type == TOKEN_LINE_MARKER)
@@ -235,6 +281,18 @@ void Parser::synchronize(bool toplevel)
 		return;
 	}
 
+	if(toplevel) while(!is_at_end())
+	{
+		if(match(TOKEN_LEFT_BRACE)) while(!match(TOKEN_RIGHT_BRACE)) { advance(); }
+		if(match(TOKEN_LEFT_B_BRACE)) while(!match(TOKEN_RIGHT_B_BRACE)) { advance(); }
+		if(match(TOKEN_LEFT_PAREN)) while(!match(TOKEN_RIGHT_PAREN)) { advance(); }
+
+		if(_current.type == TOKEN_AT || _current.type == TOKEN_MODULO)
+			return;
+
+		advance();
+	}
+
 	/*
 	if(toplevel) while(!is_at_end())
 	{
@@ -253,7 +311,7 @@ void Parser::synchronize(bool toplevel)
 	}
 	else
 	*/
-	while(!is_at_end())
+	else while(!is_at_end())
 	{
 		if(_previous.type == TOKEN_SEMICOLON) return;
 
@@ -888,7 +946,7 @@ CallNode* Parser::call()
 
 // ======================= misc. =======================
 
-Status Parser::parse(string infile, const char* source, AST* astree)
+Status Parser::parse(string infile, const char* source, AST* astree, lint_args_t lint_args)
 {
 	// printTokensFromSrc(tools::readf(infile).c_str());
 	_astree = astree;
@@ -901,8 +959,10 @@ Status Parser::parse(string infile, const char* source, AST* astree)
 
 	_had_error = false;
 	_panic_mode = false;
-	// _error_dispatcher = ErrorDispatcher(source, infile.c_str());
 	_error_dispatcher = ErrorDispatcher();
+
+	_main_file = infile;
+	_lint_args = lint_args;
 
 	advance();
 	while (!is_at_end())

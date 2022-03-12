@@ -343,7 +343,7 @@ HANDLER(apply)
 	// continue current file
 	_current_file = oldfile;
 	_current_line_no = old_lineno;
-	LINE_MARKER(_current_line_no++);
+	LINE_MARKER(_current_line_no);
 
 	ASSERT_END_OF_LINE();
 }
