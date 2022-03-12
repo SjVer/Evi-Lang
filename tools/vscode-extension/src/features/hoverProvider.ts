@@ -6,14 +6,14 @@ import eviSymbols = require('./eviSymbols');
 const constantRegexes: { [regex: string]: string } = {
 	/*integers*/ "^(-?(?:0(x|X)[0-f]+)|(0(c|C)[0-7]+)|(0(b|B)[0-1]+)|([0-9]+))$": "i32",
 	/*floats  */ "^(-?[0-9]+(\.[0-9]+)?)$": "dbl",
-	/*strings */ "^(\"(\\.|.)*\")$": "chr*"
+	/*strings */ "^(\"(\\.|.)*\")$": "chr*",
 }
 
 export default class EviHoverProvider implements HoverProvider {
 
 	public provideHover(document: TextDocument, position: Position, _token: CancellationToken): Hover | undefined {
 		let wordRange = document.getWordRangeAtPosition(position);
-		let word = wordRange ? document.getText(wordRange) : document.getText();
+		let word = wordRange ? document.getText(wordRange) : '';
 		
 		if (eviSymbols.keywords[word]) {
 			// its a keyword
