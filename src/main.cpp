@@ -43,6 +43,7 @@ struct arguments
 };
 
 lint_args_t lint_args;
+std::string lint_output = "";
 
 static struct argp_option options[] =
 {

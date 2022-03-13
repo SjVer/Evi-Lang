@@ -6,24 +6,18 @@
 typedef enum
 {
 	LINT_GET_FUNCTIONS,
-	LINT_GET_PARAMETERS,
 	LINT_GET_VARIABLES,
 
 	LINT_NONE
 } LintType;
 
-#define LINT_GET_FUNCTIONS_STR "get-functions"
-#define LINT_GET_PARAMETERS_STR "get-parameters"
-#define LINT_GET_VARIABLES_STR "get-variables"
-
 static const char* get_lint_type_string(LintType type)
 {
-	#define CASE(type) case type: return type##_STR
+	#define CASE(type, str) case type: return str
 	switch(type)
 	{
-		CASE(LINT_GET_FUNCTIONS);
-		CASE(LINT_GET_PARAMETERS);
-		CASE(LINT_GET_VARIABLES);
+		CASE(LINT_GET_FUNCTIONS, "functions");
+		CASE(LINT_GET_VARIABLES, "variables");
 
 		default: return nullptr;
 	}
@@ -48,16 +42,19 @@ typedef struct
 	uint pos[2] = {0, 0};
 } lint_args_t;
 
-#undef LINT_GET_FUNCTIONS_STR
-#undef LINT_GET_PARAMETERS_STR
-#undef LINT_GET_VARIABLES_STR
+extern std::string lint_output;
 
-string lint_output = "";
+#define WRONG_END (lint_output.length() >= 2 && lint_output.substr(lint_output.length() - 2) == ", ")
 
-#define LINT_OUTPUT_START() { lint_output += "{ "; }
+#define LINT_OUTPUT_START_MAIN_OBJECT() { lint_output += "{ "; }
+#define LINT_OUTPUT_END_MAIN_OBJECT() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "}"; }
+#define LINT_OUTPUT_START_MAIN_ARRAY() { lint_output += "[ "; }
+#define LINT_OUTPUT_END_MAIN_ARRAY() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "]"; }
 #define LINT_OUTPUT_OBJECT_START(key) { lint_output += '"' + key + "\": { "; }
+#define LINT_OUTPUT_OBJECT_END() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += " }, "; }
 #define LINT_OUTPUT_PAIR(key, value) { lint_output += '"' + key + "\": \"" + value + "\", "; }
-#define LINT_OUTPUT_OBJECT_END() { lint_output.erase(lint_output.end() - 2); lint_output += " }, "; }
-#define LINT_OUTPUT_END() { lint_output.erase(lint_output.end() - 2); lint_output += " }"; }
+#define LINT_OUTPUT_ARRAY_START(key) { lint_output += '"' + key + "\": [ "; }
+#define LINT_OUTPUT_ARRAY_ITEM(value) { lint_output += '"' + value + "\", "; }
+#define LINT_OUTPUT_ARRAY_END() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += " ], "; }
 
 #endif

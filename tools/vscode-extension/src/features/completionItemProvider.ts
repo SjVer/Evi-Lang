@@ -1,32 +1,9 @@
-import { execSync } from 'child_process';
 import { CompletionItemProvider, CompletionItem, CompletionItemKind, CancellationToken, TextDocument, 
 		Position, Range, workspace, CompletionContext, window } from 'vscode';
 import eviSymbols = require('./eviSymbols');
+import { callEviLint, eviLintType, eviLintResult } from './utils/eviLintUtil';
 
 const identifierRegex: RegExp = /([A-z_]+[a-zA-Z0-9_]*)/g;
-
-enum eviLintType {
-	getParameters = 'get-parameters',
-	getVariables = 'get-variables',
-	getFunctions = 'get-functions',
-}
-
-function callEviLint(document: TextDocument, type: eviLintType, position: Position) {
-	const file = workspace.getConfiguration('evi').get<string>('eviExecutablePath');
-	const cmd = `${file} ${document.fileName} --lint-type="${type}" --lint-pos="${position.line + 1}:${position.character}"`
-
-	window.showInformationMessage(cmd);
-
-	let output: string;
-	try { output = execSync(cmd).toString(); }
-	catch (error) { window.showErrorMessage(`Failed to execute Evi binary:\n\"${error}\"`); }
-
-	let data: any;
-	try { data = JSON.parse(output); }
-	catch (error) { window.showErrorMessage(`Failed to parse data returned by Evi binary:\n"${error}"\nData: "${output}"`) }
-
-	window.showInformationMessage(data);
-}
 
 export default class EviCompletionItemProvider implements CompletionItemProvider {
 
@@ -63,28 +40,16 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 
 		// search for variables
 		if (prefix[0] === '$') {
-			let text = document.getText(new Range(new Position(0, 0), range.start));
-			let variableMatch = /(?:\$|=|\%)([A-z_]+[a-zA-Z0-9_]*)/g;
-			let parameterMatch = /\$([0-9]+)/g;
+			const vars: eviLintResult = callEviLint(document, eviLintType.getVariables, position);
 
-			// check variables
-			if(variableMatch.test(prefix) || prefix.length === 1)
-			{
-				let match: RegExpExecArray | null = null;
-				while (match = variableMatch.exec(text)) {
-					let word = '$' + match[1];
-					if (!added[word]) {
-						added[word] = true;
-						result.push(createNewProposal(CompletionItemKind.Variable, word, null));
-					}
+			for(var variable of vars.elements) {
+				let word = '$' + variable.identifier;
+				if (!added[word]) {
+					added[word] = true;
+					const signature = `$${variable.identifier} -> ${variable.properties}`;
+					result.push(createNewProposal(CompletionItemKind.Variable, word, { signature: signature }));
 				}
 			}
-			// check parameters
-			if(parameterMatch.test(prefix) || prefix.length === 1)
-			{
-				callEviLint(document, eviLintType.getParameters, position);
-			}
-
 		}
 
 		// search for types
@@ -108,17 +73,14 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 
 		// search in functions
 		if (identifierRegex.test(prefix)) {
-			let text = document.getText(new Range(new Position(0, 0), range.start));
-			let declMatch = /@\s*([A-z_]+[a-zA-Z0-9_]*)/g;
-			let callMatch = /([A-z_]+[a-zA-Z0-9_]*)\s*\(/g;
+			const funcs: eviLintResult = callEviLint(document, eviLintType.getFunctions, position);
 
-			// check variables
-			let match: RegExpExecArray | null = null;
-			while (match = declMatch.exec(text) || callMatch.exec(text)) {
-				let word = match[1];
+			for(var func of funcs.elements) {
+				let word = func.identifier;
 				if (!added[word]) {
 					added[word] = true;
-					result.push(createNewProposal(CompletionItemKind.Function, word, null));
+					const signature = `@${func.identifier} ${func.properties}`;
+					result.push(createNewProposal(CompletionItemKind.Function, word, { signature: signature }));
 				}
 			}
 		}

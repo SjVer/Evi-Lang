@@ -48,9 +48,7 @@ void Parser::advance()
 		_current = _scanner.scanToken();
 
 		#pragma region lint shit
-		#define APPLICABLE (_lint_args.lint && \
-			(_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_PARAMETERS \
-			|| _lint_args.type == LINT_GET_VARIABLES))
+		#define APPLICABLE (_lint_args.lint && (_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_VARIABLES))
 
 		if(APPLICABLE && *_current.file == _main_file && _current.line >= _lint_args.pos[0])
 		{
@@ -70,23 +68,36 @@ void Parser::advance()
 			// at, or just after position
 			if(_current.line > _lint_args.pos[0] || col >= _lint_args.pos[1])
 			{
-				LINT_OUTPUT_START();
-
 				if(_lint_args.type == LINT_GET_FUNCTIONS)
 				{
-					
-				}
-				else if(_lint_args.type == LINT_GET_PARAMETERS)
-				{
-					for(int i = 0; i < _current_scope.func_props.params.size(); i++)
-						LINT_OUTPUT_PAIR(tools::fstr("%d", i), _current_scope.func_props.params[i]->to_c_string());
+					LINT_OUTPUT_START_MAIN_OBJECT();
+
+					for (auto const& var : _current_scope.functions)
+						LINT_OUTPUT_PAIR(var.first, var.second.ret_type->to_string());
+
+					for (auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
+						for(auto const& var : scope->functions)
+							LINT_OUTPUT_PAIR(var.first, var.second.ret_type->to_string());
+
+					LINT_OUTPUT_END_MAIN_OBJECT();	
 				}
 				else if(_lint_args.type == LINT_GET_VARIABLES)
 				{
-					
+					LINT_OUTPUT_START_MAIN_OBJECT();
+
+					for(int i = 0; i < _current_scope.func_props.params.size(); i++)
+						LINT_OUTPUT_PAIR(tools::fstr("%d", i), _current_scope.func_props.params[i]->to_string());
+
+					for (auto const& var : _current_scope.variables)
+						LINT_OUTPUT_PAIR(var.first, var.second->to_string());
+
+					for (auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
+						for(auto const& var : scope->variables)
+							LINT_OUTPUT_PAIR(var.first, var.second->to_string());
+
+					LINT_OUTPUT_END_MAIN_OBJECT();
 				}
 
-				LINT_OUTPUT_END();
 				cout << lint_output;
 				exit(0);
 			}
