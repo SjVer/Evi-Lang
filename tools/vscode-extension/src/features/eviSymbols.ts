@@ -2,13 +2,34 @@ export interface IEntry { description?: string; signature?: string }
 export interface IEntries { [name: string]: IEntry }
 
 export const keywords: IEntries = {
-	'@': { description: 'declare/define function' },
-	'%': { description: 'declare/define variable' },
-	'~': { description: 'return' },
-	'=': { description: 'assign' },
-	'??': { description: 'if' },
-	'::': { description: 'else' },
-	'!!': { description: 'loop' },
+	'@': {
+		description: 'declare/define function',
+		signature: '@func type (params)'
+	},
+	'%': {
+		description: 'declare/define variable',
+		signature: '%var type value'	
+	},
+	'~': {
+		description: 'return',
+		signature: '~ [value]'
+	},
+	'=': {
+		description: 'assign',
+		signature: '=var value'
+	},
+	'??': {
+		description: 'if',
+		signature: '??(cond) then [:: else]'
+	},
+	'::': {
+		description: 'else',
+		signature: '??(cond) then [:: else]'
+	},
+	'!!': {
+		description: 'loop',
+		signature: '!!([init]; [cond]; [inc];) body'	
+	},
 };
 
 export const directives: IEntries = {
@@ -57,30 +78,84 @@ export const directives: IEntries = {
 };
 
 export const types: IEntries = {
-	'i1': { description: "1-bit signed integer" },
-
-	'i4': { description: "4-bit signed integer" },
-	'ui4': { description: "4-bit unsigned integer" },
-
-	'i8': { description: "8-bit signed integer" },
-	'ui8': { description: "8-bit unsigned integer" },
-
-	'i16': { description: "16-bit signed integer" },
-	'ui16': { description: "16-bit unsigned integer" },
-
-	'i32': { description: "32-bit signed integer" },
-	'ui32': { description: "32-bit unsigned integer" },
-
-	'i64': { description: "64-bit signed integer" },
-	'ui64': { description: "64-bit unsigned integer" },
-
-	'i128': { description: "128-bit signed integer" },
-	'ui128': { description: "128-bit unsigned integer" },
-
-	'flt': { description: "32-bit single precision floating point number" },
-	'dbl': { description: "64-bit double precision floating point number" },
+	'i1': {
+		description: "1-bit signed integer",
+		signature: "1-bit signed int"
+	},
 	
-	'bln': { description: "unsigned 1-bit boolean" },
-	'chr': { description: "unsigned 8-bit character" },
-	'nll': { description: "null/void type" },
+	'i4': {
+		description: "4-bit signed integer",
+		signature: "4-bit signed int"
+	},
+	'ui4': {
+		description: "4-bit unsigned integer",
+		signature: "4-bit unsigned int"
+	},
+	
+	'i8': {
+		description: "8-bit signed integer",
+		signature: "8-bit signed int"
+	},
+	'ui8': {
+		description: "8-bit unsigned integer",
+		signature: "8-bit unsigned int"
+	},
+	
+	'i16': {
+		description: "16-bit signed integer",
+		signature: "16-bit signed int"
+	},
+	'ui16': {
+		description: "16-bit unsigned integer",
+		signature: "16-bit unsigned int"
+	},
+	
+	'i32': {
+		description: "32-bit signed integer",
+		signature: "32-bit signed int"
+	},
+	'ui32': {
+		description: "32-bit unsigned integer",
+		signature: "32-bit unsigned int"
+	},
+	
+	'i64': {
+		description: "64-bit signed integer",
+		signature: "64-bit signed int"
+	},
+	'ui64': {
+		description: "64-bit unsigned integer",
+		signature: "64-bit unsigned int"
+	},
+	
+	'i128': {
+		description: "128-bit signed integer",
+		signature: "128-bit signed int"
+	},
+	'ui128': {
+		description: "128-bit unsigned integer",
+		signature: "128-bit unsigned int"
+	},
+	
+	'flt': {
+		description: "32-bit single precision floating point number",
+		signature: "single precision float"
+	},
+	'dbl': {
+		description: "64-bit double precision floating point number",
+		signature: "double precision float"
+	},
+	
+	'bln': {
+		description: "unsigned 1-bit boolean",
+		signature: "boolean"
+	},
+	'chr': {
+		description: "unsigned 8-bit character",
+		signature: "8-bit character"
+	},
+	'nll': {
+		description: "null/void type",
+		signature: "null/void"
+	},
 }

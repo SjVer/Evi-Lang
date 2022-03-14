@@ -20,7 +20,8 @@
                 ],
                 "extensions": [
                     ".evi",
-                    ".evii"
+                    ".evii",
+                    ".hevi"
                 ],
                 "configuration": "./syntaxes/language-configuration.json"
             }

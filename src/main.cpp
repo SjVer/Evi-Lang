@@ -26,6 +26,7 @@ static char args_doc[] = "file...";
 #define ARG_LD_FLAGS 3
 #define ARG_LINT_TYPE 4
 #define ARG_LINT_POS 5
+#define ARG_LINT_TAB_WIDTH 6
 
 /* This structure is used by main to communicate with parse_opt. */
 struct arguments
@@ -61,6 +62,7 @@ static struct argp_option options[] =
 
 	{"lint-type", ARG_LINT_TYPE, "TYPE", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
 	{"lint-pos", ARG_LINT_POS, "POS", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
+	{"lint-tab-width", ARG_LINT_TAB_WIDTH, "WIDTH", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
 	{0}
 };
 
@@ -167,6 +169,19 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		lint_args.pos[0] = stoi(match[1].str(), 0, 10);
 		lint_args.pos[1] = stoi(match[2].str(), 0, 10);
 		lint_pos_given = true;
+
+		break;
+	}
+	case ARG_LINT_TAB_WIDTH:
+	{
+		cmatch match;
+		if(!regex_match(arg, match, regex("^([0-9]+)$")))
+		{
+			cerr << "[evi] CLI Error: Invalid lint tab width: " << arg << endl;
+			ABORT(STATUS_CLI_ERROR);
+		}
+
+		lint_args.tab_width = stoi(match[1].str(), 0, 10);
 
 		break;
 	}

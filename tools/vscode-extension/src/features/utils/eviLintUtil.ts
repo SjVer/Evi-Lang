@@ -3,15 +3,17 @@ import { execSync } from 'child_process';
 import { copyFile, rm, writeFileSync } from 'fs';
 import { basename, dirname, join } from 'path';
 import { tmpdir } from 'os';
+import { stringify } from 'querystring';
 
 export enum eviLintType {
 	getFunctions = 'functions',
 	getVariables = 'variables',
 }
 
-export interface eviLintResult { elements: { identifier: string, properties: any }[] };
+export interface eviLintFunctions { elements: { identifier: string, return_type: string, parameters: string[] }[] };
+export interface eviLintVariables { elements: { identifier: string, type: string }[] };
 
-export function callEviLint(document: TextDocument, type: eviLintType, position: Position): eviLintResult {
+export function callEviLint(document: TextDocument, type: eviLintType, position: Position): any {
 
 	// copy file so that unsaved changes are included
 	let tmpfile = join(tmpdir(), basename(document.fileName) + '.evilint_tmp');
@@ -24,49 +26,45 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 	
 	const dir = dirname(document.fileName);
 	const eviExec = workspace.getConfiguration('evi').get<string>('eviExecutablePath');
-	const cmd = `${eviExec} ${tmpfile} --include="${dir}" --lint-type="${type}" --lint-pos="${position.line + 1}:${position.character}"`
+	const cmd = `${eviExec} ${tmpfile} ` +
+				`--include="${dir}" ` +
+				`--lint-type="${type}" ` +
+				`--lint-pos="${position.line + 1}:${position.character}" ` +
+				`--lint-tab-width="${workspace.getConfiguration('editor').get<number>('tabSize')}" `;
 
 	if (tmpfile.endsWith('.evilint_tmp')) rm(tmpfile, () => {});
+
+	console.log("lint cmd: " + cmd);
 
 	let output: string;
 	try { output = execSync(cmd).toString(); }
 	catch (error) { window.showErrorMessage(`Failed to execute Evi binary:\n\"${error}\"`); }
 
-	let data: eviLintResult = { elements: [] };
-	let callback;
-	
-	switch (type) {
-		case eviLintType.getVariables:
-		{
-			callback = (key: string, value: string) => {
-				if(!key) return;
-				data.elements.push({
-					identifier: key,
-					properties: value
-				});
-			}
-			break;
-		}
-		case eviLintType.getFunctions:
-		{
-			callback = (key: string, value: string) => {
-				if(!key) return;
-				window.showInformationMessage(`"${key}: ${value}"`);
-				// data.elements.push({
-				// 	identifier: key,
-				// 	properties: value
-				// });
-			}
-			break;
-		}
-	
-		default:
-			callback = () => {};
-			break;
-	}
+	console.log("lint output: " + output);
 
-	try { JSON.parse(output, callback); }
+	let data;
+	try { data = JSON.parse(output); }
 	catch (error) { window.showErrorMessage(`Failed to parse data returned by Evi binary:\n"${error}"\nData: "${output}"`) }
 
-	return data;
+	try { switch (type)
+	{
+		case eviLintType.getFunctions: {
+			let result: eviLintFunctions = { elements: [] };
+			for (let func in data) {
+				result.elements.push({
+					identifier: func,
+					return_type: data[func]['~'],
+					parameters: []
+				})
+				for (let param in data[func])
+					if(param != '~') result.elements[result.elements.length - 1]
+						.parameters.push(data[func][param]);
+			}
+			return result;
+		}
+		case eviLintType.getVariables: {
+			console.log(data);
+			return { elements: [] } as eviLintVariables;
+		}
+	} } catch (e) { console.log(e); }
 }

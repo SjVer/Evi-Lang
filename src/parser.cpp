@@ -14,15 +14,12 @@ void Parser::error_at(Token *token, string message)
 
 	if(_lint_args.type == LINT_GET_ERRORS)
 	{
-		uint col = get_token_col(token);
-		uint tabc = 0;
-		for(int i = -col; i < 0; i++) if(token->start[i] == '\t') tabc++;
+		uint col = get_token_col(token, _lint_args.tab_width);
 		
 		LINT_OUTPUT_START_PLAIN_OBJECT();
 
 		lint_output += tools::fstr("\"line\": %d, ", token->line);
 		lint_output += tools::fstr("\"column\": %d, ", col);
-		lint_output += tools::fstr("\"tabcount\": %d, ", tabc);
 		lint_output += tools::fstr("\"length\": %d, ", token->length);
 		LINT_OUTPUT_PAIR(string("msg"), tools::replacestr(message, "\"", "\\\""));
 
@@ -71,7 +68,7 @@ void Parser::advance()
 
 		if(APPLICABLE && *_current.file == _main_file && _current.line >= _lint_args.pos[0])
 		{
-			uint col = get_token_col(&_current);
+			uint col = get_token_col(&_current, _lint_args.tab_width);
 
 			// at, or just after position
 			if(_current.line > _lint_args.pos[0] || col >= _lint_args.pos[1])
@@ -83,22 +80,22 @@ void Parser::advance()
 					// output props of functions in current scope
 					for(auto const& func : _current_scope.functions)
 					{
-						LINT_OUTPUT_ARRAY_START(func.first);
-						LINT_OUTPUT_ARRAY_ITEM(func.second.ret_type->to_string());
-						for(auto const& param : func.second.params)
-							LINT_OUTPUT_ARRAY_ITEM(param->to_string());
-						LINT_OUTPUT_ARRAY_END();
+						LINT_OUTPUT_OBJECT_START(func.first);
+						LINT_OUTPUT_PAIR(string("~"), func.second.ret_type->to_string());
+						for(int i = 0; i < func.second.params.size(); i++)
+							LINT_OUTPUT_PAIR(tools::fstr("%d", i), func.second.params[i]->to_string());
+						LINT_OUTPUT_OBJECT_END();
 					}
 
 					// and now of all other scopes
 					for(auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
 						for(auto const& func : scope->functions)
 						{
-							LINT_OUTPUT_ARRAY_START(func.first);
-							LINT_OUTPUT_ARRAY_ITEM(func.second.ret_type->to_string());
-							for(auto const& param : func.second.params)
-								LINT_OUTPUT_ARRAY_ITEM(param->to_string());
-							LINT_OUTPUT_ARRAY_END();
+							LINT_OUTPUT_OBJECT_START(func.first);
+							LINT_OUTPUT_PAIR(string("~"), func.second.ret_type->to_string());
+							for(int i = 0; i < func.second.params.size(); i++)
+								LINT_OUTPUT_PAIR(tools::fstr("%d", i), func.second.params[i]->to_string());
+							LINT_OUTPUT_OBJECT_END();
 						}						
 						
 
