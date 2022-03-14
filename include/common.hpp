@@ -82,7 +82,7 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define DEBUG_PRINT_F_MSG(format, ...) {}
 #endif
 
-#define ABORT(status) {cerr << tools::fstr("[evi] Aborted with code %d.\n", status); exit(status); }
+#define ABORT(status) { cerr << tools::fstr("[evi] Aborted with code %d.\n", status); exit(status); }
 #pragma endregion
 
 // llvm stuff

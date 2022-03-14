@@ -12,18 +12,18 @@ void Parser::error_at(Token *token, string message)
 	_had_error = true;
 	_panic_mode = true;
 
-	if(_lint_args.type != LINT_NONE) return;
-	else if(_lint_args.type == LINT_GET_ERRORS)
+	if(_lint_args.type == LINT_GET_ERRORS)
 	{
 		LINT_OUTPUT_START_PLAIN_OBJECT();
 
-		LINT_OUTPUT_PAIR(string("line"), tools::fstr("%d", token->line));
-		LINT_OUTPUT_PAIR(string("line"), tools::fstr("%d", get_token_col(token)));
-		LINT_OUTPUT_PAIR(string("msg"), message);
+		lint_output += tools::fstr("\"line\": %d, ", token->line);
+		lint_output += tools::fstr("\"col\": %d, ", get_token_col(token));
+		lint_output += tools::fstr("\"length\": %d, ", token->length);
+		LINT_OUTPUT_PAIR(string("msg"), tools::replacestr(message, "\"", "\\\""));
 
 		LINT_OUTPUT_OBJECT_END();
 	}
-	else
+	else if(_lint_args.type == LINT_NONE)
 	{
 		_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
 
@@ -66,18 +66,7 @@ void Parser::advance()
 
 		if(APPLICABLE && *_current.file == _main_file && _current.line >= _lint_args.pos[0])
 		{
-			uint col; // get column
-			{
-				// get offset of token (first char)
-				ptrdiff_t token_offset = _current.start - _current.source;
-
-				// find first newline before token
-				ptrdiff_t tok_ln_begin = token_offset;
-				while(tok_ln_begin > 0 && _current.source[tok_ln_begin] != '\n') tok_ln_begin--;
-				tok_ln_begin++; // skip newline itself
-
-				col = token_offset - tok_ln_begin;
-			}
+			uint col = get_token_col(&_current);
 
 			// at, or just after position
 			if(_current.line > _lint_args.pos[0] || col >= _lint_args.pos[1])
