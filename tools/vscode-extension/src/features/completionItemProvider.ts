@@ -9,6 +9,7 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 
 	public provideCompletionItems(document: TextDocument, position: Position, _token: CancellationToken, context: CompletionContext): Promise<CompletionItem[]> {
 		let result: CompletionItem[] = [];
+		let added: any = {};
 
 		let shouldProvideCompletionItems = workspace.getConfiguration('evi').get<boolean>('suggestions', true);
 		if (!shouldProvideCompletionItems) return Promise.resolve(result);
@@ -17,7 +18,6 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 		let prefix = range ? document.getText(range) : '';
 		if (!range) range = new Range(position, position);
 
-		let added: any = {};
 		let createNewProposal = function (kind: CompletionItemKind, name: string, entry: eviSymbols.IEntry | null): CompletionItem {
 			let proposal: CompletionItem = new CompletionItem(name);
 			proposal.kind = kind;
@@ -27,8 +27,17 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 			}
 			return proposal;
 		};
-		// let matches = (name: string) => { return prefix.length === 0 || name.length >= prefix.length && name.substr(0, prefix.length) === prefix; };
-		let matches = (name: string) => { return prefix.length === 0 || name.startsWith(prefix); };
+		let matches = (name: string) => { return prefix.length === 0 || name.length >= prefix.length && name.substring(0, prefix.length) === prefix; };
+		// let getTabCountBeforePosition = function (start: Position): number {
+		// 	let range = new Range(start, start);
+		// 	while (range.isSingleLine) range = new Range(range.start.translate(0, -1), start);
+		// 	const text = document.getText(range);
+		// 	window.showInformationMessage(`"${text}"`);
+
+		// 	let tabc: number = 0;
+		// 	for (let i = 0; i < text.length; i++) if (text.charAt(i) == '\t') tabc++;
+		// 	return tabc;
+		// }
 
 		// search for keywords
 		for (let keyword in eviSymbols.keywords) {

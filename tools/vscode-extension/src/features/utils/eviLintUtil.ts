@@ -51,10 +51,11 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 		{
 			callback = (key: string, value: string) => {
 				if(!key) return;
-				data.elements.push({
-					identifier: key,
-					properties: value
-				});
+				window.showInformationMessage(`"${key}: ${value}"`);
+				// data.elements.push({
+				// 	identifier: key,
+				// 	properties: value
+				// });
 			}
 			break;
 		}

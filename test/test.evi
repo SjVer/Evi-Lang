@@ -1,11 +1,15 @@
-\ #apply "std-io"
+#apply "std-io"
 \ #apply "std-math"
+
+@func i32 ();
 
 @main i32 ()
 {
 	%yes1 i32;
 	
-	idk;
+	\ abc]
 
 	printi(123);
+
+	
 }

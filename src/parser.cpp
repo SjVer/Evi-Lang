@@ -14,10 +14,15 @@ void Parser::error_at(Token *token, string message)
 
 	if(_lint_args.type == LINT_GET_ERRORS)
 	{
+		uint col = get_token_col(token);
+		uint tabc = 0;
+		for(int i = -col; i < 0; i++) if(token->start[i] == '\t') tabc++;
+		
 		LINT_OUTPUT_START_PLAIN_OBJECT();
 
 		lint_output += tools::fstr("\"line\": %d, ", token->line);
-		lint_output += tools::fstr("\"col\": %d, ", get_token_col(token));
+		lint_output += tools::fstr("\"column\": %d, ", col);
+		lint_output += tools::fstr("\"tabcount\": %d, ", tabc);
 		lint_output += tools::fstr("\"length\": %d, ", token->length);
 		LINT_OUTPUT_PAIR(string("msg"), tools::replacestr(message, "\"", "\\\""));
 
@@ -337,7 +342,7 @@ void Parser::synchronize(bool toplevel)
 	*/
 	else while(!is_at_end())
 	{
-		if(_previous.type == TOKEN_SEMICOLON) return;
+		// if(_previous.type == TOKEN_SEMICOLON) return;
 
 		switch(_current.type)
 		{
@@ -350,7 +355,7 @@ void Parser::synchronize(bool toplevel)
 			case TOKEN_BANG_BANG:			// for
 			case TOKEN_LEFT_BRACE:			// block
 
-			case TOKEN_RIGHT_BRACE:	
+			case TOKEN_RIGHT_BRACE:
 			// case TOKEN_RIGHT_PAREN:
 				return;
 
