@@ -8,17 +8,31 @@
 void Parser::error_at(Token *token, string message)
 {
 	if(_panic_mode) return;
+
 	_had_error = true;
 	_panic_mode = true;
 
-	_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
-
-	// print token
-	if(token->type != TOKEN_ERROR)
+	if(_lint_args.type != LINT_NONE) return;
+	else if(_lint_args.type == LINT_GET_ERRORS)
 	{
-		cerr << endl;
-		_error_dispatcher.print_token_marked(token, COLOR_RED);
-		// cerr << endl;
+		LINT_OUTPUT_START_PLAIN_OBJECT();
+
+		LINT_OUTPUT_PAIR(string("line"), tools::fstr("%d", token->line));
+		LINT_OUTPUT_PAIR(string("line"), tools::fstr("%d", get_token_col(token)));
+		LINT_OUTPUT_PAIR(string("msg"), message);
+
+		LINT_OUTPUT_OBJECT_END();
+	}
+	else
+	{
+		_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
+
+		// print token
+		if(token->type != TOKEN_ERROR)
+		{
+			cerr << endl;
+			_error_dispatcher.print_token_marked(token, COLOR_RED);
+		}
 	}
 }
 
@@ -48,7 +62,7 @@ void Parser::advance()
 		_current = _scanner.scanToken();
 
 		#pragma region lint shit
-		#define APPLICABLE (_lint_args.lint && (_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_VARIABLES))
+		#define APPLICABLE (_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_VARIABLES)
 
 		if(APPLICABLE && *_current.file == _main_file && _current.line >= _lint_args.pos[0])
 		{
@@ -70,20 +84,35 @@ void Parser::advance()
 			{
 				if(_lint_args.type == LINT_GET_FUNCTIONS)
 				{
-					LINT_OUTPUT_START_MAIN_OBJECT();
+					LINT_OUTPUT_START_PLAIN_OBJECT();
 
-					for (auto const& var : _current_scope.functions)
-						LINT_OUTPUT_PAIR(var.first, var.second.ret_type->to_string());
+					// output props of functions in current scope
+					for(auto const& func : _current_scope.functions)
+					{
+						LINT_OUTPUT_ARRAY_START(func.first);
+						LINT_OUTPUT_ARRAY_ITEM(func.second.ret_type->to_string());
+						for(auto const& param : func.second.params)
+							LINT_OUTPUT_ARRAY_ITEM(param->to_string());
+						LINT_OUTPUT_ARRAY_END();
+					}
 
-					for (auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
-						for(auto const& var : scope->functions)
-							LINT_OUTPUT_PAIR(var.first, var.second.ret_type->to_string());
+					// and now of all other scopes
+					for(auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
+						for(auto const& func : scope->functions)
+						{
+							LINT_OUTPUT_ARRAY_START(func.first);
+							LINT_OUTPUT_ARRAY_ITEM(func.second.ret_type->to_string());
+							for(auto const& param : func.second.params)
+								LINT_OUTPUT_ARRAY_ITEM(param->to_string());
+							LINT_OUTPUT_ARRAY_END();
+						}						
+						
 
-					LINT_OUTPUT_END_MAIN_OBJECT();	
+					LINT_OUTPUT_END_PLAIN_OBJECT();
 				}
 				else if(_lint_args.type == LINT_GET_VARIABLES)
 				{
-					LINT_OUTPUT_START_MAIN_OBJECT();
+					LINT_OUTPUT_START_PLAIN_OBJECT();
 
 					for(int i = 0; i < _current_scope.func_props.params.size(); i++)
 						LINT_OUTPUT_PAIR(tools::fstr("%d", i), _current_scope.func_props.params[i]->to_string());
@@ -95,7 +124,7 @@ void Parser::advance()
 						for(auto const& var : scope->variables)
 							LINT_OUTPUT_PAIR(var.first, var.second->to_string());
 
-					LINT_OUTPUT_END_MAIN_OBJECT();
+					LINT_OUTPUT_END_PLAIN_OBJECT();
 				}
 
 				cout << lint_output;
@@ -127,13 +156,8 @@ bool Parser::check(TokenType type)
 // otherwise throw an error with the given message
 void Parser::consume(TokenType type, string message)
 {
-	if (_current.type == type)
-	{
-		advance();
-		return;
-	}
-
-	error_at_current(message);
+	if (_current.type == type) advance();
+	else error_at_current(message);
 }
 
 ParsedType* Parser::consume_type(string msg)
@@ -569,7 +593,7 @@ StmtNode* Parser::block_statement()
 
 	while(!check(TOKEN_RIGHT_BRACE) && !is_at_end()) statements.push_back(declaration());
 	consume(TOKEN_RIGHT_BRACE, "Expected '}' after block.");
-	
+
 	scope_down();
 	return (StmtNode*)(new BlockNode(tok, statements));
 }
@@ -975,6 +999,8 @@ Status Parser::parse(string infile, const char* source, AST* astree, lint_args_t
 	_main_file = infile;
 	_lint_args = lint_args;
 
+	if(_lint_args.type == LINT_GET_ERRORS) LINT_OUTPUT_START_PLAIN_ARRAY();
+
 	advance();
 	while (!is_at_end())
 	{
@@ -984,7 +1010,14 @@ Status Parser::parse(string infile, const char* source, AST* astree, lint_args_t
 
 		if(_panic_mode) synchronize(true);
 	}
-	DEBUG_PRINT_MSG("Parsing complete!");
 
+	if(_lint_args.type == LINT_GET_ERRORS)
+	{
+		LINT_OUTPUT_END_PLAIN_ARRAY();
+		cout << lint_output;
+		exit(0);
+	}
+
+	DEBUG_PRINT_MSG("Parsing complete!");
 	return _had_error ? STATUS_PARSE_ERROR : STATUS_SUCCESS;
 }

@@ -43,6 +43,7 @@ struct arguments
 };
 
 lint_args_t lint_args;
+bool lint_pos_given = false;
 std::string lint_output = "";
 
 static struct argp_option options[] =
@@ -151,7 +152,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 			cerr << "[evi] CLI Error: Invalid lint type: " << arg << endl;
 			ABORT(STATUS_CLI_ERROR);
 		}
-		lint_args.lint = true;
 		lint_args.type = type;
 		break;
 	}
@@ -166,7 +166,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 		lint_args.pos[0] = stoi(match[1].str(), 0, 10);
 		lint_args.pos[1] = stoi(match[2].str(), 0, 10);
-		lint_args.pos_given = true;
+		lint_pos_given = true;
 
 		break;
 	}
@@ -206,7 +206,7 @@ int main(int argc, char **argv)
 	if(argp_parse(&argp, argc, argv, 0, 0, &arguments)) return STATUS_CLI_ERROR;
 
 	// check lint args
-	if(lint_args.lint && !lint_args.pos_given)
+	if(lint_args.type != LINT_NONE && !lint_pos_given)
 	{
 		cerr << "[evi] CLI Error: Lint requires position." << endl;
 		ABORT(STATUS_CLI_ERROR);
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
 	if(status != STATUS_SUCCESS) ABORT(status);
 
 
-	if(lint_args.lint) exit(0);
+	if(lint_args.type != LINT_NONE) exit(0);
 
 
 	// generate visualization

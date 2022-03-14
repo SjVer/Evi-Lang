@@ -1,17 +1,11 @@
-#apply "std-io"
-#apply "std-math"
+\ #apply "std-io"
+\ #apply "std-math"
 
-@main i32 (i32 chr*)
+@main i32 ()
 {
-	printg(pow(2, 3));
-	~ 0;
-
 	%yes1 i32;
-	{
-		%no i32;
-	}
-	{
-		%yes2 dbl;
-		
-	}
+	
+	idk;
+
+	printi(123);
 }

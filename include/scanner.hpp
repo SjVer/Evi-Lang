@@ -119,4 +119,17 @@ private:
 
 void printTokensFromSrc(const char *src);
 
+static uint get_token_col(Token* token)
+{
+	// get offset of token (first char)
+	ptrdiff_t token_offset = token->start - token->source;
+
+	// find first newline before token
+	ptrdiff_t tok_ln_begin = token_offset;
+	while(tok_ln_begin > 0 && token->source[tok_ln_begin] != '\n') tok_ln_begin--;
+	tok_ln_begin++; // skip newline itself
+
+	return (uint)(token_offset - tok_ln_begin);
+}
+
 #endif
