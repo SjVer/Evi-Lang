@@ -168,26 +168,10 @@ void ErrorDispatcher::print_token_marked(Token *token, ccp color)
 	cerr << markerline << endl;
 }
 
-// void ErrorDispatcher::__dispatch(bool at, Token* t, const char* c,
-// 								const char* p, const char* m, uint line, const char* file)
-// {
-// 	if(at) 		  fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE, t->file->c_str(), t->line, c, p);
-// 	else if(line) fprintf(stderr, "[%s:%d] %s%s" COLOR_NONE, file, line, c, p);
-// 	else if(file) fprintf(stderr, "[%s] %s%s" COLOR_NONE, file, c, p);
-// 	else		  fprintf(stderr, "[evi] %s%s" COLOR_NONE, c, p);
-//
-//     if (at && t->type == TOKEN_EOF) 
-// 		fprintf(stderr, " at end");
-// 	else if (at && t->type != TOKEN_ERROR) 
-// 		fprintf(stderr, " at " COLOR_BOLD "'%.*s'" COLOR_NONE, t->length, t->start);
-//
-//     fprintf(stderr, ": %s\n", m);
-// }
-
 void ErrorDispatcher::__dispatch(ccp color, ccp prompt, ccp message)
 {
-	fprintf(stderr, "[evi] %s%s" COLOR_NONE ": %s\n",
-				color, prompt, message);
+	cerr << tools::fstr("[evi] %s%s" COLOR_NONE ": %s",
+						color, prompt, message) << endl;
 }
 
 void ErrorDispatcher::__dispatch_at_token(ccp color, Token* token, ccp prompt, ccp message)
@@ -224,3 +208,12 @@ void ErrorDispatcher::warning_at_line(uint line, ccp filename, ccp prompt, ccp m
 
 void ErrorDispatcher::warning_at_token(Token* token, ccp prompt, ccp message)
 	{ __dispatch_at_token(COLOR_PURPLE, token, prompt, message); }
+
+void ErrorDispatcher::note(ccp message)
+	{ __dispatch(COLOR_GREEN, "Note", message); }
+
+void ErrorDispatcher::note_at_line(uint line, ccp filename, ccp message)
+	{ __dispatch_at_line(COLOR_GREEN, line, filename, "Note", message); }
+
+void ErrorDispatcher::note_at_token(Token* token, ccp message)
+	{ __dispatch_at_token(COLOR_GREEN, token, "Note", message); }

@@ -5,8 +5,9 @@
 
 typedef enum
 {
-	LINT_GET_FUNCTIONS,
+	LINT_GET_DECLARATION,
 	LINT_GET_ERRORS,
+	LINT_GET_FUNCTIONS,
 	LINT_GET_VARIABLES,
 
 	LINT_NONE
@@ -17,8 +18,9 @@ static const char* get_lint_type_string(LintType type)
 	#define CASE(type, str) case type: return str
 	switch(type)
 	{
-		CASE(LINT_GET_FUNCTIONS, "functions");
+		CASE(LINT_GET_DECLARATION, "declaration");
 		CASE(LINT_GET_ERRORS, "errors");
+		CASE(LINT_GET_FUNCTIONS, "functions");
 		CASE(LINT_GET_VARIABLES, "variables");
 
 		default: return nullptr;

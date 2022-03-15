@@ -21,7 +21,7 @@ void Parser::error_at(Token *token, string message)
 		lint_output += tools::fstr("\"line\": %d, ", token->line);
 		lint_output += tools::fstr("\"column\": %d, ", col);
 		lint_output += tools::fstr("\"length\": %d, ", token->length);
-		LINT_OUTPUT_PAIR(string("msg"), tools::replacestr(message, "\"", "\\\""));
+		LINT_OUTPUT_PAIR(string("message"), tools::replacestr(message, "\"", "\\\""));
 
 		LINT_OUTPUT_OBJECT_END();
 	}
@@ -52,6 +52,16 @@ void Parser::error_at_current(string message)
 	error_at(&_current, message);
 }
 
+// displays note of declaration of token and line of token
+void Parser::note_declaration(string type, string name, Token* token)
+{
+	if(_lint_args.type != LINT_NONE) return;
+
+	_error_dispatcher.note_at_token(token, (type + " '" + name + "' declared here:").c_str());
+	cerr << endl;
+	_error_dispatcher.print_token_marked(token, COLOR_GREEN);
+}
+
 // ====================== scanner ======================
 
 // advances to the next token
@@ -63,67 +73,9 @@ void Parser::advance()
 	{
 		_current = _scanner.scanToken();
 
-		#pragma region lint shit
-		#define APPLICABLE (_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_VARIABLES)
-
-		if(APPLICABLE && *_current.file == _main_file && _current.line >= _lint_args.pos[0])
-		{
-			uint col = get_token_col(&_current, _lint_args.tab_width);
-
-			// at, or just after position
-			if(_current.line > _lint_args.pos[0] || col >= _lint_args.pos[1])
-			{
-				if(_lint_args.type == LINT_GET_FUNCTIONS)
-				{
-					LINT_OUTPUT_START_PLAIN_OBJECT();
-
-					// output props of functions in current scope
-					for(auto const& func : _current_scope.functions)
-					{
-						LINT_OUTPUT_OBJECT_START(func.first);
-						LINT_OUTPUT_PAIR(string("~"), func.second.ret_type->to_string());
-						for(int i = 0; i < func.second.params.size(); i++)
-							LINT_OUTPUT_PAIR(tools::fstr("%d", i), func.second.params[i]->to_string());
-						LINT_OUTPUT_OBJECT_END();
-					}
-
-					// and now of all other scopes
-					for(auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
-						for(auto const& func : scope->functions)
-						{
-							LINT_OUTPUT_OBJECT_START(func.first);
-							LINT_OUTPUT_PAIR(string("~"), func.second.ret_type->to_string());
-							for(int i = 0; i < func.second.params.size(); i++)
-								LINT_OUTPUT_PAIR(tools::fstr("%d", i), func.second.params[i]->to_string());
-							LINT_OUTPUT_OBJECT_END();
-						}						
-						
-
-					LINT_OUTPUT_END_PLAIN_OBJECT();
-				}
-				else if(_lint_args.type == LINT_GET_VARIABLES)
-				{
-					LINT_OUTPUT_START_PLAIN_OBJECT();
-
-					for(int i = 0; i < _current_scope.func_props.params.size(); i++)
-						LINT_OUTPUT_PAIR(tools::fstr("%d", i), _current_scope.func_props.params[i]->to_string());
-
-					for (auto const& var : _current_scope.variables)
-						LINT_OUTPUT_PAIR(var.first, var.second->to_string());
-
-					for (auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
-						for(auto const& var : scope->variables)
-							LINT_OUTPUT_PAIR(var.first, var.second->to_string());
-
-					LINT_OUTPUT_END_PLAIN_OBJECT();
-				}
-
-				cout << lint_output;
-				exit(0);
-			}
-		}
-		#undef APPLICABLE
-		#pragma endregion
+		if(_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_VARIABLES
+		|| _lint_args.type == LINT_GET_DECLARATION)
+			generate_lint();
 
 		else if (_current.type == TOKEN_ERROR)
 			error_at_current(_current.start);
@@ -209,10 +161,87 @@ bool Parser::is_at_end()
 	return _current.type == TOKEN_EOF;
 }
 
+// ======================= lint ========================
+
+void Parser::generate_lint()
+{
+	uint col = get_token_col(&_current, _lint_args.tab_width);
+
+	// at, or just after position
+	if(_current.line > _lint_args.pos[0] || col >= _lint_args.pos[1])
+	{
+		if(_lint_args.type == LINT_GET_FUNCTIONS)
+		{
+			LINT_OUTPUT_START_PLAIN_OBJECT();
+
+			// output props of functions in current scope
+			for(auto const& func : _current_scope.functions)
+			{
+				LINT_OUTPUT_OBJECT_START(func.first);
+				LINT_OUTPUT_PAIR(string("return type"), func.second.ret_type->to_string());
+
+				LINT_OUTPUT_ARRAY_START(string("parameters"));
+				for(auto const& param : func.second.params)
+					LINT_OUTPUT_ARRAY_ITEM(param->to_string());
+				LINT_OUTPUT_ARRAY_END();
+
+				LINT_OUTPUT_OBJECT_END();
+			}
+
+			// and now of all other scopes
+			for(auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
+				for(auto const& func : scope->functions)
+				{
+					LINT_OUTPUT_OBJECT_START(func.first);
+					LINT_OUTPUT_PAIR(string("return type"), func.second.ret_type->to_string());
+
+					LINT_OUTPUT_ARRAY_START(string("parameters"));
+					for(auto const& param : func.second.params)
+						LINT_OUTPUT_ARRAY_ITEM(param->to_string());
+					LINT_OUTPUT_ARRAY_END();
+
+					LINT_OUTPUT_OBJECT_END();
+				}						
+				
+
+			LINT_OUTPUT_END_PLAIN_OBJECT();
+		}
+		else if(_lint_args.type == LINT_GET_VARIABLES)
+		{
+			LINT_OUTPUT_START_PLAIN_OBJECT();
+
+			for(int i = 0; i < _current_scope.func_props.params.size(); i++)
+				LINT_OUTPUT_PAIR(tools::fstr("%d", i), _current_scope.func_props.params[i]->to_string());
+
+			for (auto const& var : _current_scope.variables)
+				LINT_OUTPUT_PAIR(var.first, var.second.type->to_string());
+
+			for (auto scope = _scope_stack.rbegin(); scope != _scope_stack.rend(); scope++)
+				for(auto const& var : scope->variables)
+					LINT_OUTPUT_PAIR(var.first, var.second.type->to_string());
+
+			LINT_OUTPUT_END_PLAIN_OBJECT();
+		}	
+		else if(_lint_args.type == LINT_GET_DECLARATION)
+		{
+			LINT_OUTPUT_START_PLAIN_OBJECT();
+
+			// if(!check_variable())
+			LINT_OUTPUT_PAIR(string("previous"), std::string(_previous.start, _previous.length));
+			LINT_OUTPUT_PAIR(string("current"), std::string(_current.start, _current.length));
+
+			LINT_OUTPUT_END_PLAIN_OBJECT();
+		}
+
+		cout << lint_output;
+		exit(0);
+	}
+}
+
 // ======================= state =======================
 
 // returns nullptr if not found
-ParsedType* Parser::get_variable_type(string name)
+Parser::VarProperties Parser::get_variable_props(string name)
 {
 	if(_current_scope.variables.find(name) != _current_scope.variables.end())
 		return _current_scope.variables.at(name);
@@ -222,7 +251,7 @@ ParsedType* Parser::get_variable_type(string name)
 		if (scope->variables.find(name) != scope->variables.end())
 			return scope->variables.at(name);
 	}
-	return nullptr;
+	return { nullptr };
 }
 
 // returns with invalid = true if not found
@@ -242,7 +271,7 @@ Parser::FuncProperties Parser::get_function_props(string name)
 // checks if the given variable already exists
 bool Parser::check_variable(string name)
 {
-	if(get_variable_type(name) == nullptr)
+	if(get_variable_props(name).type == nullptr)
 		return false;
 	return true;
 }
@@ -261,7 +290,7 @@ void Parser::add_variable(Token* identtoken, ParsedType* type)
 
 	if(check_function(name)) error_at(identtoken, "Function with identical name already exists in current scope.");
 	else if (check_variable(name)) error_at(identtoken, "Variable already exists in current scope.");
-	else _current_scope.variables.insert(pair<string, ParsedType*>(name, type->copy()));
+	else _current_scope.variables.insert(pair<string, VarProperties>(name, { type->copy(), *identtoken }));
 }
 
 void Parser::add_function(Token* identtoken, FuncProperties properties)
@@ -288,7 +317,11 @@ void Parser::scope_up()
 	FuncProperties func_props = _current_scope.func_props;
 	
 	_scope_stack.push_back(_current_scope);
-	_current_scope = Scope{depth, map<string, ParsedType*>(), func_props, map<string, FuncProperties>()};
+	_current_scope = Scope{
+		depth,
+		map<string, VarProperties>(),
+		func_props,
+		map<string, FuncProperties>()};
 }
 
 void Parser::scope_down()
@@ -318,28 +351,9 @@ void Parser::synchronize(bool toplevel)
 
 		advance();
 	}
-
-	/*
-	if(toplevel) while(!is_at_end())
-	{
-		if(_previous.type == TOKEN_SEMICOLON) return;
-		switch(_current.type)
-		{
-			case TOKEN_AT:					// func
-			case TOKEN_MODULO:				// var
-				return;
-			
-			default:
-				;
-		}
-
-		advance();
-	}
-	else
-	*/
 	else while(!is_at_end())
 	{
-		// if(_previous.type == TOKEN_SEMICOLON) return;
+		if(_previous.type == TOKEN_SEMICOLON) return;
 
 		switch(_current.type)
 		{
@@ -419,16 +433,16 @@ StmtNode* Parser::function_declaration()
 	if(match(TOKEN_SEMICOLON))
 	{
 		// declaration
-		add_function(&nametok, {ret_type, params, false});
+		add_function(&nametok, {ret_type, params, false, false, tok});
 		return new FuncDeclNode(tok, name, ret_type, params, nullptr);
 	}
 	else
 	{
 		// definition
-		add_function(&nametok, {ret_type, params, true});
+		add_function(&nametok, {ret_type, params, true, false, tok});
 
 		scope_up();
-		_current_scope.func_props = FuncProperties{ret_type, params, true};
+		_current_scope.func_props = FuncProperties{ret_type, params, true, false, tok};
 		
 		StmtNode* body = statement();
 
@@ -523,7 +537,7 @@ StmtNode* Parser::assign_statement()
 	ExprNode* expr = expression();
 	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
 
-	return new AssignNode(tok, ident, expr, get_variable_type(ident));
+	return new AssignNode(tok, ident, expr, get_variable_props(ident).type);
 }
 
 StmtNode* Parser::if_statement()
@@ -926,7 +940,7 @@ ReferenceNode* Parser::reference()
 	{
 		string name = PREV_TOKEN_STR.erase(0, 1);
 		if(!check_variable(name)) error("Variable doesn't exist in current scope.");
-		return new ReferenceNode(_previous, name, -1, get_variable_type(name));
+		return new ReferenceNode(_previous, name, -1, get_variable_props(name).type);
 	}
 	else if(_previous.type == TOKEN_PARAMETER_REF)
 	{
@@ -961,8 +975,12 @@ CallNode* Parser::call()
 	} while(match(TOKEN_COMMA));
 
 	if(args.size() != funcprops.params.size())
-		error(tools::fstr("Expected %d argument%s, not %d.",
+	{
+		HOLD_PANIC();
+		error(tools::fstr("Expected %d argument%s, but %d were given.",
 			funcprops.params.size(), funcprops.params.size() == 1 ? "" : "s", args.size()));
+		if(!PANIC_HELD) note_declaration("Function", name, &funcprops.token);
+	}
 	
 	consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
 
@@ -981,7 +999,7 @@ Status Parser::parse(string infile, const char* source, AST* astree, lint_args_t
 	_scanner = Scanner(source);
 
 	_scope_stack = vector<Scope>();
-	_current_scope = Scope{0, map<string, ParsedType*>(), {}, map<string, FuncProperties>()};
+	_current_scope = Scope{0, map<string, VarProperties>(), {}, map<string, FuncProperties>()};
 
 	_had_error = false;
 	_panic_mode = false;

@@ -33,6 +33,10 @@ class ErrorDispatcher
     void warning(ccp prompt, ccp message);
     void warning_at_token(Token *token, ccp prompt, ccp message);
     void warning_at_line(uint line, ccp filename, ccp prompt, ccp message);
+
+    void note(ccp message);
+    void note_at_token(Token *token, ccp message);
+    void note_at_line(uint line, ccp filename, ccp message);
 };
 
 #endif

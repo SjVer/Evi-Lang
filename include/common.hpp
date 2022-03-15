@@ -38,6 +38,7 @@ using namespace std;
 #pragma endregion
 
 #define COLOR_RED "\x1b[1;31m"
+#define COLOR_GREEN "\x1b[0;32m"
 #define COLOR_PURPLE "\x1b[1;35m"
 #define COLOR_NONE "\x1b[0m"
 #define COLOR_BOLD "\x1b[1m"

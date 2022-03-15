@@ -30,12 +30,19 @@ private:
 		vector<ParsedType*> params;
 		bool defined;
 		bool invalid = false;
+		Token token;
 	} FuncProperties;
 
 	typedef struct
 	{
+		ParsedType* type;
+		Token token;
+	} VarProperties;
+
+	typedef struct
+	{
 		int depth;
-		map<string, ParsedType*> variables;
+		map<string, VarProperties> variables;
 		FuncProperties func_props;
 		map<string, FuncProperties> functions;
 	} Scope;
@@ -45,6 +52,7 @@ private:
 	void error_at(Token *token, string message);
 	void error(string message);
 	void error_at_current(string message);
+	void note_declaration(string type, string name, Token* token);
 
 	void advance();
 	bool check(TokenType type);
@@ -53,7 +61,9 @@ private:
 	bool match(TokenType type);
 	bool is_at_end();
 
-	ParsedType* get_variable_type(string name);
+	void generate_lint();
+
+	VarProperties get_variable_props(string name);
 	FuncProperties get_function_props(string name);
 	bool check_variable(string name);
 	bool check_function(string name);
@@ -108,6 +118,9 @@ private:
 	bool _had_error;
 	bool _panic_mode;
 	ErrorDispatcher _error_dispatcher;
+
+	#define HOLD_PANIC() bool _old_panic_mode_from_macro_hold_panic = _panic_mode
+	#define PANIC_HELD (_old_panic_mode_from_macro_hold_panic)
 
 	string _main_file;
 	lint_args_t _lint_args;
