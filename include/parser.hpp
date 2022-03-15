@@ -54,7 +54,7 @@ private:
 	void error_at_current(string message);
 	void note_declaration(string type, string name, Token* token);
 
-	void advance();
+	void advance(bool can_trigger_lint = true);
 	bool check(TokenType type);
 	void consume(TokenType type, string message);
 	ParsedType* consume_type(string msg = "Expected type.");

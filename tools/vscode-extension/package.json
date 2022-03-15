@@ -3,6 +3,12 @@
     "displayName": "Evi-Lang",
     "description": "Evi syntax highlighting extension",
     "version": "0.0.1",
+    "publisher": "SjVer",
+    "author": {
+        "email": "sjoerd@marsenaar.com",
+        "name": "Sjoerd Vermeulen",
+        "url": "https://github.com/SjVer"
+    },
     "categories": [
         "Programming Languages",
         "Snippets"
@@ -52,6 +58,11 @@
                         "type": "boolean",
                         "default": true,
                         "description": "Enable code suggestions"
+                    },
+                    "evi.logDebugInfo": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Log debugging information to the console (requires reload)"
                     }
                 }
             }

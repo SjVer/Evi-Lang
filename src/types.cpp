@@ -22,6 +22,13 @@ ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
 	_subtype = subtype;
 }
 
+ParsedType* ParsedType::new_invalid()
+{
+	ParsedType* type = new ParsedType();
+	type->_invalid = true;
+	return type;
+}
+
 ParsedType* ParsedType::copy()
 {
 	ParsedType* ret = new ParsedType(
@@ -72,7 +79,8 @@ void ParsedType::set_lex_type(LexicalType type)
 
 string ParsedType::to_string()
 {
-	if(_subtypetype == SUBTYPE_ARRAY && (long)_evi_type < 0)
+	if(_invalid) return string("???");
+	else if(_subtypetype == SUBTYPE_ARRAY && (long)_evi_type < 0)
 		return _subtype->to_string() + "|?|";
 	else if(_subtypetype == SUBTYPE_ARRAY)
 		return _subtype->to_string() + tools::fstr("|%u|", (long)_evi_type);
@@ -90,7 +98,8 @@ const char* ParsedType::to_c_string()
 
 llvm::Type* ParsedType::get_llvm_type()
 {
-	if(_subtypetype == SUBTYPE_ARRAY)
+	if(_invalid) return nullptr;
+	else if(_subtypetype == SUBTYPE_ARRAY)
 		return llvm::ArrayType::get(_subtype->get_llvm_type(), (long)_evi_type);
 	else if(_subtypetype == SUBTYPE_POINTER)
 		return _subtype->get_llvm_type()->getPointerTo();

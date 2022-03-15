@@ -1,8 +1,6 @@
 #include "parser.hpp"
 #include "tools.hpp"
 
-#include <cstdlib>
-
 // ====================== errors =======================
 
 void Parser::error_at(Token *token, string message)
@@ -14,16 +12,18 @@ void Parser::error_at(Token *token, string message)
 
 	if(_lint_args.type == LINT_GET_ERRORS)
 	{
-		uint col = get_token_col(token, _lint_args.tab_width);
-		
 		LINT_OUTPUT_START_PLAIN_OBJECT();
 
-		lint_output += tools::fstr("\"line\": %d, ", token->line);
-		lint_output += tools::fstr("\"column\": %d, ", col);
-		lint_output += tools::fstr("\"length\": %d, ", token->length);
-		LINT_OUTPUT_PAIR(string("message"), tools::replacestr(message, "\"", "\\\""));
+		LINT_OUTPUT_PAIR("file", *token->file);
+		LINT_OUTPUT_PAIR_F("line", token->line, %d);
+		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, _lint_args.tab_width), %d);
+		LINT_OUTPUT_PAIR_F("column", get_token_col(token), %d);
+		LINT_OUTPUT_PAIR_F("length", token->length, %d);
+		LINT_OUTPUT_PAIR("message", tools::replacestr(message, "\"", "\\\""));
 
-		LINT_OUTPUT_OBJECT_END();
+		LINT_OUTPUT_ARRAY_START("related");
+		
+		// array and surrounding object ended in synchronize()
 	}
 	else if(_lint_args.type == LINT_NONE)
 	{
@@ -55,17 +55,36 @@ void Parser::error_at_current(string message)
 // displays note of declaration of token and line of token
 void Parser::note_declaration(string type, string name, Token* token)
 {
-	if(_lint_args.type != LINT_NONE) return;
+	const char* msg = strdup((type + " '" + name + "' declared here:").c_str());
 
-	_error_dispatcher.note_at_token(token, (type + " '" + name + "' declared here:").c_str());
-	cerr << endl;
-	_error_dispatcher.print_token_marked(token, COLOR_GREEN);
+	if(_lint_args.type == LINT_GET_ERRORS)
+	{
+		// // remove "], }, " at end of error object
+		// lint_output.erase(lint_output.end() - 6);
+
+		LINT_OUTPUT_START_PLAIN_OBJECT();
+		
+		LINT_OUTPUT_PAIR("file", *token->file);
+		LINT_OUTPUT_PAIR_F("line", token->line, %d);
+		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, _lint_args.tab_width), %d);
+		LINT_OUTPUT_PAIR_F("column", get_token_col(token), %d);
+		LINT_OUTPUT_PAIR_F("length", token->length, %d);
+		LINT_OUTPUT_PAIR("message", msg);
+
+		LINT_OUTPUT_OBJECT_END();
+	}
+	else if(_lint_args.type == LINT_NONE)
+	{
+		_error_dispatcher.note_at_token(token, msg);
+		cerr << endl;
+		_error_dispatcher.print_token_marked(token, COLOR_GREEN);
+	}	
 }
 
 // ====================== scanner ======================
 
 // advances to the next token
-void Parser::advance()
+void Parser::advance(bool can_trigger_lint)
 {
 	_previous = _current;
 
@@ -73,8 +92,9 @@ void Parser::advance()
 	{
 		_current = _scanner.scanToken();
 
-		if(_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_VARIABLES
-		|| _lint_args.type == LINT_GET_DECLARATION)
+		if(can_trigger_lint && (*_current.file == _main_file)
+		&& (_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_VARIABLES || _lint_args.type == LINT_GET_DECLARATION)
+		&& ((_current.line == _lint_args.pos[0] && get_token_col(&_current, _lint_args.tab_width) >= _lint_args.pos[1]) || _current.line > _lint_args.pos[0]))
 			generate_lint();
 
 		else if (_current.type == TOKEN_ERROR)
@@ -108,7 +128,11 @@ ParsedType* Parser::consume_type(string msg)
 	// get base type
 	consume(TOKEN_TYPE, msg);
 	string typestr = PREV_TOKEN_STR;
-	if (!IS_EVI_TYPE(typestr)) error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
+	if (!IS_EVI_TYPE(typestr))
+	{
+		error(tools::fstr("Invalid type: '%s'.", typestr.c_str()));
+		return ParsedType::new_invalid();
+	}
 
 	ParsedType* type = PTYPE(
 		GET_EVI_TYPE(typestr)->_default_type,
@@ -139,7 +163,7 @@ ParsedType* Parser::consume_type(string msg)
 				// "Expected '|' afer size." : "Expected '|' or size after '|'.");
 				"Expected '|' afer size." : "Expected size after '|'.");
 		}
-		else if(match(TOKEN_PIPE_PIPE)) type = type->copy_array_of(-1);
+		// else if(match(TOKEN_PIPE_PIPE)) type = type->copy_array_of(-1);
 	}
 
 	return type;
@@ -165,12 +189,12 @@ bool Parser::is_at_end()
 
 void Parser::generate_lint()
 {
-	uint col = get_token_col(&_current, _lint_args.tab_width);
+	// cout << tools::fstr("lint at: %s:%d:%d (%s)", _current.file->c_str(), _current.line, 
+	// 	get_token_col(&_current, _lint_args.tab_width), getTokenStr(_current.type)) << endl;
 
-	// at, or just after position
-	if(_current.line > _lint_args.pos[0] || col >= _lint_args.pos[1])
+	switch(_lint_args.type)
 	{
-		if(_lint_args.type == LINT_GET_FUNCTIONS)
+		case LINT_GET_FUNCTIONS:
 		{
 			LINT_OUTPUT_START_PLAIN_OBJECT();
 
@@ -178,9 +202,9 @@ void Parser::generate_lint()
 			for(auto const& func : _current_scope.functions)
 			{
 				LINT_OUTPUT_OBJECT_START(func.first);
-				LINT_OUTPUT_PAIR(string("return type"), func.second.ret_type->to_string());
+				LINT_OUTPUT_PAIR("return type", func.second.ret_type->to_string());
 
-				LINT_OUTPUT_ARRAY_START(string("parameters"));
+				LINT_OUTPUT_ARRAY_START("parameters");
 				for(auto const& param : func.second.params)
 					LINT_OUTPUT_ARRAY_ITEM(param->to_string());
 				LINT_OUTPUT_ARRAY_END();
@@ -193,9 +217,9 @@ void Parser::generate_lint()
 				for(auto const& func : scope->functions)
 				{
 					LINT_OUTPUT_OBJECT_START(func.first);
-					LINT_OUTPUT_PAIR(string("return type"), func.second.ret_type->to_string());
+					LINT_OUTPUT_PAIR("return type", func.second.ret_type->to_string());
 
-					LINT_OUTPUT_ARRAY_START(string("parameters"));
+					LINT_OUTPUT_ARRAY_START("parameters");
 					for(auto const& param : func.second.params)
 						LINT_OUTPUT_ARRAY_ITEM(param->to_string());
 					LINT_OUTPUT_ARRAY_END();
@@ -205,8 +229,9 @@ void Parser::generate_lint()
 				
 
 			LINT_OUTPUT_END_PLAIN_OBJECT();
+			break;
 		}
-		else if(_lint_args.type == LINT_GET_VARIABLES)
+		case LINT_GET_VARIABLES:
 		{
 			LINT_OUTPUT_START_PLAIN_OBJECT();
 
@@ -221,21 +246,59 @@ void Parser::generate_lint()
 					LINT_OUTPUT_PAIR(var.first, var.second.type->to_string());
 
 			LINT_OUTPUT_END_PLAIN_OBJECT();
+			break;
 		}	
-		else if(_lint_args.type == LINT_GET_DECLARATION)
+		case LINT_GET_DECLARATION:
 		{
+			#pragma region get token
+			#define IS_WANTED_TOKEN(token) \
+				(token.type == TOKEN_IDENTIFIER || token.type == TOKEN_VARIABLE_REF || token.type == TOKEN_PARAMETER_REF)
+
+			// if cursor is after identifier use previous instead
+			Token token = IS_WANTED_TOKEN(_current) ? _current :
+						  IS_WANTED_TOKEN(_previous) ? _previous :
+						  (advance(false), _current);
+
+			#undef IS_WANTED_TOKEN
+			#pragma endregion
+			string name(token.start, token.length);
+			Token decltok;
+
+			#define INVALID() { LINT_OUTPUT_PAIR_F("invalid", "true", %s); LINT_OUTPUT_END_PLAIN_OBJECT(); break; }
 			LINT_OUTPUT_START_PLAIN_OBJECT();
 
-			// if(!check_variable())
-			LINT_OUTPUT_PAIR(string("previous"), std::string(_previous.start, _previous.length));
-			LINT_OUTPUT_PAIR(string("current"), std::string(_current.start, _current.length));
+			if(token.type == TOKEN_VARIABLE_REF)
+			{
+				name.erase(0, 1);
+				if(!check_variable(name)) INVALID()
+				else decltok = get_variable_props(name).token;
+			}
+			else if(token.type == TOKEN_PARAMETER_REF)
+			{
+				decltok = _current_scope.func_props.token;
+			}
+			else if(token.type == TOKEN_IDENTIFIER)
+			{
+				if(!check_function(name)) INVALID()
+				else decltok = get_function_props(name).token;
+			}
+			else INVALID()
+
+			LINT_OUTPUT_PAIR("file", *decltok.file);
+			LINT_OUTPUT_PAIR_F("line", decltok.line, %d);
+			// LINT_OUTPUT_PAIR_F("column", get_token_col(&decltok, _lint_args.tab_width), %d);
+			LINT_OUTPUT_PAIR_F("column", get_token_col(&decltok), %d);
+			LINT_OUTPUT_PAIR_F("length", decltok.length, %d);
 
 			LINT_OUTPUT_END_PLAIN_OBJECT();
+			#undef INVALID
+			break;
 		}
-
-		cout << lint_output;
-		exit(0);
+		default: assert(false && "invalid lint type?");
 	}
+
+	cout << lint_output;
+	exit(0);
 }
 
 // ======================= state =======================
@@ -333,7 +396,14 @@ void Parser::scope_down()
 void Parser::synchronize(bool toplevel)
 {
 	_panic_mode = false;
-	
+
+	if(_lint_args.type == LINT_GET_ERRORS)	
+	{
+		// end array of related info and surrounding object of last error
+		LINT_OUTPUT_ARRAY_END();
+		LINT_OUTPUT_OBJECT_END();
+	}
+
 	if(_current.type == TOKEN_SEMICOLON)
 	{
 		advance();
@@ -420,7 +490,7 @@ StmtNode* Parser::function_declaration()
 		if (params.size() >= 255) error_at_current("Parameter count exceeded limit of 255.");
 		else
 		{
-			ParsedType* type = consume_type("Expected parameter.");
+			ParsedType* type = consume_type("Expected type as parameter.");
 			if(_panic_mode) break;
 			params.push_back(type);
 		}
@@ -947,8 +1017,17 @@ ReferenceNode* Parser::reference()
 		int intval = strtol(PREV_TOKEN_STR.erase(0, 1).c_str(), NULL, 10);
 		
 		int arity = _current_scope.func_props.params.size();
-		if(intval >= arity) error(tools::fstr("Parameter reference exceeds arity of %d.", arity));
-
+		if(intval >= arity)
+		{
+			HOLD_PANIC();
+			error(tools::fstr("Parameter reference exceeds arity of %d.", arity));
+			if(!PANIC_HELD)
+			{
+				string name(_current_scope.func_props.token.start, _current_scope.func_props.token.length);
+				note_declaration("Surrounding function", name, &_current_scope.func_props.token);
+			}
+			return nullptr;
+		}
 		ParsedType* type = _current_scope.func_props.params[intval];
 		type->_is_reference = true;
 		return new ReferenceNode(_previous, "", intval, type);
@@ -1023,6 +1102,12 @@ Status Parser::parse(string infile, const char* source, AST* astree, lint_args_t
 	if(_lint_args.type == LINT_GET_ERRORS)
 	{
 		LINT_OUTPUT_END_PLAIN_ARRAY();
+		cout << lint_output;
+		exit(0);
+	}
+	else if(_lint_args.type != LINT_NONE)
+	{
+		if(lint_output.length() < 3) lint_output = "{}";
 		cout << lint_output;
 		exit(0);
 	}

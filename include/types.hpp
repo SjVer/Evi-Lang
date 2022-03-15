@@ -73,6 +73,7 @@ public:
 			   bool is_reference = false,
 			   SubType subtypetype = SUBTYPE_NONE,
 			   ParsedType* subtype = nullptr);
+	static ParsedType* new_invalid();
 
 	ParsedType* copy();
 	ParsedType* copy_change_lex(LexicalType type);
@@ -100,6 +101,8 @@ public:
 
 	SubType _subtypetype = SUBTYPE_NONE;
 	ParsedType* _subtype = nullptr;
+
+	bool _invalid = false;
 };
 
 #define PTYPE(...) (new ParsedType(__VA_ARGS__))

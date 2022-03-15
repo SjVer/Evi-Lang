@@ -38,10 +38,10 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 		}
 
 		// search for variables
-		if (prefix[0] === '$') {
+		if (prefix[0] === '$' || prefix.length === 0) {
 			const vars: eviLintVariables = callEviLint(document, eviLintType.getVariables, position);
 
-			for(var variable of vars.elements) {
+			for(var variable of vars.variables) {
 				let word = '$' + variable.identifier;
 				if (matches(word) && !added[word]) {
 					added[word] = true;
@@ -74,7 +74,7 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 		if (identifierRegex.test(prefix) || prefix.length === 0) {
 			const funcs: eviLintFunctions = callEviLint(document, eviLintType.getFunctions, position);
 
-			for(var func of funcs.elements) {
+			for(var func of funcs.functions) {
 				let word = func.identifier;
 				if (matches(word) && !added[word]) {
 					added[word] = true;

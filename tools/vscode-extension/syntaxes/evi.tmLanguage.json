@@ -535,7 +535,7 @@
 			"patterns": [
 				{
 					"name": "storage.type.integer.evi",
-					"match": "i1|(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))"
+					"match": "(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1"
 				},
 				{
 					"name": "storage.type.floating-point.evi",

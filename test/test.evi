@@ -1,15 +1,9 @@
-\ #apply "std-io"
-\ #apply "std-math"
+#apply "std-io"
+#apply "std-math"
 
-@func i32 (i32) {}
+@func i128 (i1 i4 i8) {}
 
 @main i32 (i64 chr*)
 {
-	%yes1 i32;
 	
-	\ abc]
-
-	func(1);
-
-	\ wrong(123);
 }

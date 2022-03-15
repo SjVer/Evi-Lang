@@ -51,13 +51,14 @@ extern std::string lint_output;
 
 #define LINT_OUTPUT_START_PLAIN_OBJECT() { lint_output += "{ "; }
 #define LINT_OUTPUT_END_PLAIN_OBJECT() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "}"; }
-#define LINT_OUTPUT_OBJECT_START(key) { lint_output += '"' + key + "\": { "; }
+#define LINT_OUTPUT_OBJECT_START(key) { lint_output += '"' + string(key) + "\": { "; }
 #define LINT_OUTPUT_OBJECT_END() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "}, "; }
-#define LINT_OUTPUT_PAIR(key, value) { lint_output += '"' + key + "\": \"" + value + "\", "; }
+#define LINT_OUTPUT_PAIR(key, value) { lint_output += '"' + string(key) + "\": \"" + value + "\", "; }
+#define LINT_OUTPUT_PAIR_F(key, value, fspec) { lint_output += '"' + string(key) + tools::fstr("\": " #fspec ", ", value); }
 
 #define LINT_OUTPUT_START_PLAIN_ARRAY() { lint_output += "[ "; }
 #define LINT_OUTPUT_END_PLAIN_ARRAY() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "]"; }
-#define LINT_OUTPUT_ARRAY_START(key) { lint_output += '"' + key + "\": [ "; }
+#define LINT_OUTPUT_ARRAY_START(key) { lint_output += '"' + string(key) + "\": [ "; }
 #define LINT_OUTPUT_ARRAY_END() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "], "; }
 #define LINT_OUTPUT_ARRAY_ITEM(value) { lint_output += '"' + value + "\", "; }
 
