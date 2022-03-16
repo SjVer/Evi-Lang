@@ -4,6 +4,7 @@
 #include "common.hpp"
 #include "error.hpp"
 #include "ast.hpp"
+#include "lint.hpp"
 
 #include <stack>
 
@@ -46,6 +47,9 @@ class TypeChecker: public Visitor
 
 	ParsedType* resolve_types(ParsedType* left, ParsedType* right);
 	bool can_cast_types(ParsedType* from, ParsedType* to);
+
+	bool _panic_mode;
+	bool _had_error;
 };
 
 #endif

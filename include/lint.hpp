@@ -40,11 +40,12 @@ static LintType get_lint_type(const char* str)
 
 typedef struct
 {
-	LintType type = LINT_NONE;
-	int tab_width = -1;
-	uint pos[2] = {0, 0};
+	LintType type;
+	int tab_width;
+	uint pos[2];
 } lint_args_t;
 
+extern lint_args_t lint_args;
 extern std::string lint_output;
 
 #define WRONG_END (lint_output.length() >= 2 && lint_output.substr(lint_output.length() - 2) == ", ")

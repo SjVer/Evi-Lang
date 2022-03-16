@@ -18,7 +18,7 @@ class Parser
 public:
 	Parser(): _scope_stack() {}
 	Status parse(string infile, const char* source, 
-				 AST* astree, lint_args_t lint_args);
+				 AST* astree);
 
 private:
 
@@ -123,7 +123,6 @@ private:
 	#define PANIC_HELD (_old_panic_mode_from_macro_hold_panic)
 
 	string _main_file;
-	lint_args_t _lint_args;
 
 	#define PREV_TOKEN_STR std::string(_previous.start, _previous.length)
 };

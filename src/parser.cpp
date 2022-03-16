@@ -10,22 +10,23 @@ void Parser::error_at(Token *token, string message)
 	_had_error = true;
 	_panic_mode = true;
 
-	if(_lint_args.type == LINT_GET_ERRORS)
+	if(lint_args.type == LINT_GET_ERRORS)
 	{
 		LINT_OUTPUT_START_PLAIN_OBJECT();
 
 		LINT_OUTPUT_PAIR("file", *token->file);
 		LINT_OUTPUT_PAIR_F("line", token->line, %d);
-		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, _lint_args.tab_width), %d);
+		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, lint_args.tab_width), %d);
 		LINT_OUTPUT_PAIR_F("column", get_token_col(token), %d);
 		LINT_OUTPUT_PAIR_F("length", token->length, %d);
 		LINT_OUTPUT_PAIR("message", tools::replacestr(message, "\"", "\\\""));
+		LINT_OUTPUT_PAIR("type", "error");
 
 		LINT_OUTPUT_ARRAY_START("related");
 		
 		// array and surrounding object ended in synchronize()
 	}
-	else if(_lint_args.type == LINT_NONE)
+	else if(lint_args.type == LINT_NONE)
 	{
 		_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
 
@@ -57,7 +58,7 @@ void Parser::note_declaration(string type, string name, Token* token)
 {
 	const char* msg = strdup((type + " '" + name + "' declared here:").c_str());
 
-	if(_lint_args.type == LINT_GET_ERRORS)
+	if(lint_args.type == LINT_GET_ERRORS)
 	{
 		// // remove "], }, " at end of error object
 		// lint_output.erase(lint_output.end() - 6);
@@ -66,14 +67,14 @@ void Parser::note_declaration(string type, string name, Token* token)
 		
 		LINT_OUTPUT_PAIR("file", *token->file);
 		LINT_OUTPUT_PAIR_F("line", token->line, %d);
-		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, _lint_args.tab_width), %d);
+		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, lint_args.tab_width), %d);
 		LINT_OUTPUT_PAIR_F("column", get_token_col(token), %d);
 		LINT_OUTPUT_PAIR_F("length", token->length, %d);
 		LINT_OUTPUT_PAIR("message", msg);
 
 		LINT_OUTPUT_OBJECT_END();
 	}
-	else if(_lint_args.type == LINT_NONE)
+	else if(lint_args.type == LINT_NONE)
 	{
 		_error_dispatcher.note_at_token(token, msg);
 		cerr << endl;
@@ -93,8 +94,8 @@ void Parser::advance(bool can_trigger_lint)
 		_current = _scanner.scanToken();
 
 		if(can_trigger_lint && (*_current.file == _main_file)
-		&& (_lint_args.type == LINT_GET_FUNCTIONS || _lint_args.type == LINT_GET_VARIABLES || _lint_args.type == LINT_GET_DECLARATION)
-		&& ((_current.line == _lint_args.pos[0] && get_token_col(&_current, _lint_args.tab_width) >= _lint_args.pos[1]) || _current.line > _lint_args.pos[0]))
+		&& (lint_args.type == LINT_GET_FUNCTIONS || lint_args.type == LINT_GET_VARIABLES || lint_args.type == LINT_GET_DECLARATION)
+		&& ((_current.line == lint_args.pos[0] && get_token_col(&_current, lint_args.tab_width) >= lint_args.pos[1]) || _current.line > lint_args.pos[0]))
 			generate_lint();
 
 		else if (_current.type == TOKEN_ERROR)
@@ -190,9 +191,9 @@ bool Parser::is_at_end()
 void Parser::generate_lint()
 {
 	// cout << tools::fstr("lint at: %s:%d:%d (%s)", _current.file->c_str(), _current.line, 
-	// 	get_token_col(&_current, _lint_args.tab_width), getTokenStr(_current.type)) << endl;
+	// 	get_token_col(&_current, lint_args.tab_width), getTokenStr(_current.type)) << endl;
 
-	switch(_lint_args.type)
+	switch(lint_args.type)
 	{
 		case LINT_GET_FUNCTIONS:
 		{
@@ -286,7 +287,7 @@ void Parser::generate_lint()
 
 			LINT_OUTPUT_PAIR("file", *decltok.file);
 			LINT_OUTPUT_PAIR_F("line", decltok.line, %d);
-			// LINT_OUTPUT_PAIR_F("column", get_token_col(&decltok, _lint_args.tab_width), %d);
+			// LINT_OUTPUT_PAIR_F("column", get_token_col(&decltok, lint_args.tab_width), %d);
 			LINT_OUTPUT_PAIR_F("column", get_token_col(&decltok), %d);
 			LINT_OUTPUT_PAIR_F("length", decltok.length, %d);
 
@@ -397,7 +398,7 @@ void Parser::synchronize(bool toplevel)
 {
 	_panic_mode = false;
 
-	if(_lint_args.type == LINT_GET_ERRORS)	
+	if(lint_args.type == LINT_GET_ERRORS)	
 	{
 		// end array of related info and surrounding object of last error
 		LINT_OUTPUT_ARRAY_END();
@@ -1069,7 +1070,7 @@ CallNode* Parser::call()
 
 // ======================= misc. =======================
 
-Status Parser::parse(string infile, const char* source, AST* astree, lint_args_t lint_args)
+Status Parser::parse(string infile, const char* source, AST* astree)
 {
 	// printTokensFromSrc(tools::readf(infile).c_str());
 	_astree = astree;
@@ -1085,9 +1086,8 @@ Status Parser::parse(string infile, const char* source, AST* astree, lint_args_t
 	_error_dispatcher = ErrorDispatcher();
 
 	_main_file = infile;
-	_lint_args = lint_args;
 
-	if(_lint_args.type == LINT_GET_ERRORS) LINT_OUTPUT_START_PLAIN_ARRAY();
+	if(lint_args.type == LINT_GET_ERRORS) LINT_OUTPUT_START_PLAIN_ARRAY();
 
 	advance();
 	while (!is_at_end())
@@ -1097,19 +1097,6 @@ Status Parser::parse(string infile, const char* source, AST* astree, lint_args_t
 		else error_at_current("Expected declaration at top-level code.");
 
 		if(_panic_mode) synchronize(true);
-	}
-
-	if(_lint_args.type == LINT_GET_ERRORS)
-	{
-		LINT_OUTPUT_END_PLAIN_ARRAY();
-		cout << lint_output;
-		exit(0);
-	}
-	else if(_lint_args.type != LINT_NONE)
-	{
-		if(lint_output.length() < 3) lint_output = "{}";
-		cout << lint_output;
-		exit(0);
 	}
 
 	DEBUG_PRINT_MSG("Parsing complete!");

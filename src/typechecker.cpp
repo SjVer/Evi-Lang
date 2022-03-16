@@ -7,6 +7,9 @@ Status TypeChecker::check(string path, const char* source, AST* astree)
 	_error_dispatcher = ErrorDispatcher();
 	_type_stack = stack<ParsedType*>();
 
+	_panic_mode = false;
+	_had_error = false;
+
 	for(auto& node : *astree)
 	{
 		node->accept(this);
@@ -14,25 +17,72 @@ Status TypeChecker::check(string path, const char* source, AST* astree)
 	}
 
 	DEBUG_PRINT_MSG("Type check done!");
-	return STATUS_SUCCESS;
+	return _had_error ? STATUS_TYPE_ERROR : STATUS_SUCCESS;
 }
 
 void TypeChecker::error_at(Token *token, string message)
 {
-	_error_dispatcher.error_at_token(token, "Type Error", message.c_str());
+	if(_panic_mode) return;
 
-	// print token
-	cerr << endl;
-	_error_dispatcher.print_token_marked(token, COLOR_RED);
-	cerr << endl;
-	
-	ABORT(STATUS_TYPE_ERROR);
+	_panic_mode = true;
+	_had_error = true;
+
+	if(lint_args.type == LINT_GET_ERRORS)
+	{
+		LINT_OUTPUT_START_PLAIN_OBJECT();
+
+		LINT_OUTPUT_PAIR("file", *token->file);
+		LINT_OUTPUT_PAIR_F("line", token->line, %d);
+		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, lint_args.tab_width), %d);
+		LINT_OUTPUT_PAIR_F("column", get_token_col(token), %d);
+		LINT_OUTPUT_PAIR_F("length", token->length, %d);
+		LINT_OUTPUT_PAIR("message", tools::replacestr(message, "\"", "\\\""));
+		LINT_OUTPUT_PAIR("type", "error");
+
+		LINT_OUTPUT_ARRAY_START("related");
+		
+		// TODO:? array and surrounding object ended in synchronize()
+
+		LINT_OUTPUT_ARRAY_END();
+		LINT_OUTPUT_OBJECT_END();
+	}
+	else if(lint_args.type == LINT_NONE)
+	{
+		_error_dispatcher.error_at_token(token, "Type Error", message.c_str());
+
+		// print token
+		cerr << endl;
+		_error_dispatcher.print_token_marked(token, COLOR_RED);
+		cerr << endl;
+		
+		ABORT(STATUS_TYPE_ERROR);
+		// synchronize?
+	}
 }
 
 void TypeChecker::warning_at(Token *token, string message)
 {
-	// just a lil warnign
-	_error_dispatcher.warning_at_token(token, "Type Inference Warning", message.c_str());
+	if(_panic_mode) return;
+	else if(lint_args.type == LINT_GET_ERRORS)
+	{
+		LINT_OUTPUT_START_PLAIN_OBJECT();
+
+		LINT_OUTPUT_PAIR("file", *token->file);
+		LINT_OUTPUT_PAIR_F("line", token->line, %d);
+		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, lint_args.tab_width), %d);
+		LINT_OUTPUT_PAIR_F("column", get_token_col(token), %d);
+		LINT_OUTPUT_PAIR_F("length", token->length, %d);
+		LINT_OUTPUT_PAIR("message", tools::replacestr(message, "\"", "\\\""));
+		LINT_OUTPUT_PAIR("type", "warning");
+
+		// LINT_OUTPUT_ARRAY_START("related");
+		// TODO:? array and surrounding object ended in synchronize()
+		// LINT_OUTPUT_ARRAY_END();
+
+		LINT_OUTPUT_OBJECT_END();
+	}
+	else if(lint_args.type == LINT_NONE)
+		_error_dispatcher.warning_at_token(token, "Type Inference Warning", message.c_str());
 }
 
 void TypeChecker::push(ParsedType* type)

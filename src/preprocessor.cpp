@@ -86,22 +86,25 @@ string Preprocessor::remove_comments(string src)
 string Preprocessor::find_header(string name)
 {
 	name += ".evi";
+	string hname = name + ".hevi";
 
 	// first look in current directory
-	if(ifstream(name).is_open())
-		return name;
+	if(ifstream(name).is_open()) return name;
+	else if(ifstream(hname).is_open()) return hname;
 
 	// look in each include path
 	for(int i = 0; i < include_paths_count; i++)
 	{
 		string path = include_paths[i] + (PATH_SEPARATOR + name);
-		if(ifstream(path).is_open())
-			return path;
+		string hpath = include_paths[i] + (PATH_SEPARATOR + hname);
+
+		if(ifstream(path).is_open()) return path;
+		else if(ifstream(hpath).is_open()) return hpath;
 	}
 
 	// otherwise look in stdlib
-	if(ifstream(STDLIB_DIR + name).is_open())
-		return STDLIB_DIR + name;
+	if(ifstream(STDLIB_DIR + name).is_open()) return STDLIB_DIR + name;
+	else if(ifstream(STDLIB_DIR + hname).is_open()) return STDLIB_DIR + hname;
 
 	return "";
 }

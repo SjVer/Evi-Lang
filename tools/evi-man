@@ -135,7 +135,27 @@ Invalid command line arguments
 .TP
 .B
 65
-Error occured during preprocessing, parsing, typechecking or code generation.
+Error occured during preprocessing.
+
+.TP
+.B
+66
+Error occured during the parsing of the program.
+
+.TP
+.B
+67
+Error occured during typchecking.
+
+.TP
+.B
+68
+Error occured during code generation.
+
+.TP
+.B
+69
+Error occured during file output.
 
 
 .SH BUGS

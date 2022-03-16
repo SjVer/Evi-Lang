@@ -43,9 +43,7 @@ struct arguments
 	bool output_given = false;
 };
 
-lint_args_t lint_args;
 bool lint_pos_given = false;
-std::string lint_output = "";
 
 static struct argp_option options[] =
 {
@@ -248,29 +246,42 @@ int main(int argc, char **argv)
 
 	init_builtin_evi_types();
 	Status status;
+	#define ABORT_IF_UNSUCCESSFUL() if(status != STATUS_SUCCESS && lint_args.type == LINT_NONE) ABORT(status);
 
 
 	// preprocess
 	Preprocessor* prepr = new Preprocessor();
 	status = prepr->preprocess(arguments.args[0], &source);
 	// DEBUG_PRINT_LINE();
-	if(status != STATUS_SUCCESS) ABORT(status);
+	ABORT_IF_UNSUCCESSFUL();
 	if(arguments.preprocess_only) { tools::writef(arguments.outfile, source); return STATUS_SUCCESS; }
 
 
 	// parse program
 	Parser* parser = new Parser();
-	status = parser->parse(arguments.args[0], source, &astree, lint_args);
-	if(status != STATUS_SUCCESS) ABORT(status);
+	status = parser->parse(arguments.args[0], source, &astree);
+	ABORT_IF_UNSUCCESSFUL();
 
 
 	// type check
 	TypeChecker* checker = new TypeChecker();
 	status = checker->check(arguments.args[0], source, &astree);
-	if(status != STATUS_SUCCESS) ABORT(status);
+	ABORT_IF_UNSUCCESSFUL();
 
 
-	if(lint_args.type != LINT_NONE) exit(0);
+	// finish linting
+	if(lint_args.type == LINT_GET_ERRORS)
+	{
+		LINT_OUTPUT_END_PLAIN_ARRAY();
+		cout << lint_output;
+		exit(0);
+	}
+	else if(lint_args.type != LINT_NONE)
+	{
+		if(lint_output.length() < 3) lint_output = "{}";
+		cout << lint_output;
+		exit(0);
+	}
 
 
 	// generate visualization
@@ -285,14 +296,14 @@ int main(int argc, char **argv)
 	// codegen
 	CodeGenerator* codegen = new CodeGenerator();
 	status = codegen->generate(arguments.args[0], arguments.outfile, source, &astree);
-	if(status != STATUS_SUCCESS) ABORT(status);
+	ABORT_IF_UNSUCCESSFUL();
 
 
 	// output
 	if(arguments.compile_only && !arguments.emit_llvm) status = codegen->emit_object(arguments.outfile);
 	else if(arguments.emit_llvm) status = codegen->emit_llvm(arguments.outfile);
 	else status = codegen->emit_binary(arguments.outfile, (const char**)arguments.linked, arguments.linkedc);
-	if(status != STATUS_SUCCESS) ABORT(status);
+	ABORT_IF_UNSUCCESSFUL();
 
 
 	free((void*)source);
