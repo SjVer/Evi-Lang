@@ -5,9 +5,10 @@
 
 @main i32 (i64 chr*)
 {
-	\ wrong();
+	wrong();
 
-	\ func(1, 2, 3);
+	func(1, 2, 3);
 
-	%x i32 1.0;
+	%x i32 "1.0";
+	%y nll "1.0";
 }

@@ -14,6 +14,7 @@ Status TypeChecker::check(string path, const char* source, AST* astree)
 	{
 		node->accept(this);
 		pop();
+		_panic_mode = false;
 	}
 
 	DEBUG_PRINT_MSG("Type check done!");
@@ -324,6 +325,7 @@ VISIT(FuncDeclNode)
 	{
 		node->_body->accept(this);
 		pop();
+		_panic_mode = false;
 	}
 	
 	push(nullptr);
@@ -381,14 +383,17 @@ VISIT(IfNode)
 {
 	node->_cond->accept(this);
 	pop();
+	_panic_mode = false;
 
 	node->_then->accept(this);
 	pop();
+	_panic_mode = false;
 
 	if(node->_else)
 	{
 		node->_else->accept(this);
 		pop();
+		_panic_mode = false;
 	}
 
 	push(nullptr);
@@ -400,19 +405,23 @@ VISIT(LoopNode)
 	{
 		node->_init->accept(this);
 		pop();
+		_panic_mode = false;
 	}
 
 	node->_cond->accept(this);
 	pop();
+	_panic_mode = false;
 
 	if(node->_incr)
 	{
 		node->_incr->accept(this);
 		pop();
+		_panic_mode = false;
 	}
 
 	node->_body->accept(this);
 	pop();
+	_panic_mode = false;
 
 	push(nullptr);
 }
@@ -444,6 +453,7 @@ VISIT(BlockNode)
 	{
 		subnode->accept(this);
 		pop();
+		_panic_mode = false;
 	}
 	push(nullptr);
 }
@@ -719,6 +729,8 @@ VISIT(CallNode)
 			ERROR_AT(&node->_arguments[i]->_token, "Cannot implicitly convert argument of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " to parameter's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			exprtype->to_c_string(), argtype->to_c_string());
+
+		_panic_mode = false;
 	}
 
 	push(node->_ret_type);
