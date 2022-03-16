@@ -2,6 +2,7 @@
 #define EVI_LINT_H
 
 #include <string.h>
+#include "scanner.hpp"
 
 typedef enum
 {
@@ -62,5 +63,8 @@ extern std::string lint_output;
 #define LINT_OUTPUT_ARRAY_START(key) { lint_output += '"' + string(key) + "\": [ "; }
 #define LINT_OUTPUT_ARRAY_END() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "], "; }
 #define LINT_OUTPUT_ARRAY_ITEM(value) { lint_output += '"' + value + "\", "; }
+
+void lint_output_error_object(Token* token, string message, const char* type);
+void lint_output_error_object_end();
 
 #endif

@@ -10,22 +10,7 @@ void Parser::error_at(Token *token, string message)
 	_had_error = true;
 	_panic_mode = true;
 
-	if(lint_args.type == LINT_GET_ERRORS)
-	{
-		LINT_OUTPUT_START_PLAIN_OBJECT();
-
-		LINT_OUTPUT_PAIR("file", *token->file);
-		LINT_OUTPUT_PAIR_F("line", token->line, %d);
-		// LINT_OUTPUT_PAIR_F("column", get_token_col(token, lint_args.tab_width), %d);
-		LINT_OUTPUT_PAIR_F("column", get_token_col(token), %d);
-		LINT_OUTPUT_PAIR_F("length", token->length, %d);
-		LINT_OUTPUT_PAIR("message", tools::replacestr(message, "\"", "\\\""));
-		LINT_OUTPUT_PAIR("type", "error");
-
-		LINT_OUTPUT_ARRAY_START("related");
-		
-		// array and surrounding object ended in synchronize()
-	}
+	if(lint_args.type == LINT_GET_ERRORS) lint_output_error_object(token, message, "warning");
 	else if(lint_args.type == LINT_NONE)
 	{
 		_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
@@ -398,12 +383,7 @@ void Parser::synchronize(bool toplevel)
 {
 	_panic_mode = false;
 
-	if(lint_args.type == LINT_GET_ERRORS)	
-	{
-		// end array of related info and surrounding object of last error
-		LINT_OUTPUT_ARRAY_END();
-		LINT_OUTPUT_OBJECT_END();
-	}
+	if(lint_args.type == LINT_GET_ERRORS) lint_output_error_object_end();
 
 	if(_current.type == TOKEN_SEMICOLON)
 	{
