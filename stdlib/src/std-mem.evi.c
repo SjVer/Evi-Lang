@@ -1,5 +1,5 @@
-\:
-	Evi standard library header "std-math"
+/*
+	Implementation of Evi standard library header "std-mem"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License
@@ -23,34 +23,10 @@
 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
-:\
+*/
 
-#info apply_once
-#flag __STD_MATH__
-
-\ =================================== Constants ====================================
-
-%PI dbl 3.141592653589793238462643383279502884;
-
-\ =================================== Functions ====================================
-
-\? returns the square root of a given value
-\? @param 0 the value
-@sqrt dbl (dbl);
-
-\? returns the sine of a given value
-\? @param 0 the value
-@sin dbl (dbl);
-
-\? returns the cosine of a given value
-\? @param 0 the value
-@cos dbl (dbl);
-
-\? returns the tangent of a given value
-\? @param 0 the value
-@tan dbl (dbl);
-
-\? returns a given value raised to a given power
-\? @param 0 the base value
-\? @param 1 the power
-@pow dbl (dbl dbl);
+// defined in c's libc:
+extern void* calloc(unsigned long n, unsigned long s);
+extern void* malloc(unsigned long s);
+extern void* realloc(void* a, unsigned long s);
+extern void free(void* a);

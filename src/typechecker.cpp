@@ -198,13 +198,13 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 	// DEBUG_PRINT_F_MSG("can_cast_types(%s, %s) (%s)", from->to_c_string(), to->to_c_string(),
 	// 												 from->eq(to) ? "same" : "different");
 
-	if(!from) return false;
-	if(from->eq(to)) return true;
+	if(!from || from->_invalid || !to || to->_invalid) return false;
+	else if(from->eq(to)) return true;
 
-	if(from->get_depth() == to->get_depth())
+	else if(from->get_depth() == to->get_depth())
 	{
 		// just check their types
-		if(AS_LEX(to) == AS_LEX(from)) return true;
+		if(AS_LEX(to) == AS_LEX(from) || AS_LEX(to) == TYPE_VOID) return true;
 		switch(AS_LEX(from))
 		{
 			case TYPE_BOOL: switch(AS_LEX(to))
@@ -241,37 +241,38 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 					return true;
 				default: return false;
 			}
+			case TYPE_VOID:
+				// nll* -> idk* is ok
+				return from->get_depth();
 			default: return false;
 		}
 	}
-	else if(from->get_depth())
+	else if(from->get_depth() == 0)
 	{
-		// both arrays/ptrs, compare elements
-		if(to->get_depth()) return can_cast_types(
-			from->copy_element_of(),
-			to->copy_element_of());
+		// pointer/array -> plain type
 
-		// cast array or ptr to ...
 		switch(to->_lexical_type)
 		{
 			case TYPE_BOOL:
 			case TYPE_CHARACTER:
 			case TYPE_INTEGER:
 			case TYPE_FLOAT:
+			case TYPE_VOID:
 				return true;
 			default:
 				return false;
 		}
 	}
-	else if(to->get_depth())
+	else if(to->get_depth() == 0)
 	{
-		// cast from ... to array or ptr
+		// plain type -> pointer/array
+
 		switch(from->_lexical_type)
 		{
 			case TYPE_BOOL:
 			case TYPE_CHARACTER:
 			case TYPE_INTEGER:
-				return !to->is_array();
+				return true;
 			default:
 				return false;
 		}
@@ -284,10 +285,10 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 #define VISIT(_node) void TypeChecker::visit(_node* node)
 
 #define ERROR_AT(token, format, ...) error_at(token, tools::fstr(format, __VA_ARGS__))
-#define CANNOT_CONVERT_ERROR_AT(token, ltype, rtype) \
+#define CANNOT_CONVERT_ERROR_AT(token, from, to) \
 	ERROR_AT(token, "Cannot convert from type " COLOR_BOLD "'%s'" \
 	COLOR_NONE " to type " COLOR_BOLD "'%s'" COLOR_NONE ".", \
-	rtype->to_c_string(), ltype->to_c_string())
+	from->to_c_string(), to->to_c_string())
 #define CONVERSION_WARNING_AT(token, original, result) \
 	warning_at(token, tools::fstr("Implicit conversion from type " COLOR_BOLD "'%s'" \
 	COLOR_NONE " to type " COLOR_BOLD "'%s'" COLOR_NONE ".", \
@@ -545,10 +546,11 @@ VISIT(BinaryNode)
 VISIT(CastNode)
 {
 	node->_expr->accept(this);
-	ParsedType* type = pop();
+	ParsedType* srctype = pop();
+	ParsedType* desttype = node->_type;
 
-	if(!can_cast_types(type, node->_type))
-		CANNOT_CONVERT_ERROR_AT(&node->_token, type, node->_type);
+	if(!can_cast_types(srctype, desttype))
+		CANNOT_CONVERT_ERROR_AT(&node->_token, srctype, desttype);
 	
 	push(node->_type);
 }

@@ -1,0 +1,10 @@
+#apply "std-mem"
+
+@main i32 (i32 chr**)
+{
+	%x i32* malloc(4);
+
+	=x[0] 123
+
+	free($x);
+}

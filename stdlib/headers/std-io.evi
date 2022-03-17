@@ -32,25 +32,20 @@
 
 \? writes a character to stdout
 \? @param 0 the character to print out
-\? @ret the printed character cast to an i8 or EOF if printc failed
 @printc i8 (chr);
 
 \? writes an integer to stdout
 \? @param 0 the integer to print out
-\? @ret the amount of printed characters or a negative number if printi failed
 @printi i8 (i64);
 
 \? writes a double to stdout
 \? @param 0 the double to print out
-\? @ret the amount of printed characters or a negative number if printd failed
 @printd i8 (dbl);
 @printg i8 (flt);
 
 \? writes a string to stdout
 \? @param 0 the string to print out
-\? @ret the amount of printed characters or a negative number if prints failed
 @prints i8 (chr*);
 
 \? tries to read an integer from stdin (without detecting invalid input)
-\? @ret the scanned integer
 @scani i64 ();

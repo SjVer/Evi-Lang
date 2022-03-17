@@ -3,6 +3,7 @@
 
 #include "common.hpp"
 #include "pch.h"
+#include "size.h"
 
 #include <algorithm>
 #include <map>
@@ -152,6 +153,7 @@ static void init_builtin_evi_types()
 	ADD_EVI_TYPE("dbl", (new EviType{llvm::Type::getDoubleTy(__context), TYPE_FLOAT, "dbl", 4, true}));
 
 	// ======================== Others ========================
+	ADD_EVI_TYPE("sze", EVI_INT_TYPE("sze", SIZE_TYPE_SIZE, false));
 	ADD_EVI_TYPE("bln", (new EviType{llvm::Type::getInt1Ty(__context), TYPE_BOOL, "bln", 1, false}));
 	ADD_EVI_TYPE("chr", (new EviType{llvm::Type::getInt8Ty(__context), TYPE_CHARACTER, "chr", 8, false}));
 	ADD_EVI_TYPE("nll", (new EviType{llvm::Type::getVoidTy(__context), TYPE_VOID, "nll"}));

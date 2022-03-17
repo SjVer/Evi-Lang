@@ -1,5 +1,5 @@
 \:
-	Evi standard library header "std-math"
+	Evi standard library header "std-mem"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License
@@ -26,31 +26,24 @@
 :\
 
 #info apply_once
-#flag __STD_MATH__
-
-\ =================================== Constants ====================================
-
-%PI dbl 3.141592653589793238462643383279502884;
+#flag __STD_MEM__
 
 \ =================================== Functions ====================================
 
-\? returns the square root of a given value
-\? @param 0 the value
-@sqrt dbl (dbl);
+\? allocates an array of n elements each of which will be n bytes in size
+\? @param 0 the amount of elements
+\? @param 1 the size in bytes of each element
+@calloc nll* (i32 i32);
 
-\? returns the sine of a given value
-\? @param 0 the value
-@sin dbl (dbl);
+\? allocates an array of n bytes and returns them uninitialized
+\? @param 0 the size in bytes of the array
+@malloc nll* (sze);
 
-\? returns the cosine of a given value
-\? @param 0 the value
-@cos dbl (dbl);
+\? re-allocates memory extending it to a given size
+\? @param 0 the address to re-allocate
+\? @param 1 the new size in bytes
+@realloc nll* (nll* i32);
 
-\? returns the tangent of a given value
-\? @param 0 the value
-@tan dbl (dbl);
-
-\? returns a given value raised to a given power
-\? @param 0 the base value
-\? @param 1 the power
-@pow dbl (dbl dbl);
+\? releases a block of memory block specified by address
+\? @param 0 the address to free
+@free nll (nll*);

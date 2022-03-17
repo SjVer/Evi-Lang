@@ -954,7 +954,8 @@ VISIT(CallNode)
 		args.push_back(create_cast(pop(), false, casttype, node->_expected_arg_types[i]->is_signed()));
 	}
 
-	push(_builder->CreateCall(callee, args, "calltmp"));
+	if(AS_LEX(node->_ret_type) == TYPE_VOID) push(_builder->CreateCall(callee, args));
+	else push(_builder->CreateCall(callee, args, "calltmp"));
 }
 
 #undef VISIT

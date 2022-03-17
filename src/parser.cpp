@@ -466,13 +466,13 @@ StmtNode* Parser::function_declaration()
 
 	// get parameters
 	vector<ParsedType*> params;
-	while(!check(TOKEN_RIGHT_PAREN) && !_panic_mode) do
+	while(!check(TOKEN_RIGHT_PAREN)) do // && !_panic_mode) do
 	{
 		if (params.size() >= 255) error_at_current("Parameter count exceeded limit of 255.");
 		else
 		{
 			ParsedType* type = consume_type("Expected type as parameter.");
-			if(_panic_mode) break;
+			// if(_panic_mode) break;
 			params.push_back(type);
 		}
 
