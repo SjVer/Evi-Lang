@@ -646,7 +646,7 @@ VISIT(GroupingNode)
 VISIT(SubscriptNode)
 {
 	// TODO
-	node->_expr->accept(this);
+	node->_left->accept(this);
 }
 
 

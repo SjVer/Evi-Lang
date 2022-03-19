@@ -89,8 +89,8 @@ vector<string> Preprocessor::remove_comments(vector<string> lines)
 
 string Preprocessor::find_header(string name)
 {
-	name += ".evi";
 	string hname = name + ".hevi";
+	name += ".evi";
 
 	// first look in current directory
 	if(ifstream(name).is_open()) return name;

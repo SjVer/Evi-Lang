@@ -15,15 +15,16 @@ statement		: assignment
 				| block
 				| expression ";"
 
-assignment		: "=" IDENT ("@" expression)* expression ";"
+assignment		: "=" IDENT ("@" ternary)* expression ";"
 if_stmt			: "??" "(" expression ")" statement ("::" statement)?
 loop			: "!!" "(" declaration? expression ";" declaration? ")" statement
 return 			: "~" expression? ";"
 block			: "{" declaration* "}"
 
 
-expression		: ternary
+expression		: subscript
 
+subscript		: ternary ("@" ternary)*
 ternary			: logical_or ("?" expression ":" ternary)?
 logical_or		: logical_xor ("||" logical_xor)*
 logical_or		: logical_and ("^^" logical_and)*
@@ -37,8 +38,7 @@ bitwise_shift	: term (("<<" | ">>") term)*
 term			: factor (("-" | "+") factor)*
 factor			: cast (("/" | "*") cast)*
 cast			: unary ("->" TYPE)*
-unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
-subscript		: primary ("@" expression)?
+unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | primary
 primary			: NUMBER | CHAR | STRING | "(" expression ")"
 				| array | reference | call
 

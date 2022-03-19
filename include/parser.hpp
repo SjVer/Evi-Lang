@@ -83,6 +83,7 @@ private:
 		StmtNode* block_statement();
 		StmtNode* expression_statement();
 			ExprNode* expression();
+			ExprNode* subscript();
 			ExprNode* ternary();
 			ExprNode* logical_or();
 			ExprNode* logical_xor();
@@ -97,7 +98,6 @@ private:
 			ExprNode* factor();
 			ExprNode* cast();
 			ExprNode* unary();
-			ExprNode* subscript();
 			ExprNode* primary();
 
 	LiteralNode* literal();

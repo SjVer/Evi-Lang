@@ -578,7 +578,7 @@ StmtNode* Parser::statement()
 
 StmtNode* Parser::assign_statement()
 {
-	// assignment	: "=" IDENT ("[" expression "]")* "=" expression ";"
+	// assignment	: "=" IDENT ("@" ternary)* expression ";"
 	Token tok = _previous;
 
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '='.");
@@ -586,12 +586,13 @@ StmtNode* Parser::assign_statement()
 	if(!check_variable(ident)) error("Variable doesn't exist in current scope.");
 
 	// allow subscript
-	ExprNode* sub = match(TOKEN_AT) ? expression() : nullptr;
+	vector<ExprNode*> subs = vector<ExprNode*>();
+	while(match(TOKEN_AT)) subs.push_back(ternary());
 
 	ExprNode* expr = expression();
 	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
 
-	return new AssignNode(tok, ident, sub, expr, get_variable_props(ident).type);
+	return new AssignNode(tok, ident, subs, expr, get_variable_props(ident).type);
 }
 
 StmtNode* Parser::if_statement()
@@ -668,8 +669,24 @@ StmtNode* Parser::expression_statement()
 
 ExprNode* Parser::expression()
 {
-	// expression 	: ternary
-	return ternary();
+	// expression 	: subscript
+	return subscript();
+}
+
+ExprNode* Parser::subscript()
+{
+	// subscript	: ternary ("@" ternary)*
+
+	ExprNode* expr = ternary();
+
+	while(match(TOKEN_AT))
+	{
+		Token tok = _previous;
+		ExprNode* right = ternary();
+		expr = new SubscriptNode(tok, expr, right);
+	}
+
+	return expr;
 }
 
 ExprNode* Parser::ternary()
@@ -878,7 +895,7 @@ ExprNode* Parser::cast()
 
 ExprNode* Parser::unary()
 {
-	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
+	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | primary
 
 	if(/* match(TOKEN_STAR) || match(TOKEN_AND) || */ match(TOKEN_BANG)
 	|| match(TOKEN_MINUS) || match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS))
@@ -888,22 +905,7 @@ ExprNode* Parser::unary()
 		return new UnaryNode(tok, tok.type, expr);
 	}
 
-	return subscript();
-}
-
-ExprNode* Parser::subscript()
-{
-	// subscript	: primary ("@" expression)?
-
-	ExprNode* expr = primary();
-
-	if(match(TOKEN_AT))
-	{
-		Token tok = _previous;
-		expr = new SubscriptNode(tok, expr, expression());
-	}
-
-	return expr;
+	return primary();
 }
 
 ExprNode* Parser::primary()

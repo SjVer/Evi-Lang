@@ -46,7 +46,9 @@ contexts:
       - match: \]
         scope: punctuation.section.brackets.end.evi
         pop: true
+      - include: comment
       - include: expression
+      - include: invalids
 
   number:
     - match: \b{{number}}\b

@@ -79,15 +79,23 @@ VISIT(VarDeclNode)
 VISIT(AssignNode)
 {
 	int thisnode = ADD_NODE("=");
-	CONNECT_NODES(thisnode, ADD_NODE(node->_ident.c_str()));
-	
-	if(node->_subscript)
-	{
-		int subnode = ADD_NODE("@");
-		CONNECT_NODES(thisnode, subnode);
-		CONNECT_NODES(subnode, _nodecount);
-		node->_expr->accept(this);
-	}
+
+	#define SIGNATURE int index, int currnode
+	function<void (SIGNATURE)> do_subscript = [this, node, &do_subscript](SIGNATURE) -> void {
+		if(index + 1 == node->_subscripts.size()) CONNECT_NODES(currnode, ADD_NODE(node->_ident.c_str()));
+		else
+		{
+			int nextnode = ADD_NODE("@");
+			CONNECT_NODES(currnode, nextnode);
+			do_subscript(index + 1, nextnode);
+		}
+
+		CONNECT_NODES(currnode, _nodecount);
+		node->_subscripts[index]->accept(this);
+	};
+	#undef SIGNATURE
+
+	do_subscript(0, thisnode);
 
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_expr->accept(this);
@@ -109,7 +117,7 @@ VISIT(IfNode)
 
 VISIT(LoopNode)
 {
-	int thisnode = ADD_NODE("(;;)");;
+	int thisnode = ADD_NODE("!!");;
 	int anchor = _nodecount; _nodecount++;
 	_stream << tools::fstr("\tnode%d [label=\"\", shape=\"none\", width=0, height=0]\n", anchor);
 	CONNECT_NODES(thisnode, anchor);
@@ -162,6 +170,17 @@ VISIT(BlockNode)
 }
 
 // === Expressions ===
+
+VISIT(SubscriptNode)
+{
+	int thisnode = ADD_NODE("@");
+
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_left->accept(this);
+
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_right->accept(this);
+}
 
 VISIT(LogicalNode)
 {
@@ -253,32 +272,6 @@ VISIT(GroupingNode)
 	// node id will be _nodecount
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_expr->accept(this);
-}
-
-VISIT(SubscriptNode)
-{
-	int thisnode = ADD_NODE("@");
-
-	// TODO: fix this shit
-
-	if(dynamic_cast<SubscriptNode*>(node->_expr))
-	{
-		// expr is subscript
-
-		CONNECT_NODES(thisnode, _nodecount);
-		node->_index->accept(this);
-
-		CONNECT_NODES(thisnode, _nodecount);
-		node->_expr->accept(this);
-	}
-	else
-	{
-		CONNECT_NODES(thisnode, _nodecount);
-		node->_expr->accept(this);
-
-		CONNECT_NODES(thisnode, _nodecount);
-		node->_index->accept(this);
-	}
 }
 
 

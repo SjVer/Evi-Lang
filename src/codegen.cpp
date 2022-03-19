@@ -827,7 +827,7 @@ VISIT(GroupingNode)
 
 VISIT(SubscriptNode)
 {
-	node->_expr->accept(this);
+	node->_left->accept(this);
 	ParsedType* casttype = node->_cast_to;
 	push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
 }
