@@ -643,6 +643,12 @@ VISIT(GroupingNode)
 	node->_expr->accept(this);
 }
 
+VISIT(SubscriptNode)
+{
+	// TODO
+	node->_expr->accept(this);
+}
+
 
 VISIT(LiteralNode)
 {
@@ -682,7 +688,8 @@ VISIT(ArrayNode)
 			exprtype->to_c_string(), firsttype->to_c_string());
 	}
 
-	ParsedType* arrtype = firsttype->copy_array_of(node->_elements.size());
+	// ParsedType* arrtype = firsttype->copy_array_of(node->_elements.size());
+	ParsedType* arrtype = firsttype->copy_pointer_to();
 	node->_cast_to = arrtype;
 	push(arrtype);
 }

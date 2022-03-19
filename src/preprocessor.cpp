@@ -21,6 +21,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	_had_error = false;
 
 	vector<string> lines = tools::split_string(string(*source), "\n");
+	lines = remove_comments(lines);
 
 	// do the actual preprocessing
 	LINE_MARKER(_current_line_no);
@@ -28,7 +29,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 
 	// finish up
 	string result_source; for(string& ln : _lines) result_source += ln + "\n";
-	*source = strdup(remove_comments(result_source).c_str());
+	*source = strdup(result_source.c_str());
 
 	DEBUG_PRINT_MSG("Preprocessor done!");
 	// DEBUG_PRINT_F_MSG("Preprocessed source:\n%s", *source);
@@ -54,33 +55,36 @@ void Preprocessor::process_lines(vector<string> lines)
 	}
 }
 
-string Preprocessor::remove_comments(string src)
+vector<string> Preprocessor::remove_comments(vector<string> lines)
 {
-	for(int i = 0; i < src.length(); i++)
+	bool block_comment = false;
+
+	for(auto& line : lines)
 	{
-		if(src[i] != '\\') continue;
-		i++;
-
-		if(src[i] == ':') // block comment
+		for(int i = 0; i < line.length(); i++)
 		{
-			src[i - 1] = ' ';
-			src[i] = ' ';
+			if(block_comment)
+			{
+				if(i + 1 < line.length() && line[i] == ':' && line[i + 1] == '\\')
+				{
+					block_comment = false;
+					line[i] = ' ';
+					line[++i] = ' ';
+				}
+				else line[i] = ' ';
+			}
+			else if(i + 1 < line.length() && line[i] == '\\' && line[i + 1] == ':') // start block comment
+			{
+				block_comment = true;
+				line[i] = ' ';
+				line[++i] = ' ';
+			}
+			else if(line[i] == '\\')  // line comment
+				while(i < line.length()) line[i++] = ' ';
+		}
+	}
 
-			i++;
-			while(i < src.length() && src[i - 1] != ':' && src[i] != '\\')
-				{ src[i] = src[i] == '\n' ? '\n' : ' '; i++; }
-			src[i] = ' ';
-			continue;
-		}
-		else
-		{
-			i--;
-			while(i < src.length() && src[i] != '\n')
-				src[i++] = ' ';
-			continue;
-		}
-	}	
-	return src;
+	return lines;
 }
 
 string Preprocessor::find_header(string name)
@@ -340,6 +344,7 @@ HANDLER(apply)
 	// process text
 	_current_file = path;
 	vector<string> lines = tools::split_string(source, "\n");
+	lines = remove_comments(lines);
 	LINE_MARKER(0);
 	process_lines(lines);
 

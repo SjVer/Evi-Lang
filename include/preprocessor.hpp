@@ -50,7 +50,7 @@ private:
 		line, _current_file.c_str(), ERR_PROMPT, tools::fstr(format, __VA_ARGS__).c_str()); _had_error = true; }
 
 	void process_lines(vector<string> lines);
-	string remove_comments(string source);
+	vector<string> remove_comments(vector<string> lines);
 	string find_header(string name);
 
 	string strip_start(string str);

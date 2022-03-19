@@ -18,12 +18,12 @@
 	printi($t2);
 
 	\ print 3rd to nth terms
-  	!!(%i i32 3; $i <= $n; =i ++$i;) {
+  	!!(%i i32 3; $i <= $n; =i = ++$i;) {
 	    printi($tn);
 	    \ printf("%d, ", $tn);
-	    =t1 $t2;
-	    =t2 $tn;
-	    =tn $t1 + $t2;
+	    =t1 = $t2;
+	    =t2 = $tn;
+	    =tn = $t1 + $t2;
 	}
 }
 

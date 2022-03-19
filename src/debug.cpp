@@ -78,8 +78,34 @@ VISIT(VarDeclNode)
 
 VISIT(AssignNode)
 {
-	// string lable = "= " + node->_ident;
-	int thisnode = ADD_NODE(("= " + node->_ident).c_str());
+	int thisnode = ADD_NODE("=");
+
+	int currnode = thisnode;
+	for(auto s = node->_subscripts.rbegin(); s != node->_subscripts.rend(); s++)
+	{
+		CONNECT_NODES(currnode, _nodecount);
+		currnode = ADD_NODE(".");
+		CONNECT_NODES(currnode, _nodecount);
+		(*s)->accept(this);
+	}
+	CONNECT_NODES(currnode, _nodecount);
+	ADD_NODE(node->_ident.c_str());
+
+	/*
+		=x.0.1.2 "idk"
+ 
+			=
+		  /   \
+		 .   "idk"
+		/ \
+	   .   2
+   	  / \
+  	 .   1
+  	/ \ 	
+   x   0
+
+	*/
+
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_expr->accept(this);
 }
@@ -244,6 +270,17 @@ VISIT(GroupingNode)
 	// node id will be _nodecount
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_expr->accept(this);
+}
+
+VISIT(SubscriptNode)
+{
+	int thisnode = ADD_NODE(".");
+
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_expr->accept(this);
+
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_index->accept(this);
 }
 
 

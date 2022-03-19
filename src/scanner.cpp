@@ -312,6 +312,7 @@ Token Scanner::scanToken()
 		case '~': return makeToken(TOKEN_TILDE);
 		case '@': return makeToken(TOKEN_AT);
 		case ';': return makeToken(TOKEN_SEMICOLON);
+		case '.': return makeToken(TOKEN_DOT);
 
 		// two-character
 		case '+': return makeToken(match('+') ? TOKEN_PLUS_PLUS   	: TOKEN_PLUS);
@@ -363,6 +364,7 @@ char *getTokenStr(TokenType type)
 		case TOKEN_TILDE: return "TILDE";
 		case TOKEN_AT: return "AT";
 		case TOKEN_HASHTAG: return "HASHTAG";
+		case TOKEN_DOT: return "DOT";
 
 		// One or two character tokens.
 		case TOKEN_PLUS: return "PLUS";

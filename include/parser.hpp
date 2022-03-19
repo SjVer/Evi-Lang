@@ -17,8 +17,7 @@ class Parser
 {
 public:
 	Parser(): _scope_stack() {}
-	Status parse(string infile, const char* source, 
-				 AST* astree);
+	Status parse(string infile, const char* source, AST* astree);
 
 private:
 
@@ -98,6 +97,7 @@ private:
 			ExprNode* factor();
 			ExprNode* cast();
 			ExprNode* unary();
+			ExprNode* subscript();
 			ExprNode* primary();
 
 	LiteralNode* literal();

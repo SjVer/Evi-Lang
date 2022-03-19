@@ -25,6 +25,7 @@ class ASTVisualizer: public Visitor
 		VISIT(CastNode);
 		VISIT(UnaryNode);
 		VISIT(GroupingNode);
+		VISIT(SubscriptNode);
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
 			VISIT(ReferenceNode);

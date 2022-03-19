@@ -24,6 +24,7 @@ typedef enum
 	TOKEN_TILDE,
 	TOKEN_AT,
 	TOKEN_HASHTAG,
+	TOKEN_DOT,
 
 	// One or two character tokens.
 	TOKEN_PLUS,

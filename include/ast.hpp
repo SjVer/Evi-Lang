@@ -24,6 +24,8 @@ class StmtNode;
 		class UnaryNode;
 		class CastNode;
 		class GroupingNode;
+		class SubscriptNode;
+
 		class PrimaryNode;
 			class LiteralNode;
 			class ArrayNode;
@@ -47,6 +49,7 @@ class Visitor
 		VISIT(UnaryNode);
 		VISIT(CastNode);
 		VISIT(GroupingNode);
+		VISIT(SubscriptNode);
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
 			VISIT(ReferenceNode);
@@ -115,12 +118,14 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 	{
 		public:
 
-		AssignNode(Token token, string ident,
+		AssignNode(Token token, string ident, vector<ExprNode*> subscripts,
 				   ExprNode* expr, ParsedType* expected_type):
-			StmtNode(token), _ident(ident), _expr(expr), _expected_type(expected_type) {}
+			StmtNode(token), _ident(ident), _subscripts(subscripts), 
+			_expr(expr), _expected_type(expected_type) {}
 		ACCEPT
 
 		string _ident;
+		vector<ExprNode*> _subscripts;
 		ExprNode* _expr;
 		ParsedType* _expected_type;
 	};
@@ -246,6 +251,18 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 			ACCEPT
 
 			ExprNode* _expr;
+		};
+
+		class SubscriptNode: public ExprNode
+		{
+			public:
+
+			SubscriptNode(Token token, ExprNode* expr, ExprNode* index): 
+				ExprNode(token), _expr(expr), _index(index) {}
+			ACCEPT
+
+			ExprNode* _expr;
+			ExprNode* _index;
 		};
 
 		VIRTUAL_NODE_DECLARATION(PrimaryNode, ExprNode);

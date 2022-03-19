@@ -825,6 +825,13 @@ VISIT(GroupingNode)
 	push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
 }
 
+VISIT(SubscriptNode)
+{
+	node->_expr->accept(this);
+	ParsedType* casttype = node->_cast_to;
+	push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
+}
+
 
 VISIT(LiteralNode)
 {

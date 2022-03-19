@@ -578,17 +578,27 @@ StmtNode* Parser::statement()
 
 StmtNode* Parser::assign_statement()
 {
-	// assignment	: "=" IDENT expression ";"
+	// assignment	: "=" IDENT ("[" expression "]")* "=" expression ";"
 	Token tok = _previous;
 
 	consume(TOKEN_IDENTIFIER, "Expected identifier after '='.");
 	string ident = PREV_TOKEN_STR;
 	if(!check_variable(ident)) error("Variable doesn't exist in current scope.");
 
+	// allow subscript
+	vector<ExprNode*> subscripts = vector<ExprNode*>();
+	while(match(TOKEN_LEFT_B_BRACE))
+	{
+		subscripts.push_back(expression());
+		consume(TOKEN_RIGHT_B_BRACE, "Expected ']' after index.");
+	}
+
+	consume(TOKEN_EQUAL, "Expected '=' after assignment target.");
+
 	ExprNode* expr = expression();
 	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
 
-	return new AssignNode(tok, ident, expr, get_variable_props(ident).type);
+	return new AssignNode(tok, ident, subscripts, expr, get_variable_props(ident).type);
 }
 
 StmtNode* Parser::if_statement()
@@ -875,7 +885,7 @@ ExprNode* Parser::cast()
 
 ExprNode* Parser::unary()
 {
-	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | primary
+	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
 
 	if(/* match(TOKEN_STAR) || match(TOKEN_AND) || */ match(TOKEN_BANG)
 	|| match(TOKEN_MINUS) || match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS))
@@ -888,14 +898,32 @@ ExprNode* Parser::unary()
 	return primary();
 }
 
+ExprNode* Parser::subscript()
+{
+	// subscript	: primary ("[" expression "]")*
+
+	ExprNode* expr = primary();
+
+	while(match(TOKEN_LEFT_B_BRACE))
+	{
+		Token tok = _previous;
+		expr = new SubscriptNode(tok, expr, expression());
+		consume(TOKEN_RIGHT_B_BRACE);
+	}
+
+	return expr;
+}
+
 ExprNode* Parser::primary()
 {
 	// primary		: NUMBER | CHAR | STRING | "(" expression ")"
-	//				| reference | call | "[" (expression ("," expression)*)? "]"
+	// 				| array | reference | call
 
+	// array		: "[" (expression ("," expression)*)? "]"
 	// reference	: "$" (IDENT | INTEGER)
 	// call			: IDENT "(" (expression ("," expression)*)? ")"
 	
+
 	// literals
 	if(match(TOKEN_INTEGER) || match(TOKEN_FLOAT)
 	|| match(TOKEN_CHARACTER) || match(TOKEN_STRING))
@@ -910,17 +938,15 @@ ExprNode* Parser::primary()
 		return new GroupingNode(tok, expr);
 	}
 
-	// array
-	else if(match(TOKEN_LEFT_B_BRACE))
-		return array();
+
+	// arrays
+	else if(match(TOKEN_LEFT_B_BRACE)) return array();
 
 	// references
-	else if(match(TOKEN_VARIABLE_REF) || match(TOKEN_PARAMETER_REF))
-		return reference();
+	else if(match(TOKEN_VARIABLE_REF) || match(TOKEN_PARAMETER_REF)) return reference();
 
 	// calls
-	else if (match(TOKEN_IDENTIFIER))
-		return call();
+	else if (match(TOKEN_IDENTIFIER)) return call();
 
 	error_at_current("Expected expression.");
 	return nullptr;

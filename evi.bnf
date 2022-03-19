@@ -37,9 +37,11 @@ bitwise_shift	: term (("<<" | ">>") term)*
 term			: factor (("-" | "+") factor)*
 factor			: cast (("/" | "*") cast)*
 cast			: unary ("->" TYPE)*
-unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | primary
+unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
+subscript		: primary ("." expression)*
 primary			: NUMBER | CHAR | STRING | "(" expression ")"
-				| reference | call | "[" (expression ("," expression)*)? "]"
+				| array | reference | call
 
+array			: "[" (expression ("," expression)*)? "]"
 reference		: "$" (IDENT | INTEGER)
 call			: IDENT "(" (expression ("," expression)*)? ")"

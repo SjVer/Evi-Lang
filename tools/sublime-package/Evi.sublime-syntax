@@ -80,6 +80,8 @@ contexts:
               scope: storage.type.evi
               pop: true
         - include: invalids
+    # - match: \.
+    #   scope: punctuation.accessor.dot.evi
     - match: <<|>>
       scope: keyword.operator.bitwise.shift.evi
     - match: ==|/=
@@ -97,6 +99,17 @@ contexts:
     - match: \*|/|-|\+
       scope: keyword.operator.arithmetic.evi
 
+  subscript:
+    - match: \[
+      scope: punctuation.section.brackets.begin.evi
+      push:
+        - include: expression
+        - match: \]
+          scope: punctuation.section.brackets.end.evi
+          pop: true
+        - include: comment
+        - include: invalids
+
   # EXPRESSION
 
   expression:
@@ -108,6 +121,8 @@ contexts:
     - include: number
     - include: variable
     - include: string-char
+
+    - include: subscript
 
     - include: punctuation
 
@@ -146,10 +161,17 @@ contexts:
       captures:
         1: keyword.operator.assignment.evi
         2: meta.assignment.target.evi
-      set:
-        - include: expression
-        - include: terminator
-      # push: expression
+      push:
+        - include: subscript
+        - include: comment
+        - match: =
+          scope: keyword.operator.assignment.evi
+          set:
+          - include: comment
+          - include: expression
+          - include: terminator
+          - include: invalids
+        - include: invalids
 
   return:
     - match: \~

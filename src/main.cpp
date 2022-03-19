@@ -252,7 +252,6 @@ int main(int argc, char **argv)
 	// preprocess
 	Preprocessor* prepr = new Preprocessor();
 	status = prepr->preprocess(arguments.args[0], &source);
-	// DEBUG_PRINT_LINE();
 	ABORT_IF_UNSUCCESSFUL();
 	if(arguments.preprocess_only) { tools::writef(arguments.outfile, source); return STATUS_SUCCESS; }
 
