@@ -15,7 +15,7 @@ statement		: assignment
 				| block
 				| expression ";"
 
-assignment		: "=" IDENT expression ";"
+assignment		: "=" IDENT ("@" expression)* expression ";"
 if_stmt			: "??" "(" expression ")" statement ("::" statement)?
 loop			: "!!" "(" declaration? expression ";" declaration? ")" statement
 return 			: "~" expression? ";"
@@ -38,7 +38,7 @@ term			: factor (("-" | "+") factor)*
 factor			: cast (("/" | "*") cast)*
 cast			: unary ("->" TYPE)*
 unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
-subscript		: primary ("." expression)*
+subscript		: primary ("@" expression)?
 primary			: NUMBER | CHAR | STRING | "(" expression ")"
 				| array | reference | call
 

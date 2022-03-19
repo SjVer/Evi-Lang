@@ -1,5 +1,5 @@
 \:
-	Evi standard library header "std-mem"
+	Evi standard library header "std/io"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License
@@ -26,24 +26,26 @@
 :\
 
 #info apply_once
-#flag __STD_MEM__
+#flag __STD_IO__
 
 \ =================================== Functions ====================================
 
-\? allocates an array of n elements each of which will be n bytes in size
-\? @param 0 the amount of elements
-\? @param 1 the size in bytes of each element
-@calloc nll* (i32 i32);
+\? writes a character to stdout
+\? @param 0 the character to print out
+@printc i8 (chr);
 
-\? allocates an array of n bytes and returns them uninitialized
-\? @param 0 the size in bytes of the array
-@malloc nll* (sze);
+\? writes an integer to stdout
+\? @param 0 the integer to print out
+@printi i8 (i64);
 
-\? re-allocates memory extending it to a given size
-\? @param 0 the address to re-allocate
-\? @param 1 the new size in bytes
-@realloc nll* (nll* i32);
+\? writes a double to stdout
+\? @param 0 the double to print out
+@printd i8 (dbl);
+@printg i8 (flt);
 
-\? releases a block of memory block specified by address
-\? @param 0 the address to free
-@free nll (nll*);
+\? writes a string to stdout
+\? @param 0 the string to print out
+@prints i8 (chr*);
+
+\? tries to read an integer from stdin (without detecting invalid input)
+@scani i64 ();

@@ -86,6 +86,8 @@ contexts:
       scope: keyword.operator.bitwise.shift.evi
     - match: ==|/=
       scope: keyword.operator.comparison.evi
+    # - match: \=
+    #   scope: keyword.operator.assignment.evi
     - match: <=|>=|<>|<|>
       scope: keyword.operator.relational.evi
     - match: \!|&&|\|\||\?\?|:|\?|\^\^
@@ -100,15 +102,21 @@ contexts:
       scope: keyword.operator.arithmetic.evi
 
   subscript:
-    - match: \[
-      scope: punctuation.section.brackets.begin.evi
-      push:
-        - include: expression
-        - match: \]
-          scope: punctuation.section.brackets.end.evi
-          pop: true
-        - include: comment
-        - include: invalids
+    # - match: \[
+    #   scope: punctuation.section.brackets.begin.evi
+    #   push:
+    #     - include: expression
+    #     - match: \]
+    #       scope: punctuation.section.brackets.end.evi
+    #       pop: true
+    #     - include: comment
+    #     - include: invalids
+    - match: \@
+      scope: punctuation.accessor.evi
+      # push:
+      #   - include: comment
+      #   - include: expression
+      #   - include: invalids
 
   # EXPRESSION
 
@@ -162,21 +170,26 @@ contexts:
         1: keyword.operator.assignment.evi
         2: meta.assignment.target.evi
       push:
-        - include: subscript
         - include: comment
-        - match: =
-          scope: keyword.operator.assignment.evi
-          set:
-          - include: comment
-          - include: expression
-          - include: terminator
-          - include: invalids
+        - include: expression
+        - include: terminator
         - include: invalids
+        # - match: =
+        #   scope: keyword.operator.assignment.evi
+        #   set:
+        #   - include: comment
+        #   - include: expression
+        #   - include: terminator
+        #   - include: invalids
 
   return:
     - match: \~
       scope: keyword.control.flow.return.evi
-      set: expression
+      push:
+        - include: comment
+        - include: expression
+        - include: terminator
+        - include: invalids
 
   if_and_loop:
     - match: \?\?

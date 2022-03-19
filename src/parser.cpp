@@ -586,19 +586,12 @@ StmtNode* Parser::assign_statement()
 	if(!check_variable(ident)) error("Variable doesn't exist in current scope.");
 
 	// allow subscript
-	vector<ExprNode*> subscripts = vector<ExprNode*>();
-	while(match(TOKEN_LEFT_B_BRACE))
-	{
-		subscripts.push_back(expression());
-		consume(TOKEN_RIGHT_B_BRACE, "Expected ']' after index.");
-	}
-
-	consume(TOKEN_EQUAL, "Expected '=' after assignment target.");
+	ExprNode* sub = match(TOKEN_AT) ? expression() : nullptr;
 
 	ExprNode* expr = expression();
 	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
 
-	return new AssignNode(tok, ident, subscripts, expr, get_variable_props(ident).type);
+	return new AssignNode(tok, ident, sub, expr, get_variable_props(ident).type);
 }
 
 StmtNode* Parser::if_statement()
@@ -895,20 +888,19 @@ ExprNode* Parser::unary()
 		return new UnaryNode(tok, tok.type, expr);
 	}
 
-	return primary();
+	return subscript();
 }
 
 ExprNode* Parser::subscript()
 {
-	// subscript	: primary ("[" expression "]")*
+	// subscript	: primary ("@" expression)?
 
 	ExprNode* expr = primary();
 
-	while(match(TOKEN_LEFT_B_BRACE))
+	if(match(TOKEN_AT))
 	{
 		Token tok = _previous;
 		expr = new SubscriptNode(tok, expr, expression());
-		consume(TOKEN_RIGHT_B_BRACE);
 	}
 
 	return expr;

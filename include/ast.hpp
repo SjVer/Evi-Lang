@@ -118,14 +118,14 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 	{
 		public:
 
-		AssignNode(Token token, string ident, vector<ExprNode*> subscripts,
+		AssignNode(Token token, string ident, ExprNode* subscript,
 				   ExprNode* expr, ParsedType* expected_type):
-			StmtNode(token), _ident(ident), _subscripts(subscripts), 
+			StmtNode(token), _ident(ident), _subscript(subscript), 
 			_expr(expr), _expected_type(expected_type) {}
 		ACCEPT
 
 		string _ident;
-		vector<ExprNode*> _subscripts;
+		ExprNode* _subscript;
 		ExprNode* _expr;
 		ParsedType* _expected_type;
 	};

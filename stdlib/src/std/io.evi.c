@@ -1,5 +1,5 @@
 /*
-	Implementation of Evi standard library header "std-math"
+	Implementation of Evi standard library header "std/io"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License
@@ -25,9 +25,49 @@
 	SOFTWARE.
 */
 
-// defined in c's libm:
-extern double sqrt(double value);
-extern double sin(double value);
-extern double cos(double value);
-extern double tan(double value);
-extern double pow(double g, double a);
+#include <stdio.h>
+#include <stdint.h>
+
+uint8_t printc(char ch)
+{
+	return putchar(ch);
+}
+
+uint8_t printi(int64_t i)
+{
+	return printf("%ld\n", i);
+}
+
+uint8_t printd(double d)
+{
+	return printf("%g\n", d);
+}
+
+uint8_t printg(float f)
+{
+	return printf("%f\n", f);
+}
+
+uint8_t prints(char* str)
+{
+	return printf("%s\n", str);
+}
+
+uint64_t scani()
+{
+	int ret;
+	scanf("%d", &ret);
+	return ret;
+}
+
+void printstrarr(uint64_t len, char** arr)
+{
+	for(int i = 0; i < len; i++)
+		prints(arr[i]);
+}
+
+void printintarr(uint64_t len, int32_t* arr)
+{
+	for(int i = 0; i < len; i++)
+		printi(arr[i]);
+}

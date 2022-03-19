@@ -79,32 +79,15 @@ VISIT(VarDeclNode)
 VISIT(AssignNode)
 {
 	int thisnode = ADD_NODE("=");
-
-	int currnode = thisnode;
-	for(auto s = node->_subscripts.rbegin(); s != node->_subscripts.rend(); s++)
+	CONNECT_NODES(thisnode, ADD_NODE(node->_ident.c_str()));
+	
+	if(node->_subscript)
 	{
-		CONNECT_NODES(currnode, _nodecount);
-		currnode = ADD_NODE(".");
-		CONNECT_NODES(currnode, _nodecount);
-		(*s)->accept(this);
+		int subnode = ADD_NODE("@");
+		CONNECT_NODES(thisnode, subnode);
+		CONNECT_NODES(subnode, _nodecount);
+		node->_expr->accept(this);
 	}
-	CONNECT_NODES(currnode, _nodecount);
-	ADD_NODE(node->_ident.c_str());
-
-	/*
-		=x.0.1.2 "idk"
- 
-			=
-		  /   \
-		 .   "idk"
-		/ \
-	   .   2
-   	  / \
-  	 .   1
-  	/ \ 	
-   x   0
-
-	*/
 
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_expr->accept(this);
@@ -274,13 +257,28 @@ VISIT(GroupingNode)
 
 VISIT(SubscriptNode)
 {
-	int thisnode = ADD_NODE(".");
+	int thisnode = ADD_NODE("@");
 
-	CONNECT_NODES(thisnode, _nodecount);
-	node->_expr->accept(this);
+	// TODO: fix this shit
 
-	CONNECT_NODES(thisnode, _nodecount);
-	node->_index->accept(this);
+	if(dynamic_cast<SubscriptNode*>(node->_expr))
+	{
+		// expr is subscript
+
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_index->accept(this);
+
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_expr->accept(this);
+	}
+	else
+	{
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_expr->accept(this);
+
+		CONNECT_NODES(thisnode, _nodecount);
+		node->_index->accept(this);
+	}
 }
 
 
@@ -329,9 +327,9 @@ VISIT(ArrayNode)
 VISIT(ReferenceNode)
 {
 	if(node->_token.type == TOKEN_VARIABLE_REF)
-		ADD_NODE(tools::fstr("$ %s", node->_variable.c_str()).c_str());
+		ADD_NODE(tools::fstr("$%s", node->_variable.c_str()).c_str());
 	else if(node->_token.type == TOKEN_PARAMETER_REF)
-		ADD_NODE(tools::fstr("$ %d", node->_parameter).c_str());
+		ADD_NODE(tools::fstr("$%d", node->_parameter).c_str());
 	else assert(false);
 }
 

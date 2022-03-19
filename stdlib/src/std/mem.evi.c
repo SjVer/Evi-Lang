@@ -1,5 +1,5 @@
 /*
-	Implementation of Evi standard library header "std-mem"
+	Implementation of Evi standard library header "std/mem"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License

@@ -1,5 +1,5 @@
-\:
-	Evi standard library header "std-io"
+/*
+	Implementation of Evi standard library header "std/math"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License
@@ -23,29 +23,11 @@
 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
-:\
+*/
 
-#info apply_once
-#flag __STD_IO__
-
-\ =================================== Functions ====================================
-
-\? writes a character to stdout
-\? @param 0 the character to print out
-@printc i8 (chr);
-
-\? writes an integer to stdout
-\? @param 0 the integer to print out
-@printi i8 (i64);
-
-\? writes a double to stdout
-\? @param 0 the double to print out
-@printd i8 (dbl);
-@printg i8 (flt);
-
-\? writes a string to stdout
-\? @param 0 the string to print out
-@prints i8 (chr*);
-
-\? tries to read an integer from stdin (without detecting invalid input)
-@scani i64 ();
+// defined in c's libm:
+extern double sqrt(double value);
+extern double sin(double value);
+extern double cos(double value);
+extern double tan(double value);
+extern double pow(double g, double a);
