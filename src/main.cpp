@@ -249,6 +249,9 @@ int main(int argc, char **argv)
 	#define ABORT_IF_UNSUCCESSFUL() if(status != STATUS_SUCCESS && lint_args.type == LINT_NONE) ABORT(status);
 
 
+	if(lint_args.type == LINT_GET_ERRORS) LINT_OUTPUT_START_PLAIN_ARRAY();
+
+
 	// preprocess
 	Preprocessor* prepr = new Preprocessor();
 	status = prepr->preprocess(arguments.args[0], &source);

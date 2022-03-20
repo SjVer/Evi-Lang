@@ -103,16 +103,21 @@ bool Parser::check(TokenType type)
 
 // consume the next token if it is of the correct type,
 // otherwise throw an error with the given message
-void Parser::consume(TokenType type, string message)
+bool Parser::consume(TokenType type, string message)
 {
-	if (_current.type == type) advance();
-	else error_at_current(message);
+	if (_current.type == type)
+	{
+		advance();
+		return true;
+	}
+	error_at_current(message);
+	return false;
 }
 
 ParsedType* Parser::consume_type(string msg)
 {
 	// get base type
-	consume(TOKEN_TYPE, msg);
+	CONSUME_OR_RET_NULL(TOKEN_TYPE, msg);
 	string typestr = PREV_TOKEN_STR;
 	if (!IS_EVI_TYPE(typestr))
 	{
@@ -145,7 +150,7 @@ ParsedType* Parser::consume_type(string msg)
 				type = type->copy_array_of(match(TOKEN_INTEGER) ? literal()->_int_value : -1);
 			}
 
-			consume(TOKEN_PIPE, _previous.type == TOKEN_INTEGER ? 
+			CONSUME_OR_RET_NULL(TOKEN_PIPE, _previous.type == TOKEN_INTEGER ? 
 				// "Expected '|' afer size." : "Expected '|' or size after '|'.");
 				"Expected '|' afer size." : "Expected size after '|'.");
 		}
@@ -455,14 +460,14 @@ StmtNode* Parser::function_declaration()
 	Token tok = _previous;
 
 	// get name
-	consume(TOKEN_IDENTIFIER, "Expected identifier after '@'.");
+	CONSUME_OR_RET_NULL(TOKEN_IDENTIFIER, "Expected identifier after '@'.");
 	string name = PREV_TOKEN_STR;
 	Token nametok = _previous;
 
 	// get type
 	ParsedType* ret_type = consume_type(tools::fstr("Expected type after '@%s'.", name.c_str()));
 
-	consume(TOKEN_LEFT_PAREN, "Expect '(' after return type.");
+	CONSUME_OR_RET_NULL(TOKEN_LEFT_PAREN, "Expect '(' after return type.");
 
 	// get parameters
 	vector<ParsedType*> params;
@@ -478,7 +483,7 @@ StmtNode* Parser::function_declaration()
 
 	} while (check(TOKEN_TYPE));
 
-	consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
 
 	// get body?
 	if(match(TOKEN_SEMICOLON))
@@ -512,7 +517,7 @@ StmtNode* Parser::variable_declaration()
 	vector<Token> nametokens;
 	do
 	{
-		consume(TOKEN_IDENTIFIER, nametokens.size() > 0 ? 
+		CONSUME_OR_RET_NULL(TOKEN_IDENTIFIER, nametokens.size() > 0 ? 
 			"Expected identifier after ','." :
 			"Expected identifier after '%'.");
 		nametokens.push_back(_previous);
@@ -540,11 +545,11 @@ StmtNode* Parser::variable_declaration()
 		for(int i = 0; i < nametokens.size(); i++)
 		{
 			ExprNode* expr = expression();
-			if(i + 1 < nametokens.size()) consume(TOKEN_COMMA, "Expected ',' after expression.");
+			if(i + 1 < nametokens.size()) CONSUME_OR_RET_NULL(TOKEN_COMMA, "Expected ',' after expression.");
 			string name = string(nametokens[i].start, nametokens[i].length);
 			decls.push_back(new VarDeclNode(tok, name, type, expr, _current_scope.depth == 0));
 		}
-		consume(TOKEN_SEMICOLON, "Expected ';' after variable defenition.");
+		CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after variable defenition.");
 	}
 
 	assert(nametokens.size() == decls.size());
@@ -581,7 +586,7 @@ StmtNode* Parser::assign_statement()
 	// assignment	: "=" IDENT ("@" ternary)* expression ";"
 	Token tok = _previous;
 
-	consume(TOKEN_IDENTIFIER, "Expected identifier after '='.");
+	CONSUME_OR_RET_NULL(TOKEN_IDENTIFIER, "Expected identifier after '='.");
 	string ident = PREV_TOKEN_STR;
 	if(!check_variable(ident)) error("Variable doesn't exist in current scope.");
 
@@ -590,7 +595,7 @@ StmtNode* Parser::assign_statement()
 	while(match(TOKEN_AT)) subs.push_back(ternary());
 
 	ExprNode* expr = expression();
-	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
+	CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after expression.");
 
 	return new AssignNode(tok, ident, subs, expr, get_variable_props(ident).type);
 }
@@ -599,9 +604,9 @@ StmtNode* Parser::if_statement()
 {
 	Token tok = _previous;
 
-	consume(TOKEN_LEFT_PAREN, "Expect '(' after '\?\?'.");
+	CONSUME_OR_RET_NULL(TOKEN_LEFT_PAREN, "Expect '(' after '\?\?'.");
 	ExprNode* cond = expression();
-	consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
 	StmtNode* if_branch = statement();
 	StmtNode* else_branch = match(TOKEN_COLON_COLON) ? statement() : nullptr;
@@ -614,15 +619,15 @@ StmtNode* Parser::loop_statement()
 	Token tok = _previous;
 
 	scope_up();
-	consume(TOKEN_LEFT_PAREN, "Expected '(' after '!!'.");
+	CONSUME_OR_RET_NULL(TOKEN_LEFT_PAREN, "Expected '(' after '!!'.");
 
 	StmtNode* init = match(TOKEN_SEMICOLON) ? nullptr : declaration(); 
 
 	ExprNode* cond = expression();
-	consume(TOKEN_SEMICOLON, "Expect ';' after condition.");
+	CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expect ';' after condition.");
 
 	StmtNode* incr = match(TOKEN_SEMICOLON) ? nullptr : declaration(); 
-	consume(TOKEN_RIGHT_PAREN, "Expect ')' after incrementor statement.");
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expect ')' after incrementor statement.");
 
 	StmtNode* body = statement();
 
@@ -638,7 +643,7 @@ StmtNode* Parser::return_statement()
 	else
 	{
 		ExprNode* expr = expression();
-		consume(TOKEN_SEMICOLON, "Expected ';' after return statement.");
+		CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after return statement.");
 		return new ReturnNode(tok, expr, _current_scope.func_props.ret_type);
 	}
 }
@@ -652,7 +657,7 @@ StmtNode* Parser::block_statement()
 	scope_up();
 
 	while(!check(TOKEN_RIGHT_BRACE) && !is_at_end()) statements.push_back(declaration());
-	consume(TOKEN_RIGHT_BRACE, "Expected '}' after block.");
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_BRACE, "Expected '}' after block.");
 
 	scope_down();
 	return (StmtNode*)(new BlockNode(tok, statements));
@@ -661,7 +666,7 @@ StmtNode* Parser::block_statement()
 StmtNode* Parser::expression_statement()
 {
 	ExprNode* expr = expression();
-	consume(TOKEN_SEMICOLON, "Expected ';' after expression.");
+	CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after expression.");
 	return expr;	
 }
 
@@ -700,7 +705,7 @@ ExprNode* Parser::ternary()
 		Token tok = _previous;
 		ExprNode* middle = expression();
 	
-		consume(TOKEN_COLON, "Expect ':' after if-expression.");
+		CONSUME_OR_RET_NULL(TOKEN_COLON, "Expect ':' after if-expression.");
 		ExprNode* right = ternary();
 	
 		expr = new LogicalNode(tok, expr, right, middle);
@@ -928,7 +933,7 @@ ExprNode* Parser::primary()
 	{
 		Token tok = _previous;
 		ExprNode* expr = expression();
-		consume(TOKEN_RIGHT_PAREN, "Expected ')' after parenthesized expression.");
+		CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expected ')' after parenthesized expression.");
 		return new GroupingNode(tok, expr);
 	}
 
@@ -1001,7 +1006,7 @@ ArrayNode* Parser::array()
 		elements.push_back(expression());
 	} while(match(TOKEN_COMMA));
 
-	consume(TOKEN_RIGHT_B_BRACE, "Expected ']' after elements.");
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_B_BRACE, "Expected ']' after elements.");
 	return new ArrayNode(tok, elements);
 }
 
@@ -1040,12 +1045,12 @@ CallNode* Parser::call()
 {
 	Token tok = _previous;
 	string name = PREV_TOKEN_STR;
-
-	consume(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
 	if(!check_function(name)) error_at(&tok, "Function does not exist in current scope.");
 
 	vector<ExprNode*> args;
 	FuncProperties funcprops = get_function_props(name);
+
+	CONSUME_OR_RET_NULL(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
 	
 	if(!check(TOKEN_RIGHT_PAREN)) do
 	{
@@ -1054,18 +1059,19 @@ CallNode* Parser::call()
 	
 	} while(match(TOKEN_COMMA));
 
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
+
 	if(args.size() != funcprops.params.size())
 	{
 		HOLD_PANIC();
-		error(tools::fstr("Expected %d argument%s, but %d were given.",
+		error_at(&tok, tools::fstr("Expected %d argument%s, but %d were given.",
 			funcprops.params.size(), funcprops.params.size() == 1 ? "" : "s", args.size()));
 		if(!PANIC_HELD) note_declaration("Function", name, &funcprops.token);
+		return nullptr;
 	}
-	
-	consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
 
 	vector<ParsedType*> lexparams; for(ParsedType*& p : funcprops.params) lexparams.push_back(p);
-	return new CallNode(tok, name, args, funcprops.ret_type, lexparams);
+	return funcprops.invalid ? nullptr : new CallNode(tok, name, args, funcprops.ret_type, lexparams);
 }
 
 // ======================= misc. =======================
@@ -1086,8 +1092,6 @@ Status Parser::parse(string infile, const char* source, AST* astree)
 	_error_dispatcher = ErrorDispatcher();
 
 	_main_file = infile;
-
-	if(lint_args.type == LINT_GET_ERRORS) LINT_OUTPUT_START_PLAIN_ARRAY();
 
 	advance();
 	while (!is_at_end())

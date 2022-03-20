@@ -82,12 +82,12 @@ VISIT(AssignNode)
 
 	#define SIGNATURE int index, int currnode
 	function<void (SIGNATURE)> do_subscript = [this, node, &do_subscript](SIGNATURE) -> void {
-		if(index + 1 == node->_subscripts.size()) CONNECT_NODES(currnode, ADD_NODE(node->_ident.c_str()));
+		if(index - 1 < 0) CONNECT_NODES(currnode, ADD_NODE(node->_ident.c_str()));
 		else
 		{
 			int nextnode = ADD_NODE("@");
 			CONNECT_NODES(currnode, nextnode);
-			do_subscript(index + 1, nextnode);
+			do_subscript(index - 1, nextnode);
 		}
 
 		CONNECT_NODES(currnode, _nodecount);
@@ -95,7 +95,13 @@ VISIT(AssignNode)
 	};
 	#undef SIGNATURE
 
-	do_subscript(0, thisnode);
+	if(!node->_subscripts.empty())
+	{
+		int firstnode = ADD_NODE("@");
+		CONNECT_NODES(thisnode, firstnode);
+		do_subscript(node->_subscripts.size() - 1, firstnode);
+	}
+	else CONNECT_NODES(thisnode, ADD_NODE(node->_ident.c_str()));
 
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_expr->accept(this);

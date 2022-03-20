@@ -3,6 +3,9 @@
 		"outDir": "./out",
 		"types": [
 			"node"
+		],
+		"lib": [
+			"ES2021.String"
 		]
 	},
 	"include": [

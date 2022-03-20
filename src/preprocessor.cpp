@@ -12,6 +12,8 @@ char* include_paths[MAX_INCLUDE_PATHS] = {};
 Status Preprocessor::preprocess(string infile, const char** source)
 {
 	// prepare sum shit
+	// _source = strdup(*source);
+	_source = *source;
 	_lines = vector<string>();
 	_current_file = infile;
 	_current_line_no = 0;
@@ -32,6 +34,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	*source = strdup(result_source.c_str());
 
 	DEBUG_PRINT_MSG("Preprocessor done!");
+
 	// DEBUG_PRINT_F_MSG("Preprocessed source:\n%s", *source);
 	return _had_error ? STATUS_PREPROCESS_ERROR : STATUS_SUCCESS;
 }
@@ -111,6 +114,31 @@ string Preprocessor::find_header(string name)
 	else if(ifstream(STDLIB_DIR + hname).is_open()) return STDLIB_DIR + hname;
 
 	return "";
+}
+
+// ===============================================================
+
+void Preprocessor::error_at_line(uint line, const char* message)
+{
+	if(lint_args.type == LINT_GET_ERRORS)
+	{
+		LINT_OUTPUT_START_PLAIN_OBJECT();
+
+		LINT_OUTPUT_PAIR("file", _current_file);
+		LINT_OUTPUT_PAIR_F("line", line, %d);
+		LINT_OUTPUT_PAIR_F("column", 0, %d);
+		LINT_OUTPUT_PAIR_F("length", 0, %d);
+		LINT_OUTPUT_PAIR("message", tools::replacestr(message, "\"", "\\\""));
+		LINT_OUTPUT_PAIR("type", "error");
+
+		LINT_OUTPUT_ARRAY_START("related");
+		lint_output_error_object_end();
+	}
+	else if(lint_args.type == LINT_NONE)
+	{
+		_error_dispatcher.error_at_line(line, _current_file.c_str(), ERR_PROMPT, message);
+		_had_error = true;
+	}
 }
 
 // ===============================================================
@@ -244,7 +272,7 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 	#undef CASE
 }
 
-void Preprocessor::handle_directive(string line, uint line_no)
+void Preprocessor::handle_directive(string line, uint _current_line_no)
 {
 	// get first word and make sure it's a valid directive
 	string first_word = line.substr(0, line.find(' '));
@@ -253,19 +281,19 @@ void Preprocessor::handle_directive(string line, uint line_no)
  	if(dirtype == DIR_INVALID)
 	{
 		if(!IN_FALSE_BRANCH)
-			ERROR_F(line_no, "Invalid preprocessor directive: '#%s'.", first_word.c_str())
+			ERROR_F(_current_line_no, "Invalid preprocessor directive: '#%s'.", first_word.c_str())
 		else SUBMIT_LINE("");
 		return; // report the error but keep on chuckin'
 	}
 
 	// directive is valid, so handle it
 	DirectiveHandler handler = get_directive_handler(dirtype);
-	(this->*handler)(strip_start(line.erase(0, first_word.length())), line_no - 1);
+	(this->*handler)(strip_start(line.erase(0, first_word.length())));
 }
 
 // ===============================================================
 
-bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
+bool Preprocessor::handle_pragma(vector<string> args, uint _current_line_no)
 {
 	string cmd = args[0];
 	args.erase(args.begin());
@@ -278,21 +306,17 @@ bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
 	else if(cmd == "error")
 	{
 		string msg;
-		consume_string(&args[0], &msg, line_no);
+		if(!consume_string(&args[0], &msg, _current_line_no) || args.size() != 1) return false;
 
-		if(args.size() != 1) return false;
-
-		ERROR(line_no, msg.c_str());
+		ERROR(_current_line_no, msg.c_str());
 		return true;
 	}
 	else if(cmd == "warning")
 	{
 		string msg;
-		consume_string(&args[0], &msg, line_no);
+		if(!consume_string(&args[0], &msg, _current_line_no) || args.size() != 1) return false;
 
-		if(args.size() != 1) return false;
-
-		_error_dispatcher.warning_at_line(line_no, _current_file.c_str(), "Preprocessor Warning", msg.c_str());
+		_error_dispatcher.warning_at_line(_current_line_no, _current_file.c_str(), "Preprocessor Warning", msg.c_str());
 		return true;
 	}
 
@@ -301,10 +325,10 @@ bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
 
 // ===============================================================
 
-#define HANDLER(name) void Preprocessor::handle_directive_##name(string line, uint line_no)
+#define HANDLER(name) void Preprocessor::handle_directive_##name(string line)
 #define TRY_TO(code) { if(!(code)) return; }
 #define CHECK_FLAG(flag) (std::find(_flags.begin(), _flags.end(), flag) != _flags.end())
-#define ASSERT_END_OF_LINE() { if(strip_start(line).length()) ERROR(line_no, "Expected newline"); return; }
+#define ASSERT_END_OF_LINE() { if(strip_start(line).length()) ERROR(_current_line_no, "Expected newline"); return; }
 
 HANDLER(apply)
 {
@@ -316,14 +340,15 @@ HANDLER(apply)
 
 	// get filename
 	string header;
-	TRY_TO(consume_string(&line, &header, line_no));
+	TRY_TO(consume_string(&line, &header, _current_line_no));
 
 	// find and read file
 	string path = find_header(header);
 
 	if(!path.length()) // find_header failed
 	{
-		ERROR_F(line_no, "Could not find header '%s'.", header.c_str());
+		ERROR_F(_current_line_no, "Could not find header '%s'.", header.c_str());
+		SUBMIT_LINE("");
 		return;
 	}
 	else if(find(_blocked_files.begin(), _blocked_files.end(), path) != _blocked_files.end())
@@ -334,7 +359,8 @@ HANDLER(apply)
 	}
 	else if(_apply_depth > MAX_APPLY_DEPTH) // too deep
 	{
-		ERROR_F(line_no, "Inclusion depth surpassed limit of %d.", MAX_APPLY_DEPTH);
+		ERROR_F(_current_line_no, "Inclusion depth surpassed limit of %d.", MAX_APPLY_DEPTH);
+		SUBMIT_LINE("");
 		return;
 	}
 	
@@ -365,12 +391,12 @@ HANDLER(info)
 	vector<string> args = tools::split_string(line, " ");
 	if(!args.size() || !args[0].length())
 	{
-		ERROR(line_no, "Expected arguments after #info.");
+		ERROR(_current_line_no, "Expected arguments after #info.");
 		return;
 	}
-	else if(!handle_pragma(args, line_no))
+	else if(!handle_pragma(args, _current_line_no))
 	{
-		ERROR_F(line_no, "Invalid arguments for '#info %s'.", args[0].c_str());
+		ERROR_F(_current_line_no, "Invalid arguments for '#info %s'.", args[0].c_str());
 		return;
 	}
 }
@@ -380,9 +406,9 @@ HANDLER(file)
 	if(IN_FALSE_BRANCH) { SUBMIT_LINE(""); return; }
 
 	// get filename
-	TRY_TO(consume_string(&line, &_current_file, line_no));
+	TRY_TO(consume_string(&line, &_current_file, _current_line_no));
 	// DEBUG_PRINT_F_MSG("Set filename to '%s'.", _current_file.c_str());
-	LINE_MARKER(line_no);
+	LINE_MARKER(_current_line_no);
 
 	ASSERT_END_OF_LINE();
 }
@@ -392,7 +418,7 @@ HANDLER(line)
 	if(IN_FALSE_BRANCH) { SUBMIT_LINE(""); return; }
 
 	// get lineno
-	TRY_TO(consume_integer(&line, &_current_line_no, line_no));
+	TRY_TO(consume_integer(&line, &_current_line_no, _current_line_no));
 	LINE_MARKER(_current_line_no);
 
 	ASSERT_END_OF_LINE();
@@ -405,11 +431,11 @@ HANDLER(flag)
 	if(IN_FALSE_BRANCH) return;
 
 	string flag;
-	TRY_TO(consume_identifier(&line, &flag, line_no));
+	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
 
 	if(CHECK_FLAG(flag))
 	{
-		ERROR_F(line_no, "Flag '%s' is already set.", flag.c_str());
+		ERROR_F(_current_line_no, "Flag '%s' is already set.", flag.c_str());
 		return;
 	}
 	
@@ -425,11 +451,11 @@ HANDLER(unflag)
 	if(IN_FALSE_BRANCH) return;
 
 	string flag;
-	TRY_TO(consume_identifier(&line, &flag, line_no));
+	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
 
 	if(!CHECK_FLAG(flag))
 	{
-		ERROR_F(line_no, "Flag '%s' is not set.", flag.c_str());
+		ERROR_F(_current_line_no, "Flag '%s' is not set.", flag.c_str());
 		return;
 	}
 	
@@ -446,7 +472,7 @@ HANDLER(ifset)
 	if(IN_FALSE_BRANCH) { _branches->push(false); return; }
 
 	string flag;
-	TRY_TO(consume_identifier(&line, &flag, line_no));
+	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
 	// DEBUG_PRINT_F_MSG("Started if-branch with '%s'", flag.c_str());
 	_branches->push(CHECK_FLAG(flag));
 	
@@ -459,7 +485,7 @@ HANDLER(ifnset)
 	if(IN_FALSE_BRANCH) { _branches->push(false); return; }
 
 	string flag;
-	TRY_TO(consume_identifier(&line, &flag, line_no));
+	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
 	// DEBUG_PRINT_F_MSG("Started if-not-branch with '%s'", flag.c_str());
 	_branches->push(!CHECK_FLAG(flag));
 
@@ -470,7 +496,7 @@ HANDLER(else)
 {
 	if(!_branches->size())
 	{
-		ERROR(line_no, "Stray '#else'.");
+		ERROR(_current_line_no, "Stray '#else'.");
 		return;
 	}
 	_branches->top() = !_branches->top();
@@ -483,7 +509,7 @@ HANDLER(endif)
 {
 	if(!_branches->size())
 	{
-		ERROR(line_no, "Stray '#endif'.");
+		ERROR(_current_line_no, "Stray '#endif'.");
 		return;
 	}
 	_branches->pop();

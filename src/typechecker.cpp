@@ -429,8 +429,11 @@ VISIT(BlockNode)
 {
 	for(auto& subnode : node->_statements)
 	{
-		subnode->accept(this);
-		pop();
+		if(subnode)
+		{
+			subnode->accept(this);
+			pop();
+		}
 		_panic_mode = false;
 	}
 	push(nullptr);
@@ -645,8 +648,26 @@ VISIT(GroupingNode)
 
 VISIT(SubscriptNode)
 {
-	// TODO
 	node->_left->accept(this);
+	ParsedType* lhs = pop();
+
+	// lhs must be pointer or array
+	if(!lhs->get_depth())
+	{
+		ERROR_AT(&node->_token, "Subscripted value is not an array or pointer.", 0);
+		push(ParsedType::new_invalid());
+		return;
+	}
+
+	node->_right->accept(this);
+	ParsedType* rhs = pop();
+
+	// try to cast rhs to int
+	if(!can_cast_types(rhs, PTYPE(TYPE_INTEGER)))
+		ERROR_AT(&node->_token, "Cannot convert from type " COLOR_BOLD "'%s'" \
+				COLOR_NONE " to integer type for subscript.", rhs->to_c_string());
+	
+	push(lhs->copy_element_of());
 }
 
 

@@ -6,6 +6,7 @@
 		{ "include": "#pre-directives" },
 		{ "include": "#comments" },
 
+		{ "include": "#funcdeclarations" },
 		{ "include": "#declarations" },
 		
 		{ "include": "#operators" },
@@ -177,7 +178,6 @@
 				{ "include": "#comments" },
 
 				{ "include": "#vardeclarations" },
-				{ "include": "#funcdeclarations" },
 				{ "include": "#statements" },
 				{ "include": "#separators" },
 
@@ -329,6 +329,10 @@
 		"operators": 
 		{
 			"patterns": [
+				{
+					"name": "punctuation.accessor.evi",
+					"match": "@"
+				},
 				{
 					"name": "keyword.operator.bitwise.shift.evi",
 					"match": "<<|>>|>>"

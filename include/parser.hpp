@@ -55,10 +55,12 @@ private:
 
 	void advance(bool can_trigger_lint = true);
 	bool check(TokenType type);
-	void consume(TokenType type, string message);
+	bool consume(TokenType type, string message);
 	ParsedType* consume_type(string msg = "Expected type.");
 	bool match(TokenType type);
 	bool is_at_end();
+
+	#define CONSUME_OR_RET_NULL(type, msg) if(!consume(type, msg)) return nullptr;
 
 	void generate_lint();
 

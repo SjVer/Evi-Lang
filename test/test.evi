@@ -1,23 +1,10 @@
-\:
-#apply "std-io"
-#apply "std-math"
+#apply "std/mem"
 
-@func i128 (i1 i4 i8) {}
-
-@main i32 (i64 chr*)
+@main i32 ()
 {
-	wrong();
+	%arr i32* [1, 2, 3, 4, 5];
 
-	func(1, 2, 3);
+	~ $arr@2; \ returns 3
 
-	%x i32 "1.0";
-	%y nll "1.0";
-}
-:\
-
-@main nll ()
-{
-	%arr i32*;
-
-	=arr@1@2@3 0;
+	$arr;
 }

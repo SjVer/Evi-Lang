@@ -3,6 +3,7 @@
 
 #include "common.hpp"
 #include "error.hpp"
+#include "lint.hpp"
 #include "scanner.hpp"
 
 extern int include_paths_count;
@@ -39,19 +40,18 @@ private:
 		DIR_INVALID
 	} DirectiveType;
 
-	typedef void(Preprocessor::*DirectiveHandler)(string, uint);
+	typedef void(Preprocessor::*DirectiveHandler)(string);
 
 	// methods
 	#define ERR_PROMPT "Preprocessing Error"
-	#define ERROR(line, msg) { \
-		_error_dispatcher.error_at_line(\
-		line, _current_file.c_str(), ERR_PROMPT, msg); _had_error = true; }
-	#define ERROR_F(line, format, ...) { _error_dispatcher.error_at_line(\
-		line, _current_file.c_str(), ERR_PROMPT, tools::fstr(format, __VA_ARGS__).c_str()); _had_error = true; }
+	#define ERROR(line, msg) { error_at_line(line, msg); }
+	#define ERROR_F(line, format, ...) { error_at_line(line, tools::fstr(format, __VA_ARGS__).c_str()); }
 
 	void process_lines(vector<string> lines);
 	vector<string> remove_comments(vector<string> lines);
 	string find_header(string name);
+
+	void error_at_line(uint line, const char* message);
 
 	string strip_start(string str);
 	bool consume_identifier(string* str, string* dest, uint line);
@@ -60,11 +60,11 @@ private:
 
 	DirectiveType get_directive_type(string str);
 	DirectiveHandler get_directive_handler(DirectiveType type);
-	void handle_directive(string line, uint line_idx);
+	void handle_directive(string line, uint line_no);
 
-	bool handle_pragma(vector<string> args, uint line_idx);
+	bool handle_pragma(vector<string> args, uint line_no);
 
-	#define HANDLER(name) void handle_directive_##name(string line, uint line_no)
+	#define HANDLER(name) void handle_directive_##name(string line)
 		HANDLER(apply);
 		HANDLER(info);
 		HANDLER(file);
@@ -80,6 +80,7 @@ private:
 	#undef HANDLER
 
 	// members
+	const char* _source;
 	vector<string> _lines;
 	string _current_file;
 	uint _current_line_no;

@@ -1,9 +1,9 @@
-import { TextDocument, Position, window, workspace } from 'vscode';
+import { TextDocument, Position, window, workspace, MarkdownString, Uri } from 'vscode';
+import { BackwardIterator } from './backwardIterator';
 import { execSync } from 'child_process';
 import { copyFile, rm, writeFileSync } from 'fs';
 import { basename, dirname, join } from 'path';
 import { tmpdir } from 'os';
-import { stringify } from 'querystring';
 
 export enum eviLintType {
 	getDeclaration = 'declaration',
@@ -49,6 +49,9 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 	try { output = execSync(cmd).toString(); }
 	catch (error) { window.showErrorMessage(`Failed to execute Evi binary:\n\"${error}\"`); }
 
+	// remove ansii escape codes
+	output = output.replace(RegExp(String.fromCharCode(0x1b) + "\\[([0-9]+;)?[0-9]+m", "g"), '');
+
 	log("lint output: " + output);
 	
 	let data: any;
@@ -84,7 +87,7 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 							file: info['file'] == tmpfile ? document.fileName : info['file'],
 							line: info['line'] - 1,
 							column: info['column'],
-							length: info['length'],
+							length: info['length'] > 0 ? info['length'] : document.lineAt(info['line'] - 1).range.end.character,
 						},
 						message: info['message'],
 					});
@@ -129,4 +132,54 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 			return result;
 		}
 	} } catch (e) { log(e); }
+}
+
+export async function getDocumentation(document: TextDocument, position: Position): Promise<MarkdownString> {
+	// get defenition location of function
+	const declaration: eviLintDeclaration = callEviLint(document, eviLintType.getDeclaration, position);
+	if (!declaration) return new MarkdownString("Function declaration not found.");
+	
+	let delcdoc: TextDocument = await workspace.openTextDocument(Uri.file(declaration.position.file));
+	if (!delcdoc) return new MarkdownString("Could not open file " + declaration.position.file);
+
+	let it = new BackwardIterator(delcdoc, declaration.position.column, declaration.position.line);
+
+	// get newline before declaration
+	while (it.hasNext()) { if (it.next() == "\n") break; };
+
+	// get full documentation
+	let doc: string = "";
+	while (it.hasNext()) {
+		const c = it.next();
+		if (c == "\n" && !doc.startsWith("\\?")) {
+			// end of documentation, remove last (non-doc) line
+			doc = doc.slice(doc.indexOf("\\?"));
+			break;
+		}
+		doc = c + doc;
+	}
+	// replace comment tokens with just newlines
+	doc = doc.replace(/\n?\\\?\s*/g, "\n") + "\n";
+	while (doc.startsWith("\n")) doc = doc.slice(1);
+
+	// get parameters
+	let params: { [key: string]: string } = { };
+	const paramRegex = /\n\s*\@param\s+([0-9]+)\s+(.*)\n/;
+	while (paramRegex.test(doc)) {
+		const match = doc.match(paramRegex);
+		doc = doc.replace(match[0], "\n");
+		params[match[1]] = match[2];
+	}
+	for (const param in params) doc += `\n*@param* \`${param}\` - ${params[param]}`;
+	
+	// get return type
+	const retRegex = /\n\s*\@ret\s+(.*)\n/;
+	if (retRegex.test(doc)) {
+		const match = doc.match(retRegex);
+		doc = doc.replace(match[0], "\n");
+		doc += `\n*@ret* - ${match[1]}`;
+	}
+
+	// format final documentation
+	return new MarkdownString(doc.trim().replaceAll("\n", " \\\n"));
 }

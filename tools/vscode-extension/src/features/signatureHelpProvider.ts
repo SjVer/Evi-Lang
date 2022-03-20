@@ -1,13 +1,10 @@
-import { SignatureHelpProvider, SignatureHelp, SignatureInformation, CancellationToken, TextDocument, Position, workspace, window, Uri } from 'vscode';
-// import eviSymbols = require('./eviSymbols');
-import { callEviLint, eviLintDeclaration, eviLintType } from './utils/eviLintUtil';
+import { SignatureHelpProvider, SignatureHelp, SignatureInformation, CancellationToken, TextDocument, Position, workspace, window } from 'vscode';
+import { callEviLint, eviLintType, getDocumentation } from './utils/eviLintUtil';
 import { BackwardIterator } from './utils/backwardIterator';
-
-interface FuncDocumentation { information?: string, parameters: { [key: string]: string } };
 
 export default class EviSignatureHelpProvider implements SignatureHelpProvider {
 
-	public provideSignatureHelp(document: TextDocument, position: Position, _token: CancellationToken): Promise<SignatureHelp> | null {
+	public async provideSignatureHelp(document: TextDocument, position: Position, _token: CancellationToken): Promise<SignatureHelp | null> {
 		if (!workspace.getConfiguration('evi').get<boolean>('suggestions', true)) return null;
 
 		let iterator = new BackwardIterator(document, position.character - 1, position.line);
@@ -32,10 +29,10 @@ export default class EviSignatureHelpProvider implements SignatureHelpProvider {
 			if (signature.endsWith(' ')) signature = signature.substring(0, signature.length - 1);
 			signature += ')';
 		});
+		if(!signature.length) return Promise.reject("Function not found.");
 
-		console.log(this.getDocumentation(document, position));
-
-		let signatureInfo = new SignatureInformation(signature, /* documentation */);
+		const doc = await getDocumentation(document, position);
+		let signatureInfo = new SignatureInformation(signature, doc);
 		params.forEach(param => signatureInfo.parameters.push({ label: param, documentation: undefined }));
 		
 		let ret = new SignatureHelp();
@@ -113,22 +110,5 @@ export default class EviSignatureHelpProvider implements SignatureHelpProvider {
 			}
 		}
 		return ident;
-	}
-
-	private getDocumentation(document: TextDocument, position: Position): FuncDocumentation {
-		// get defenition location of function
-		const declaration: eviLintDeclaration = callEviLint(document, eviLintType.getDeclaration, position);
-		if (!declaration) return { information: "Function declaration not found.", parameters: {} };
-		
-		let delcdoc: TextDocument = undefined;
-		workspace.openTextDocument(Uri.file(declaration.position.file)).then(doc => delcdoc = doc);
-		if (!delcdoc) return { information: "Could not open document.", parameters: {} };
-
-		let iterator = new BackwardIterator(delcdoc, declaration.position.column, declaration.position.line);
-
-		let idk: string = "";
-		while (iterator.hasNext() && idk.length < 5) idk += iterator.next();
-
-		return { information: idk, parameters: {} };
 	}
 }

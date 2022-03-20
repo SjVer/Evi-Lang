@@ -30,20 +30,21 @@
 
 \ =================================== Functions ====================================
 
-\? allocates an array of n elements each of which will be n bytes in size
+\? allocates an array of n elements each of which will be n bytes in size.
 \? @param 0 the amount of elements
 \? @param 1 the size in bytes of each element
 @calloc nll* (i32 i32);
 
-\? allocates an array of n bytes and returns them uninitialized
+\? allocates an array of n bytes and returns them uninitialized.
 \? @param 0 the size in bytes of the array
 @malloc nll* (sze);
 
-\? re-allocates memory extending it to a given size
+\? re-allocates memory extending it to a given size.
 \? @param 0 the address to re-allocate
 \? @param 1 the new size in bytes
+\? @ret a pointer to the address, or a null pointer if reallocation failed
 @realloc nll* (nll* i32);
 
-\? releases a block of memory block specified by address
+\? releases a block of memory block specified by address.
 \? @param 0 the address to free
 @free nll (nll*);
