@@ -1015,7 +1015,6 @@ ReferenceNode* Parser::reference()
 			return nullptr;
 		}
 		ParsedType* type = _current_scope.func_props.params[intval];
-		type->_is_reference = true;
 		return new ReferenceNode(_previous, "", intval, type);
 	}
 	assert(false);

@@ -706,8 +706,9 @@ VISIT(ArrayNode)
 
 VISIT(ReferenceNode)
 {
-	node->_cast_to = node->_type;
-	push(node->_type);
+	node->_cast_to = node->_type->copy();
+	node->_cast_to->_is_reference = true;
+	push(node->_cast_to);
 }
 
 VISIT(CallNode)

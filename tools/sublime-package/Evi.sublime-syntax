@@ -104,21 +104,15 @@ contexts:
       scope: keyword.operator.arithmetic.evi
 
   subscript:
-    # - match: \[
-    #   scope: punctuation.section.brackets.begin.evi
-    #   push:
-    #     - include: expression
-    #     - match: \]
-    #       scope: punctuation.section.brackets.end.evi
-    #       pop: true
-    #     - include: comment
-    #     - include: invalids
-    - match: \@
-      scope: punctuation.accessor.evi
-      # push:
-      #   - include: comment
-      #   - include: expression
-      #   - include: invalids
+    - match: \[
+      scope: punctuation.section.brackets.begin.evi
+      push:
+        - include: expression
+        - match: \]
+          scope: punctuation.section.brackets.end.evi
+          pop: true
+        - include: comment
+        - include: invalids
 
   # EXPRESSION
 
@@ -143,16 +137,17 @@ contexts:
       scope: variable.parameter.evi
 
   call:
-    - match: '({{ident}})\s*\('
+    - match: '({{ident}})\s*(\()'
       captures:
         1: variable.function.evi
-      # push:
-      #   - include: comment
-      #   # args
-      #   - meta_scope: meta.function-call-arguments.evi
-      #   - include: expression
-      #   - match: '\)'
-      #     pop: true
+        2: punctuation.section.arguments.begin.evi
+      push:
+        - include: comment
+        - match: \)
+          scope: punctuation.section.arguments.end.evi
+          pop: true
+        - include: expression
+        - include: invalids
 
   # STATEMENTS
 

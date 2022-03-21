@@ -1,10 +1,17 @@
 #apply "std/mem"
+#apply "std/io"
+
+@makearr i32* (i32);
 
 @main i32 ()
 {
-	\ %arr i32* {1, 2, 3, 4, 5};
-	%arr i32* malloc(4) -> i32*;
+	%size i32 5;
 
-	~ $arr[2]; \ returns 3
-	=arr[1][2] 2;
+	%arr i32* {1, 2, 3, 4, 5};
+	\ %arr i32* calloc($size, 4) -> i32*;
+
+	!!(%i i32 0; $i < $size; =i ++$i;)
+		=arr[$i] $i;
+
+	!!(%i i32 0; $i < 5; =i ++$i;) printi($arr[$i]);
 }

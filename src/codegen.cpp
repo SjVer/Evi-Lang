@@ -389,8 +389,18 @@ VISIT(VarDeclNode)
 
 VISIT(AssignNode)
 {
-	llvm::Value* var = _named_values[node->_ident].first;
+	llvm::Value* target = _named_values[node->_ident].first;
 	ParsedType* type = _named_values[node->_ident].second;
+
+	// handle subscripts
+	for(auto& subnode : node->_subscripts)
+	{
+		subnode->accept(this);
+		llvm::Value* index = pop();
+
+		target = _builder->CreateInBoundsGEP(_builder->CreateLoad(target, "asslodtmp"), index, "assgeptmp");
+		type = type->copy_element_of();
+	}
 
 	node->_expr->accept(this);
 	llvm::Value* rawval = pop();
@@ -399,7 +409,7 @@ VISIT(AssignNode)
 		rawval, true, type->get_llvm_type(), type->is_signed());
 	llvm::Value* val = _builder->CreateCast(cop, rawval, type->get_llvm_type());
 	
-	_builder->CreateStore(val, var);
+	_builder->CreateStore(val, target);
 }
 
 VISIT(IfNode)
@@ -766,8 +776,8 @@ VISIT(UnaryNode)
 	llvm::Type* casttype = parsedtype->get_llvm_type();
 	llvm::Value* value = pop();
 
-	if(node->_optype != TOKEN_STAR && node->_optype != TOKEN_AND)
-		value = create_cast(value, false, casttype, parsedtype->is_signed());
+	// if(node->_optype != TOKEN_STAR && node->_optype != TOKEN_AND)
+	// 	value = create_cast(value, false, casttype, parsedtype->is_signed());
 
 	switch(node->_optype)
 	{
@@ -819,15 +829,24 @@ VISIT(UnaryNode)
 VISIT(GroupingNode)
 {
 	node->_expr->accept(this);
-	ParsedType* casttype = node->_cast_to;
-	push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
+	// ParsedType* casttype = node->_cast_to;
+	// push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
+	// push(pop());
 }
 
 VISIT(SubscriptNode)
 {
 	node->_expr->accept(this);
-	ParsedType* casttype = node->_cast_to;
-	push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
+	llvm::Value* ptr = pop();
+
+	node->_index->accept(this);
+	llvm::Value* index = pop();
+
+	llvm::Value* gep = _builder->CreateInBoundsGEP(ptr, index, "sgeptmp");
+
+	// ParsedType* casttype = node->_cast_to;
+	// push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
+	push(_builder->CreateLoad(gep, "subscrtmp"));
 }
 
 
@@ -878,8 +897,9 @@ VISIT(LiteralNode)
 		default: assert(false);
 	}
 
-	ParsedType* casttype = node->_cast_to;
-	push(create_cast(constant, type->is_signed(), casttype->get_llvm_type(), casttype->is_signed()));
+	// ParsedType* casttype = node->_cast_to;
+	// push(create_cast(constant, type->is_signed(), casttype->get_llvm_type(), casttype->is_signed()));
+	push(constant);
 }
 
 VISIT(ArrayNode)
@@ -932,7 +952,9 @@ VISIT(ReferenceNode)
 		type = _named_values[tools::fstr("%d", node->_parameter)].second;
 	}
 
-	if(node->_cast_to->_keep_as_reference)
+	// cerr << string(node->_token.start, node->_token.length) + tools::fstr(" %d ", node->_token.line) + (node->_cast_to ? " yup" : " nop") << endl;
+
+	if(type->_keep_as_reference)
 	{
 		// DEBUG_PRINT_F_MSG("kept '%s' as ref", node->_variable.c_str());
 		push(var);
@@ -940,8 +962,9 @@ VISIT(ReferenceNode)
 	else
 	{
 		llvm::LoadInst* load = _builder->CreateLoad(type->get_llvm_type(), var, "loadtmp");
-		ParsedType* casttype = node->_cast_to;
-		push(create_cast(load, type->is_signed(), casttype->get_llvm_type(), casttype->is_signed()));
+		// ParsedType* casttype = node->_cast_to;
+		// push(create_cast(load, type->is_signed(), casttype->get_llvm_type(), casttype->is_signed()));
+		push(load);
 	}
 }
 
@@ -954,9 +977,10 @@ VISIT(CallNode)
 	for(int i = 0; i < node->_arguments.size(); i++)
 	{
 		node->_arguments[i]->accept(this);
+
 		llvm::Type* casttype = callee->getArg(i)->getType();
-		
 		args.push_back(create_cast(pop(), false, casttype, node->_expected_arg_types[i]->is_signed()));
+		// args.push_back(pop());
 	}
 
 	if(AS_LEX(node->_ret_type) == TYPE_VOID && !node->_ret_type->is_pointer())
