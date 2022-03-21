@@ -904,33 +904,30 @@ VISIT(LiteralNode)
 
 VISIT(ArrayNode)
 {
+	llvm::ArrayType* arrtype = llvm::ArrayType::get(node->_cast_to->copy_element_of()->get_llvm_type(), node->_elements.size());
+	llvm::Type* ptrtype = node->_cast_to->get_llvm_type();
+
 	// alloca array
-	llvm::AllocaInst* arr = new llvm::AllocaInst(
-		node->_cast_to->get_llvm_type(), 0, string("arrtmp"), _builder->GetInsertBlock());
+	llvm::AllocaInst* arr = new llvm::AllocaInst(arrtype, 0, string("arrtmp"), _builder->GetInsertBlock());
 	arr->setAlignment(llvm::Align(node->_cast_to->get_alignment()));
 
 	// get base pointer to array
-	llvm::ConstantInt* idx0 = llvm::ConstantInt::get(__context, llvm::APInt(64, 0, false));
-	llvm::Value* ptr = _builder->CreateInBoundsGEP(
-		node->_cast_to->get_llvm_type(), arr, (llvm::Value*[2]){idx0, idx0}, "geptmp");
+	llvm::Value* ptr = _builder->CreateInBoundsGEP(arr, 
+		llvm::ConstantInt::get(__context, llvm::APInt(64, 0, false)), "arrgeptmp");
 
 	// iterate over elements
-	vector<llvm::Constant*> elements = vector<llvm::Constant*>();
 	for(int i = 0; i < node->_elements.size(); i++)
 	{
 		ExprNode* element = node->_elements[i];
 		element->accept(this);
-		// llvm::Value* val = create_cast(pop(), false, element->_cast_to->get_llvm_type(), 
-		// 							   element->_cast_to->is_signed());
+		// llvm::Value* val = create_cast(pop(), false, element->_cast_to->get_llvm_type(), element->_cast_to->is_signed());
 		llvm::Value* val = pop();
-		
+
 		_builder->CreateStore(val, ptr);
 		
 		// move pointer one up (so to next element)
-		if(i + 1 < node->_elements.size())
-			ptr = _builder->CreateInBoundsGEP(ptr, (llvm::Value*[1]){
-				llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false))
-			}, "geptmp");
+		ptr = _builder->CreateInBoundsGEP(ptrtype, ptr,
+			llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false)), "arrgeptmp");
 	}
 
 	push(arr);
