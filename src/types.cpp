@@ -1,7 +1,7 @@
 #include "types.hpp"
 
 ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
-			   		   bool is_reference, SubType subtypetype, ParsedType* subtype)
+			   		   bool is_reference, ParsedType* subtype)
 {
 	_lexical_type = lexical_type;
 
@@ -18,7 +18,6 @@ ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
 	}
 
 	_is_reference = is_reference;
-	_subtypetype = subtypetype;
 	_subtype = subtype;
 }
 
@@ -31,11 +30,8 @@ ParsedType* ParsedType::new_invalid()
 
 ParsedType* ParsedType::copy()
 {
-	ParsedType* ret = new ParsedType(
-		_lexical_type, _evi_type, _is_reference,
-		_subtypetype, nullptr);
-	if(_subtypetype != SUBTYPE_NONE)
-		ret->_subtype = _subtype->copy();
+	ParsedType* ret = new ParsedType(_lexical_type, _evi_type, _is_reference, nullptr);
+	if(_subtype) ret->_subtype = _subtype->copy();
 	return ret;
 }
 
@@ -50,44 +46,27 @@ ParsedType* ParsedType::copy_pointer_to()
 {
 	ParsedType* ret = this->copy();
 	ret->_subtype = this->copy();
-	ret->_subtypetype = SUBTYPE_POINTER;
-	return ret;
-}
-
-ParsedType* ParsedType::copy_array_of(int len)
-{
-	ParsedType* ret = this->copy();
-	ret->_subtype = this->copy();
-	ret->_subtypetype = SUBTYPE_ARRAY;
-	ret->_evi_type = (EviType*)((long)len);
 	return ret;
 }
 
 ParsedType* ParsedType::copy_element_of()
 {
-	assert(_subtypetype != SUBTYPE_NONE);
+	assert(_subtype && "cannot copy element of non-pointer type!");
 	return _subtype->copy();
 }
 
 void ParsedType::set_lex_type(LexicalType type)
 {
 	_lexical_type = type;
-	if(_subtypetype != SUBTYPE_NONE)
-		_subtype->set_lex_type(type);
+	if(_subtype) _subtype->set_lex_type(type);
 }
 
 
 string ParsedType::to_string()
 {
 	if(_invalid) return string("???");
-	else if(_subtypetype == SUBTYPE_ARRAY && (long)_evi_type < 0)
-		return _subtype->to_string() + "|?|";
-	else if(_subtypetype == SUBTYPE_ARRAY)
-		return _subtype->to_string() + tools::fstr("|%u|", (long)_evi_type);
-	else if(_subtypetype == SUBTYPE_POINTER)
-		return _subtype->to_string() + '*';
-	else
-		return _evi_type->_name;
+	else if(_subtype) return _subtype->to_string() + '*';
+	else return _evi_type->_name;
 }
 
 const char* ParsedType::to_c_string()
@@ -99,24 +78,20 @@ const char* ParsedType::to_c_string()
 llvm::Type* ParsedType::get_llvm_type()
 {
 	if(_invalid) return nullptr;
-	else if(_subtypetype == SUBTYPE_ARRAY)
-		return llvm::ArrayType::get(_subtype->get_llvm_type(), (long)_evi_type);
-	else if(_subtypetype == SUBTYPE_POINTER)
+	else if(_subtype) 
+	{
+		// for llvm void* is invalid
+		if(!_subtype->is_pointer() && _subtype->_lexical_type == TYPE_VOID)
+			return llvm::IntegerType::getInt8PtrTy(__context);
 		return _subtype->get_llvm_type()->getPointerTo();
+	}
 	else return _evi_type->_llvm_type;
 }
 
 
 bool ParsedType::eq(ParsedType* rhs, bool simple)
 {
-	if(_subtypetype != rhs->_subtypetype) return false;
-
-	if(_subtypetype != SUBTYPE_NONE)
-	{
-		return _subtypetype == rhs->_subtypetype
-			&& get_depth() == rhs->get_depth()
-			&& _subtype->eq(rhs->_subtype);
-	}
+	if(_subtype) return get_depth() == rhs->get_depth() && _subtype->eq(rhs->_subtype);
 
 	return _lexical_type == rhs->_lexical_type
 		&& (simple || _evi_type->eq(rhs->_evi_type));
@@ -124,45 +99,25 @@ bool ParsedType::eq(ParsedType* rhs, bool simple)
 
 uint ParsedType::get_alignment()
 {
-	if(_subtypetype == SUBTYPE_ARRAY) return _subtype->get_alignment() * (long)_evi_type;
-	else if(_subtypetype == SUBTYPE_POINTER) return POINTER_ALIGNMENT;
+	if(_subtype) return POINTER_ALIGNMENT;
 	else return _evi_type->_alignment;
 }
 
 uint ParsedType::get_depth()
 {
-	if(_subtypetype != SUBTYPE_NONE)
-		return _subtype->get_depth() + 1;
+	if(_subtype) return _subtype->get_depth() + 1;
 	else return 0;
-}
-
-int ParsedType::get_array_size()
-{
-	assert(_subtypetype == SUBTYPE_ARRAY);
-	return (long)_evi_type;
-}
-
-void ParsedType::set_array_size(int size)
-{
-	assert(_subtypetype == SUBTYPE_ARRAY);
-	_evi_type = (EviType*)((long)size);
-}
-
-bool ParsedType::is_array()
-{
-	// ez
-	return _subtypetype == SUBTYPE_ARRAY;
 }
 
 bool ParsedType::is_pointer()
 {
 	// ez
-	return _subtypetype == SUBTYPE_POINTER;
+	return (bool)_subtype;
 }
 
 bool ParsedType::is_signed()
 {
-	if(_subtypetype != SUBTYPE_NONE) return false;
+	if(_subtype) return false;
 	return _evi_type->_is_signed;
 }
 

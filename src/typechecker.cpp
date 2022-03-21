@@ -85,10 +85,6 @@ ParsedType* TypeChecker::resolve_types(ParsedType* original, ParsedType* adapted
 	// DEBUG_PRINT_F_MSG("resolve_types(%s, %s) (%s)", original->to_c_string(), adapted->to_c_string(),
 	// 												original->eq(adapted) ? "same" : "different");
 
-	// // if a|?| with b|x| than a|x|
-	// if(original->is_array() && adapted->is_array() && original->get_array_size() < 0)
-	// 	original->set_array_size(adapted->get_array_size());
-
 	if(original->eq(adapted)) return original->copy();
 
 	if(original->get_depth() == adapted->get_depth())
@@ -138,43 +134,26 @@ ParsedType* TypeChecker::resolve_types(ParsedType* original, ParsedType* adapted
 			default: return nullptr;
 		}
 	}
-	else if(original->get_depth())
+	else if(original->is_pointer())
 	{
-		// both arrays/ptrs, compare elements
-		if(adapted->get_depth())
-		{
-			if(original->is_array())
-				return resolve_types(
-					original->copy_element_of(),
-					adapted->copy_element_of()
-				)->copy_array_of(original->get_array_size());
-			else
-				return resolve_types(
-					original->copy_element_of(),
-					adapted->copy_element_of()
-				)->copy_pointer_to();
-		}
-		else if(original->is_pointer())
-		{
-			// original = ptr or array, adapted = value
-			switch (adapted->_lexical_type)
-			{
-				case TYPE_BOOL:
-				case TYPE_INTEGER:
-				case TYPE_CHARACTER:
-					return original->copy_change_lex(TYPE_INTEGER);
+		// both ptrs, compare elements
+		if(adapted->is_pointer()) return resolve_types(
+			original->copy_element_of(), adapted->copy_element_of())->copy_pointer_to();
 
-				default: return nullptr;
-			}
-		}
-		else if(original->is_array())
+		// original = ptr, adapted = value
+		switch (adapted->_lexical_type)
 		{
-			// >:(
-			return nullptr;
+			case TYPE_BOOL:
+			case TYPE_INTEGER:
+			case TYPE_CHARACTER:
+				return original->copy_change_lex(TYPE_INTEGER);
+
+			default: return nullptr;
 		}
+
 		assert(false);
 	}
-	else if(adapted->get_depth())
+	else if(adapted->is_pointer())
 	{
 		// e.g. "int** a = int* b" is basically "int* a = int b"
 		// so relative to right, left is a pointer
@@ -247,7 +226,7 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 			default: return false;
 		}
 	}
-	else if(from->get_depth() == 0)
+	else if(from->is_pointer())
 	{
 		// pointer/array -> plain type
 
@@ -263,7 +242,7 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 				return false;
 		}
 	}
-	else if(to->get_depth() == 0)
+	else if(to->get_depth())
 	{
 		// plain type -> pointer/array
 
@@ -345,11 +324,22 @@ VISIT(AssignNode)
 	ParsedType* exprtype = pop();
 	ParsedType* vartype = node->_expected_type;
 
+	// handle subscript
+	for(auto& subscript : node->_subscripts)
+	{
+		if(!vartype->is_pointer())
+		{
+			ERROR_AT(&subscript->_token, "Subscripted target is not a pointer.", 0);
+			return;
+		}
+		else vartype = vartype->copy_element_of();
+	}
+
 	ParsedType* result = resolve_types(vartype, exprtype);
 
 	if(!can_cast_types(result, vartype)) 
 		ERROR_AT(&node->_token, "Cannot implicitly convert expression of type " COLOR_BOLD \
-		"'%s'" COLOR_NONE " to variable's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
+		"'%s'" COLOR_NONE " to target's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 		exprtype->to_c_string(), vartype->to_c_string());
 	else if(!exprtype->eq(vartype, true))
 		CONVERSION_WARNING_AT(&node->_token, exprtype, vartype);
@@ -563,7 +553,43 @@ VISIT(UnaryNode)
 	node->_expr->accept(this);
 	ParsedType* type = pop();
 
-	if(!type->is_array() && !type->is_pointer()) switch(node->_optype) // we're dealing with a pointer
+	if(type->is_pointer()) switch(node->_optype) // we're dealing with a pointer
+	{
+		case TOKEN_STAR:
+		{
+			node->_expr->_cast_to = type->copy_element_of();
+			node->_expr->_cast_to->_keep_as_reference = true;
+			push(node->_expr->_cast_to);
+			break;
+		}
+		case TOKEN_AND:
+		{
+			node->_expr->_cast_to = type->copy_pointer_to();
+			node->_expr->_cast_to->_keep_as_reference = true;
+			push(node->_expr->_cast_to);
+			break;
+		}
+		case TOKEN_BANG:
+		{
+			node->_expr->_cast_to = PTYPE(TYPE_BOOL);
+			push(node->_expr->_cast_to);
+			break;
+		}
+
+		case TOKEN_MINUS:
+		case TOKEN_PLUS_PLUS:
+		case TOKEN_MINUS_MINUS:
+		{
+			// pointer arithmetic :(
+			node->_expr->_cast_to = PTYPE(TYPE_INTEGER);
+			push(node->_expr->_cast_to);
+			CONVERSION_WARNING_AT(&node->_token, type, node->_expr->_cast_to);
+			break;
+		}
+
+		default: assert(false);
+	}
+	else switch(node->_optype) // not a pointer
 	{
 		case TOKEN_STAR:
 		{
@@ -603,42 +629,6 @@ VISIT(UnaryNode)
 
 		default: assert(false);
 	}
-	else switch(node->_optype)
-	{
-		case TOKEN_STAR:
-		{
-			node->_expr->_cast_to = type->copy_element_of();
-			node->_expr->_cast_to->_keep_as_reference = true;
-			push(node->_expr->_cast_to);
-			break;
-		}
-		case TOKEN_AND:
-		{
-			node->_expr->_cast_to = type->copy_pointer_to();
-			node->_expr->_cast_to->_keep_as_reference = true;
-			push(node->_expr->_cast_to);
-			break;
-		}
-		case TOKEN_BANG:
-		{
-			node->_expr->_cast_to = PTYPE(TYPE_BOOL);
-			push(node->_expr->_cast_to);
-			break;
-		}
-
-		case TOKEN_MINUS:
-		case TOKEN_PLUS_PLUS:
-		case TOKEN_MINUS_MINUS:
-		{
-			// pointer arithmetic :(
-			node->_expr->_cast_to = PTYPE(TYPE_INTEGER);
-			push(node->_expr->_cast_to);
-			CONVERSION_WARNING_AT(&node->_token, type, node->_expr->_cast_to);
-			break;
-		}
-
-		default: assert(false);
-	}
 }
 
 VISIT(GroupingNode)
@@ -648,26 +638,26 @@ VISIT(GroupingNode)
 
 VISIT(SubscriptNode)
 {
-	node->_left->accept(this);
-	ParsedType* lhs = pop();
+	node->_expr->accept(this);
+	ParsedType* exprtype = pop();
 
 	// lhs must be pointer or array
-	if(!lhs->get_depth())
+	if(!exprtype->get_depth())
 	{
-		ERROR_AT(&node->_token, "Subscripted value is not an array or pointer.", 0);
+		ERROR_AT(&node->_token, "Subscripted value is not a pointer.", 0);
 		push(ParsedType::new_invalid());
 		return;
 	}
 
-	node->_right->accept(this);
-	ParsedType* rhs = pop();
+	node->_index->accept(this);
+	ParsedType* indextype = pop();
 
 	// try to cast rhs to int
-	if(!can_cast_types(rhs, PTYPE(TYPE_INTEGER)))
+	if(!can_cast_types(indextype, PTYPE(TYPE_INTEGER)))
 		ERROR_AT(&node->_token, "Cannot convert from type " COLOR_BOLD "'%s'" \
-				COLOR_NONE " to integer type for subscript.", rhs->to_c_string());
+				COLOR_NONE " to integer type for subscript.", indextype->to_c_string());
 	
-	push(lhs->copy_element_of());
+	push(exprtype->copy_element_of());
 }
 
 
@@ -679,7 +669,7 @@ VISIT(LiteralNode)
 		case TOKEN_FLOAT: 		node->_cast_to = PTYPE(TYPE_FLOAT); 	   push(node->_cast_to); break;
 		case TOKEN_CHARACTER: 	node->_cast_to = PTYPE(TYPE_CHARACTER);    push(node->_cast_to); break;
 		case TOKEN_STRING: 		
-			node->_cast_to = PTYPE(TYPE_CHARACTER)->copy_array_of(node->_string_value.length()); 
+			node->_cast_to = PTYPE(TYPE_CHARACTER)->copy_pointer_to(); 
 			push(node->_cast_to); break;
 		default: assert(false);
 	}
@@ -709,7 +699,6 @@ VISIT(ArrayNode)
 			exprtype->to_c_string(), firsttype->to_c_string());
 	}
 
-	// ParsedType* arrtype = firsttype->copy_array_of(node->_elements.size());
 	ParsedType* arrtype = firsttype->copy_pointer_to();
 	node->_cast_to = arrtype;
 	push(arrtype);

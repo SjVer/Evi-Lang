@@ -129,33 +129,8 @@ ParsedType* Parser::consume_type(string msg)
 		GET_EVI_TYPE(typestr)->_default_type,
 		GET_EVI_TYPE(typestr));
 
-	// can be array, pointer, etc
-	while(check(TOKEN_STAR) || check(TOKEN_PIPE)  )// || check(TOKEN_PIPE_PIPE))
-	{
-		if(match(TOKEN_STAR)) type = type->copy_pointer_to();
-		else if(match(TOKEN_PIPE))
-		{
-			bool first = true;
-			while(first  )// || match(TOKEN_PIPE_PIPE))
-			{
-				first = false;
-
-				// int must follow
-				if(!check(TOKEN_INTEGER) && !check(TOKEN_PIPE)  )// && !check(TOKEN_PIPE_PIPE))
-				{
-					error_at_current("Expected size or '|' after '|'.");
-					return PTYPE(TYPE_NONE);
-				}
-
-				type = type->copy_array_of(match(TOKEN_INTEGER) ? literal()->_int_value : -1);
-			}
-
-			CONSUME_OR_RET_NULL(TOKEN_PIPE, _previous.type == TOKEN_INTEGER ? 
-				// "Expected '|' afer size." : "Expected '|' or size after '|'.");
-				"Expected '|' afer size." : "Expected size after '|'.");
-		}
-		// else if(match(TOKEN_PIPE_PIPE)) type = type->copy_array_of(-1);
-	}
+	// can be pointer
+	while(match(TOKEN_STAR)) type = type->copy_pointer_to();
 
 	return type;
 }
@@ -583,7 +558,7 @@ StmtNode* Parser::statement()
 
 StmtNode* Parser::assign_statement()
 {
-	// assignment	: "=" IDENT ("@" ternary)* expression ";"
+	// assignment	: "=" IDENT ("[" expression "]")* expression ";"
 	Token tok = _previous;
 
 	CONSUME_OR_RET_NULL(TOKEN_IDENTIFIER, "Expected identifier after '='.");
@@ -592,7 +567,11 @@ StmtNode* Parser::assign_statement()
 
 	// allow subscript
 	vector<ExprNode*> subs = vector<ExprNode*>();
-	while(match(TOKEN_AT)) subs.push_back(ternary());
+	while(match(TOKEN_LEFT_B_BRACE))
+	{
+		subs.push_back(expression());
+		consume(TOKEN_RIGHT_B_BRACE, "Expected ']' after subscript index.");
+	}
 
 	ExprNode* expr = expression();
 	CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after expression.");
@@ -674,24 +653,8 @@ StmtNode* Parser::expression_statement()
 
 ExprNode* Parser::expression()
 {
-	// expression 	: subscript
-	return subscript();
-}
-
-ExprNode* Parser::subscript()
-{
-	// subscript	: ternary ("@" ternary)*
-
-	ExprNode* expr = ternary();
-
-	while(match(TOKEN_AT))
-	{
-		Token tok = _previous;
-		ExprNode* right = ternary();
-		expr = new SubscriptNode(tok, expr, right);
-	}
-
-	return expr;
+	// expression 	: ternary
+	return ternary();
 }
 
 ExprNode* Parser::ternary()
@@ -900,9 +863,9 @@ ExprNode* Parser::cast()
 
 ExprNode* Parser::unary()
 {
-	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | primary
+	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
 
-	if(/* match(TOKEN_STAR) || match(TOKEN_AND) || */ match(TOKEN_BANG)
+	if(match(TOKEN_STAR)  || match(TOKEN_AND) 		|| match(TOKEN_BANG)
 	|| match(TOKEN_MINUS) || match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS))
 	{
 		Token tok = _previous;
@@ -910,7 +873,24 @@ ExprNode* Parser::unary()
 		return new UnaryNode(tok, tok.type, expr);
 	}
 
-	return primary();
+	return subscript();
+}
+
+ExprNode* Parser::subscript()
+{
+	// subscript	: primary ("[" expression "]")*
+
+	ExprNode* expr = primary();
+
+	while(match(TOKEN_LEFT_B_BRACE))
+	{
+		Token tok = _previous;
+		ExprNode* index = expression();
+		consume(TOKEN_RIGHT_B_BRACE, "Expected ']' after subscript index.");
+		expr = new SubscriptNode(tok, expr, index);
+	}
+
+	return expr;
 }
 
 ExprNode* Parser::primary()
@@ -918,7 +898,7 @@ ExprNode* Parser::primary()
 	// primary		: NUMBER | CHAR | STRING | "(" expression ")"
 	// 				| array | reference | call
 
-	// array		: "[" (expression ("," expression)*)? "]"
+	// array		: "{" (expression ("," expression)*)? "}"
 	// reference	: "$" (IDENT | INTEGER)
 	// call			: IDENT "(" (expression ("," expression)*)? ")"
 	
@@ -939,7 +919,7 @@ ExprNode* Parser::primary()
 
 
 	// arrays
-	else if(match(TOKEN_LEFT_B_BRACE)) return array();
+	else if(match(TOKEN_LEFT_BRACE)) return array();
 
 	// references
 	else if(match(TOKEN_VARIABLE_REF) || match(TOKEN_PARAMETER_REF)) return reference();
@@ -1000,13 +980,13 @@ ArrayNode* Parser::array()
 	Token tok = _previous;
 
 	vector<ExprNode*> elements;
-	if(!check(TOKEN_RIGHT_B_BRACE)) do
+	if(!check(TOKEN_RIGHT_BRACE)) do
 	{
 		// simple expression
 		elements.push_back(expression());
 	} while(match(TOKEN_COMMA));
 
-	CONSUME_OR_RET_NULL(TOKEN_RIGHT_B_BRACE, "Expected ']' after elements.");
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_BRACE, "Expected '}' after array elements.");
 	return new ArrayNode(tok, elements);
 }
 

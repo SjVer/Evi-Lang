@@ -149,7 +149,6 @@ void CodeGenerator::finish()
 				"LLVM verification of globals initialization function failed: ");
 			llvm::verifyFunction(*_global_init_func_block->getParent(), _errstream);
 			cerr << endl << endl;
-			// ABORT(STATUS_CODEGEN_ERROR);
 			invalid = true;
 		}
 	}
@@ -160,7 +159,6 @@ void CodeGenerator::finish()
 		_error_dispatcher.error("Code Generation Error", "LLVM module verification failed: ");
 		llvm::verifyModule(*_top_module, _errstream);
 		cerr << endl << endl;
-		// ABORT(STATUS_CODEGEN_ERROR);
 		invalid = true;
 	}
 
@@ -827,7 +825,7 @@ VISIT(GroupingNode)
 
 VISIT(SubscriptNode)
 {
-	node->_left->accept(this);
+	node->_expr->accept(this);
 	ParsedType* casttype = node->_cast_to;
 	push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
 }
@@ -961,7 +959,8 @@ VISIT(CallNode)
 		args.push_back(create_cast(pop(), false, casttype, node->_expected_arg_types[i]->is_signed()));
 	}
 
-	if(AS_LEX(node->_ret_type) == TYPE_VOID) push(_builder->CreateCall(callee, args));
+	if(AS_LEX(node->_ret_type) == TYPE_VOID && !node->_ret_type->is_pointer())
+		push(_builder->CreateCall(callee, args));
 	else push(_builder->CreateCall(callee, args, "calltmp"));
 }
 

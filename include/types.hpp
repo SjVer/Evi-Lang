@@ -56,15 +56,8 @@ static bool __evi_builtin_types_initialized = false;
 class ParsedType
 {
 private:
-	// holds array length if _subtypetype == SUBTYPE_ARRAY
 	EviType* _evi_type;
-
-	enum SubType
-	{
-		SUBTYPE_ARRAY,
-		SUBTYPE_POINTER,
-		SUBTYPE_NONE
-	};
+	ParsedType* _subtype = nullptr;
 
 public:
 
@@ -72,14 +65,12 @@ public:
 	ParsedType(LexicalType lexical_type, 
 			   EviType* evi_type = nullptr,
 			   bool is_reference = false,
-			   SubType subtypetype = SUBTYPE_NONE,
 			   ParsedType* subtype = nullptr);
 	static ParsedType* new_invalid();
 
 	ParsedType* copy();
 	ParsedType* copy_change_lex(LexicalType type);
 	ParsedType* copy_pointer_to();
-	ParsedType* copy_array_of(int len);
 	ParsedType* copy_element_of();
 	void set_lex_type(LexicalType type);
 
@@ -90,18 +81,12 @@ public:
 	bool eq(ParsedType* rhs, bool simple = false);
 	uint get_alignment();
 	uint get_depth();
-	int get_array_size();
-	void set_array_size(int size);
-	bool is_array();
 	bool is_pointer();
 	bool is_signed();
 
 	LexicalType _lexical_type;
 	bool _is_reference = false;
 	bool _keep_as_reference = false;
-
-	SubType _subtypetype = SUBTYPE_NONE;
-	ParsedType* _subtype = nullptr;
 
 	bool _invalid = false;
 };

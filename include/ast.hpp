@@ -190,18 +190,6 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 
 	VIRTUAL_NODE_DECLARATION(ExprNode, StmtNode);
 
-		class SubscriptNode: public ExprNode
-		{
-			public:
-
-			SubscriptNode(Token token, ExprNode* left, ExprNode* right): 
-				ExprNode(token), _left(left), _right(right) {}
-			ACCEPT
-
-			ExprNode* _left;
-			ExprNode* _right;
-		};
-
 		class LogicalNode: public ExprNode
 		{
 			public:
@@ -263,6 +251,18 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 			ACCEPT
 
 			ExprNode* _expr;
+		};
+
+		class SubscriptNode: public ExprNode
+		{
+			public:
+
+			SubscriptNode(Token token, ExprNode* expr, ExprNode* index): 
+				ExprNode(token), _expr(expr), _index(index) {}
+			ACCEPT
+
+			ExprNode* _expr;
+			ExprNode* _index;
 		};
 
 		VIRTUAL_NODE_DECLARATION(PrimaryNode, ExprNode);

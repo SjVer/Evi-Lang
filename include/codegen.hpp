@@ -27,12 +27,12 @@ class CodeGenerator: public Visitor
 	VISIT(LoopNode);
 	VISIT(ReturnNode);
 	VISIT(BlockNode);
-		VISIT(SubscriptNode);
 		VISIT(LogicalNode);
 		VISIT(BinaryNode);
 		VISIT(CastNode);
 		VISIT(UnaryNode);
 		VISIT(GroupingNode);
+		VISIT(SubscriptNode);
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
 			VISIT(ReferenceNode);

@@ -85,7 +85,7 @@ VISIT(AssignNode)
 		if(index - 1 < 0) CONNECT_NODES(currnode, ADD_NODE(node->_ident.c_str()));
 		else
 		{
-			int nextnode = ADD_NODE("@");
+			int nextnode = ADD_NODE("[ ]");
 			CONNECT_NODES(currnode, nextnode);
 			do_subscript(index - 1, nextnode);
 		}
@@ -97,7 +97,7 @@ VISIT(AssignNode)
 
 	if(!node->_subscripts.empty())
 	{
-		int firstnode = ADD_NODE("@");
+		int firstnode = ADD_NODE("[ ]");
 		CONNECT_NODES(thisnode, firstnode);
 		do_subscript(node->_subscripts.size() - 1, firstnode);
 	}
@@ -176,17 +176,6 @@ VISIT(BlockNode)
 }
 
 // === Expressions ===
-
-VISIT(SubscriptNode)
-{
-	int thisnode = ADD_NODE("@");
-
-	CONNECT_NODES(thisnode, _nodecount);
-	node->_left->accept(this);
-
-	CONNECT_NODES(thisnode, _nodecount);
-	node->_right->accept(this);
-}
 
 VISIT(LogicalNode)
 {
@@ -278,6 +267,17 @@ VISIT(GroupingNode)
 	// node id will be _nodecount
 	CONNECT_NODES(thisnode, _nodecount);
 	node->_expr->accept(this);
+}
+
+VISIT(SubscriptNode)
+{
+	int thisnode = ADD_NODE("[ ]");
+
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_expr->accept(this);
+
+	CONNECT_NODES(thisnode, _nodecount);
+	node->_index->accept(this);
 }
 
 
