@@ -37,7 +37,7 @@ void TypeChecker::error_at(Token *token, string message)
 	}
 	else if(lint_args.type == LINT_NONE)
 	{
-		_error_dispatcher.error_at_token(token, "Type Error", message.c_str());
+		_error_dispatcher.error_at_token(token, "Type Inference Error", message.c_str());
 
 		// print token
 		cerr << endl;
@@ -296,16 +296,9 @@ VISIT(VarDeclNode)
 	{
 		node->_expr->accept(this);
 		ParsedType* exprtype = pop();
-		// DEBUG_PRINT_F_MSG("popped: %s (%s)", exprtype->to_c_string(), GET_LEX_TYPE_STR(exprtype->_lexical_type));
-
 		ParsedType* result = resolve_types(vartype, exprtype);
-		// if(result) DEBUG_PRINT_F_MSG("result: %s (%s)", result->to_c_string(), GET_LEX_TYPE_STR(result->_lexical_type));
-		// else DEBUG_PRINT_MSG("result: n/a");
 
-		bool cancast = can_cast_types(result ? result : exprtype, vartype);
-		// DEBUG_PRINT_F_MSG("cast? %s", cancast ? "yes" : "no");
-
-		if(!cancast)
+		if(!can_cast_types(result ? result : exprtype, vartype))
 			ERROR_AT(&node->_token, "Cannot initialize variable of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " with expression of type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			vartype->to_c_string(), exprtype->to_c_string());

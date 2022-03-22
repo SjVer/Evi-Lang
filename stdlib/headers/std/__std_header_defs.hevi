@@ -25,4 +25,13 @@
 	SOFTWARE.
 :\
 
+\ mark file as stdlib header
 #flag __STDLIB_HEADER__
+
+\ mark compiler type
+#flag __OFFICIAL_EVI_COMPILER__
+
+\ compiler information
+\ #macro __COMPILER_VERSION__ {{version}}
+\ #macro __COMPILER_BUILD_TARGET__ {{target}}
+\ #macro __COMPILER_BUILD_DATE__ {{date}}

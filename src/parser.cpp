@@ -868,6 +868,11 @@ ExprNode* Parser::unary()
 	if(match(TOKEN_STAR)  || match(TOKEN_AND) 		|| match(TOKEN_BANG)
 	|| match(TOKEN_MINUS) || match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS))
 	{
+		if(_previous.type == TOKEN_AND) _error_dispatcher.warning_at_token(&_previous, "Syntax Warning", 
+			"Use of unary '&' operator not officially supported, behaviour may be undefined.");
+		if(_previous.type == TOKEN_STAR) _error_dispatcher.warning_at_token(&_previous, "Syntax Warning", 
+			"Use of unary '*' operator not officially supported, behaviour may be undefined.");
+
 		Token tok = _previous;
 		ExprNode* expr = unary();
 		return new UnaryNode(tok, tok.type, expr);

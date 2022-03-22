@@ -625,11 +625,11 @@ VISIT(BinaryNode)
 {
 	node->_left->accept(this);
 	node->_right->accept(this);
-	
-	llvm::Value* right = pop();
-	llvm::Value* left = pop();
 
 	ParsedType* resulttype = node->_left->_cast_to;
+	
+	llvm::Value* right = create_cast(pop(), resulttype->is_signed(), resulttype->get_llvm_type(), resulttype->is_signed());
+	llvm::Value* left = create_cast(pop(), resulttype->is_signed(), resulttype->get_llvm_type(), resulttype->is_signed());
 
 	switch(node->_optype)
 	{

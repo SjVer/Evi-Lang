@@ -1,6 +1,7 @@
 #apply "std/io"
 
-@main i32 ()
+@main i32 (i32 chr**)
 {
-	printi(?(i1) * 2);
+	!!(%i i8; $i < $0; =i ++$i;)
+		prints($1[$i]);
 }

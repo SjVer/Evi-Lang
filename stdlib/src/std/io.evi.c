@@ -28,7 +28,6 @@
 #include "__std_header_defs.hevi.h"
 
 #include <stdio.h>
-#include <stdint.h>
 
 evi_ui8_t printc(evi_chr_t ch)
 {
@@ -60,16 +59,4 @@ evi_ui64_t scani()
 	int ret;
 	scanf("%d", &ret);
 	return ret;
-}
-
-evi_nll_t printstrarr(evi_ui64_t len, evi_chr_t** arr)
-{
-	for(int i = 0; i < len; i++)
-		prints(arr[i]);
-}
-
-evi_nll_t printintarr(evi_ui64_t len, evi_i32_t* arr)
-{
-	for(int i = 0; i < len; i++)
-		printi(arr[i]);
 }

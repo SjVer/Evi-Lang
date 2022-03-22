@@ -208,6 +208,30 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 // ================================
 
+void check_main_function(AST* astree)
+{
+	FuncDeclNode* mainfunc = nullptr;
+
+	// search for main func declaration
+	for(auto& node : *astree)
+		if(!mainfunc && dynamic_cast<FuncDeclNode*>(node) && ((FuncDeclNode*)node)->_identifier == "main")
+				mainfunc = (FuncDeclNode*)node;
+
+	if(!mainfunc) // main func not found
+		ErrorDispatcher().warning("Warning", "Function " COLOR_BOLD "'main'" COLOR_NONE " not declared.");
+
+	else if(!mainfunc->_ret_type->eq(PTYPE(TYPE_INTEGER), true)) // wrong return type
+		ErrorDispatcher().warning_at_token(&mainfunc->_token, "Warning",
+			"Return type of function " COLOR_BOLD "'main'" COLOR_NONE " is not an integer type.");
+
+	else if(mainfunc->_params.size() != 2 || !mainfunc->_params[0]->eq(PTYPE(TYPE_INTEGER), true) || 
+			!mainfunc->_params[1]->eq(PTYPE(TYPE_CHARACTER)->copy_pointer_to()->copy_pointer_to(), true)) // incorrect args
+		ErrorDispatcher().warning_at_token(&mainfunc->_token, "Warning", 
+			"Function " COLOR_BOLD "'main'" COLOR_NONE " does not have parameters similar to " COLOR_BOLD "'i32 chr**'" COLOR_NONE ".");
+
+	#undef WRONG_PARAMS_MSG
+}
+
 int main(int argc, char **argv)
 {
 	// ========= argument stuff =========
@@ -263,6 +287,11 @@ int main(int argc, char **argv)
 	Parser* parser = new Parser();
 	status = parser->parse(arguments.args[0], source, &astree);
 	ABORT_IF_UNSUCCESSFUL();
+
+
+	// check for function @main i32 (...)
+	if(!arguments.compile_only && !arguments.emit_llvm && !arguments.generate_ast)
+		check_main_function(&astree);
 
 
 	// type check
