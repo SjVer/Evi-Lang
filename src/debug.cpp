@@ -323,6 +323,12 @@ VISIT(ArrayNode)
 	}
 }
 
+VISIT(SizeOfNode)
+{
+	// 
+	ADD_NODE(tools::fstr("? %s", node->_type->to_c_string()).c_str());
+}
+
 VISIT(ReferenceNode)
 {
 	if(node->_token.type == TOKEN_VARIABLE_REF)

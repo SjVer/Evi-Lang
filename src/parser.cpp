@@ -896,9 +896,10 @@ ExprNode* Parser::subscript()
 ExprNode* Parser::primary()
 {
 	// primary		: NUMBER | CHAR | STRING | "(" expression ")"
-	// 				| array | reference | call
+	// 				| array | size_of | reference | call
 
 	// array		: "{" (expression ("," expression)*)? "}"
+	// size_of		: "?" ( "(" TYPE ")" | TYPE )
 	// reference	: "$" (IDENT | INTEGER)
 	// call			: IDENT "(" (expression ("," expression)*)? ")"
 	
@@ -920,6 +921,9 @@ ExprNode* Parser::primary()
 
 	// arrays
 	else if(match(TOKEN_LEFT_BRACE)) return array();
+
+	// size of
+	else if(match(TOKEN_QUESTION)) return size_of();
 
 	// references
 	else if(match(TOKEN_VARIABLE_REF) || match(TOKEN_PARAMETER_REF)) return reference();
@@ -988,6 +992,18 @@ ArrayNode* Parser::array()
 
 	CONSUME_OR_RET_NULL(TOKEN_RIGHT_BRACE, "Expected '}' after array elements.");
 	return new ArrayNode(tok, elements);
+}
+
+SizeOfNode* Parser::size_of()
+{
+	Token tok = _previous;
+
+	bool has_parens = match(TOKEN_LEFT_PAREN);
+	ParsedType* type = consume_type(has_parens ?
+		"Expected type after '?' and '('." : "Expected type or '(' after '?'.");
+	if(has_parens) consume(TOKEN_RIGHT_PAREN, "Expected ')' after type.");
+
+	return new SizeOfNode(tok, type);
 }
 
 ReferenceNode* Parser::reference()

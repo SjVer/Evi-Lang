@@ -19,7 +19,7 @@ variables:
 
   # types
   inttype: '(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1'
-  type: '({{inttype}}|flt|dbl|bln|nll|chr|sze)\**'
+  type: '(?:{{inttype}}|flt|dbl|bln|nll|chr|sze)(?:\s*\*)*'
 
 contexts:
   prototype:
@@ -29,7 +29,7 @@ contexts:
   main:
     # The main context is the initial starting point of our syntax.
     # Include other contexts from here (or specify them directly).
-    - include: comment
+    - include: comments
     - include: pre-directive
     - include: declaration
     - include: statement
@@ -46,9 +46,26 @@ contexts:
       - match: \]
         scope: punctuation.section.brackets.end.evi
         pop: true
-      - include: comment
+      - include: comments
       - include: expression
       - include: invalids
+
+  size_of:
+    - match: (\?)\s*(?:(?:(\()\s*({{type}})\s*(\)))|({{type}}))
+      captures:
+        1: keyword.operator.size_of.evi
+        2: punctuation.separator.evi
+        3: storage.type.evi
+        4: punctuation.separator.evi
+        5: storage.type.evi
+        # 1: one
+        # 2: two
+        # 3: three
+        # 4: four
+        # 5: five
+        # 6: six
+        # 7: seven
+        # 8: eight
 
   number:
     - match: \b{{number}}\b
@@ -111,14 +128,15 @@ contexts:
         - match: \]
           scope: punctuation.section.brackets.end.evi
           pop: true
-        - include: comment
+        - include: comments
         - include: invalids
 
   # EXPRESSION
 
   expression:
-    - include: comment, pre-directive
+    - include: comments, pre-directive
 
+    - include: size_of
     - include: call
     - include: operator
     - include: array
@@ -142,7 +160,7 @@ contexts:
         1: variable.function.evi
         2: punctuation.section.arguments.begin.evi
       push:
-        - include: comment
+        - include: comments
         - match: \)
           scope: punctuation.section.arguments.end.evi
           pop: true
@@ -152,7 +170,7 @@ contexts:
   # STATEMENTS
 
   statement:
-    - include: comment
+    - include: comments
 
     - include: assignment
     - include: return
@@ -167,14 +185,14 @@ contexts:
         1: keyword.operator.assignment.evi
         2: meta.assignment.target.evi
       push:
-        - include: comment
+        - include: comments
         - include: expression
         - include: terminator
         - include: invalids
         # - match: =
         #   scope: keyword.operator.assignment.evi
         #   set:
-        #   - include: comment
+        #   - include: comments
         #   - include: expression
         #   - include: terminator
         #   - include: invalids
@@ -183,7 +201,7 @@ contexts:
     - match: \~
       scope: keyword.control.flow.return.evi
       push:
-        - include: comment
+        - include: comments
         - include: expression
         - include: terminator
         - include: invalids
@@ -204,12 +222,12 @@ contexts:
         2: entity.name.variable.evi
         3: entity.name.variable.evi
       set:
-        - include: comment, pre-directive
+        - include: comments, pre-directive
         - match: '{{type}}'
           scope: storage.type.evi
           set:
             - meta_scope: meta.declaration.variable.initializer.evi
-            - include: comment, pre-directive
+            - include: comments, pre-directive
             - include: expression
             - include: terminator
           
@@ -221,14 +239,14 @@ contexts:
         1: keyword.declaration.function.evi
         2: entity.name.function.evi
       push:
-        - include: comment
+        - include: comments
         - match: \s*({{type}})?\s*\(
           captures:
             1: storage.type.returntype.evi
           push:
-            - include: comment
+            - include: comments
             - meta_scope: meta.parameter_list.evi
-            - include: comment, pre-directive
+            - include: comments, pre-directive
 
             - match: '\b{{type}}\b|\*'
               scope: variable.parameter.evi
@@ -252,7 +270,7 @@ contexts:
     - match: \S
       scope: invalid.misplaced.evi
 
-  comment:
+  comments:
     - match: '\\:'
       scope: punctuation.definition.comment.evi
       push:

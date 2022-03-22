@@ -1,5 +1,5 @@
-\:
-	Evi standard library header "std/io"
+/*
+	Implementation of Evi standard library header "std/__std_header_defs"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License
@@ -23,31 +23,36 @@
 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
-:\
+*/
 
-#info apply_once
-#flag __STD_IO__
+// ============= C version of Evi's types =============
 
-#apply "std/__std_header_defs"
+typedef /*signed*/ _Bool		evi_i1_t;		// i1
 
-\ =================================== Functions ====================================
+typedef signed char	/*?*/		evi_i4_t;		// i4
+typedef unsigned char /*?*/		evi_ui4_t;		// ui4
 
-\? writes a character to stdout
-\? @param 0 the character to print out
-@printc i8 (chr);
+typedef signed char				evi_i8_t;		// i8
+typedef unsigned char			evi_ui8_t;		// ui8
 
-\? writes an integer to stdout
-\? @param 0 the integer to print out
-@printi i8 (i64);
+typedef signed short int		evi_i16_t;		// i16
+typedef unsigned short int		evi_ui16_t;		// ui16
 
-\? writes a double to stdout
-\? @param 0 the double to print out
-@printd i8 (dbl);
-@printg i8 (flt);
+typedef signed int				evi_i32_t;		// i32
+typedef unsigned int			evi_ui32_t;		// ui32
 
-\? writes a string to stdout
-\? @param 0 the string to print out
-@prints i8 (chr*);
+typedef signed long int			evi_i64_t;		// i64
+typedef unsigned long int		evi_ui64_t;		// ui64
 
-\? tries to read an integer from stdin (without detecting invalid input)
-@scani i64 ();
+typedef __int128_t				evi_i128_t;		// i128
+typedef __uint128_t				evi_ui128_t;	// ui128
+
+typedef float					evi_flt_t;		// flt
+typedef double					evi_dbl_t;		// dbl
+
+typedef unsigned long 			evi_sze_t;		// sze
+typedef /*unsigned*/ _Bool		evi_bln_t;		// bln
+typedef char 					evi_chr_t;		// chr
+typedef void 					evi_nll_t;		// nll
+
+// ====================================================

@@ -25,48 +25,50 @@
 	SOFTWARE.
 */
 
+#include "__std_header_defs.hevi.h"
+
 #include <stdio.h>
 #include <stdint.h>
 
-uint8_t printc(char ch)
+evi_ui8_t printc(evi_chr_t ch)
 {
 	return putchar(ch);
 }
 
-uint8_t printi(int64_t i)
+evi_ui8_t printi(evi_i64_t i)
 {
 	return printf("%ld\n", i);
 }
 
-uint8_t printd(double d)
+evi_ui8_t printd(evi_dbl_t d)
 {
 	return printf("%g\n", d);
 }
 
-uint8_t printg(float f)
+evi_ui8_t printg(evi_flt_t f)
 {
 	return printf("%f\n", f);
 }
 
-uint8_t prints(char* str)
+evi_ui8_t prints(evi_chr_t* str)
 {
 	return printf("%s", str);
 }
 
-uint64_t scani()
+evi_ui64_t scani()
 {
 	int ret;
 	scanf("%d", &ret);
 	return ret;
 }
 
-void printstrarr(uint64_t len, char** arr)
+evi_nll_t printstrarr(evi_ui64_t len, evi_chr_t** arr)
 {
 	for(int i = 0; i < len; i++)
 		prints(arr[i]);
 }
 
-void printintarr(uint64_t len, int32_t* arr)
+evi_nll_t printintarr(evi_ui64_t len, evi_i32_t* arr)
 {
 	for(int i = 0; i < len; i++)
 		printi(arr[i]);

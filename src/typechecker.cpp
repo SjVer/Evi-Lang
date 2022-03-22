@@ -704,6 +704,16 @@ VISIT(ArrayNode)
 	push(arrtype);
 }
 
+VISIT(SizeOfNode)
+{
+	node->_cast_to = PTYPE(
+		GET_EVI_TYPE("sze")->_default_type,
+		GET_EVI_TYPE("sze")
+	);
+
+	push(node->_cast_to->copy());
+}
+
 VISIT(ReferenceNode)
 {
 	node->_cast_to = node->_type->copy();

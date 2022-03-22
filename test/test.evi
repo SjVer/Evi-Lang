@@ -1,10 +1,6 @@
 #apply "std/io"
 
-@main i32 (i32 chr**)
+@main i32 ()
 {
-	!!(%i i32 0; $i < $0; =i ++$i;)
-	{
-		prints($1[$i]);
-		printc('\n');
-	}
+	printi(?(i1) * 2);
 }

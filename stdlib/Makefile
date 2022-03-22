@@ -24,7 +24,7 @@ stdlib: $(STDLIB_OBJ) | makedirs
 $(STDLIB_OBJDIR)/%.o: $(STDLIB_SRCDIR)/%$(STDLIB_EXT) | makedirs
 	@mkdir -p $(dir $@)
 	@printf "[$(word 1,$(STDLIB_OBJCOUNT))/$(words $(STDLIB_OBJ))] compiling $(notdir $<) into $(notdir $@)..."
-	@$(STDLIB_CC) $(STDLIB_CXXFLAGS) -o $@ -c $< -fmodule-name=$($<:$(STDLIB_EXT)=.evi)
+	@$(STDLIB_CC) $(STDLIB_CXXFLAGS) -I$(STDLIB_SRCDIR) -o $@ -c $< -fmodule-name=$($<:$(STDLIB_EXT)=.evi)
 	@printf "\b\b done!\n"
 	$(eval STDLIB_OBJCOUNT = $(filter-out $(word 1,$(STDLIB_OBJCOUNT)),$(STDLIB_OBJCOUNT)))
 	@([ "$(word $(words $(STDLIB_OBJ)), $(STDLIB_OBJ))" == "$@" ] && echo "[stdlib] standard library compiled!") || true

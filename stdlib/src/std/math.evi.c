@@ -25,9 +25,48 @@
 	SOFTWARE.
 */
 
+#include "__std_header_defs.hevi.h"
+
 // defined in c's libm:
-extern double sqrt(double value);
-extern double sin(double value);
-extern double cos(double value);
-extern double tan(double value);
-extern double pow(double g, double a);
+
+extern evi_dbl_t acos(evi_dbl_t x);
+
+extern evi_dbl_t asin(evi_dbl_t x);
+
+extern evi_dbl_t atan(evi_dbl_t x);
+
+extern evi_dbl_t atan2(evi_dbl_t x, evi_dbl_t y);
+
+extern evi_dbl_t cos(evi_dbl_t x);
+
+extern evi_dbl_t cosh(evi_dbl_t x);
+
+extern evi_dbl_t sin(evi_dbl_t x);
+
+extern evi_dbl_t sinh(evi_dbl_t x);
+
+extern evi_dbl_t tanh(evi_dbl_t x);
+
+extern evi_dbl_t exp(evi_dbl_t x);
+
+extern evi_dbl_t frexp(evi_dbl_t x, evi_i32_t* exponent);
+
+extern evi_dbl_t ldexp(evi_dbl_t x, evi_i32_t exponent);
+
+extern evi_dbl_t log(evi_dbl_t x);
+
+extern evi_dbl_t log10(evi_dbl_t x);
+
+extern evi_dbl_t modf(evi_dbl_t x, evi_dbl_t* integer);
+
+extern evi_dbl_t pow(evi_dbl_t x, evi_dbl_t y);
+
+extern evi_dbl_t sqrt(evi_dbl_t x);
+
+extern evi_dbl_t ceil(evi_dbl_t x);
+
+extern evi_dbl_t fabs(evi_dbl_t x);
+
+extern evi_dbl_t floor(evi_dbl_t x);
+
+extern evi_dbl_t fmod(evi_dbl_t x, evi_dbl_t y);

@@ -538,6 +538,10 @@
 		{
 			"patterns": [
 				{
+					"name": "storage.modifier.pointer.evi",
+					"match": "\\*"
+				},
+				{
 					"name": "storage.type.integer.evi",
 					"match": "(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1"
 				},
@@ -556,10 +560,6 @@
 				{
 					"name": "storage.type.character.evi",
 					"match": "chr"
-				},
-				{
-					"name": "storage.modifier.pointer.evi",
-					"match": "\\*"
 				},
 				{
 					"begin": "(\\|)",
@@ -583,6 +583,10 @@
 			"patterns": [
 				{
 					"name": "punctuation.bracket.evi",
+					"match": "\\{|\\}"
+				},
+				{
+					"name": "punctuation.parentheses.evi",
 					"match": "\\(|\\)"
 				},
 				{

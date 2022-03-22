@@ -1,5 +1,5 @@
 \:
-	Evi standard library header "std/io"
+	Evi standard library header "std/__std_header_defs"
 	Written by Sjoerd Vermeulen (2022)
 
 	MIT License
@@ -25,29 +25,4 @@
 	SOFTWARE.
 :\
 
-#info apply_once
-#flag __STD_IO__
-
-#apply "std/__std_header_defs"
-
-\ =================================== Functions ====================================
-
-\? writes a character to stdout
-\? @param 0 the character to print out
-@printc i8 (chr);
-
-\? writes an integer to stdout
-\? @param 0 the integer to print out
-@printi i8 (i64);
-
-\? writes a double to stdout
-\? @param 0 the double to print out
-@printd i8 (dbl);
-@printg i8 (flt);
-
-\? writes a string to stdout
-\? @param 0 the string to print out
-@prints i8 (chr*);
-
-\? tries to read an integer from stdin (without detecting invalid input)
-@scani i64 ();
+#flag __STDLIB_HEADER__

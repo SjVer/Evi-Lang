@@ -104,6 +104,7 @@ private:
 
 	LiteralNode* literal();
 	ArrayNode* array();
+	SizeOfNode* size_of();
 	ReferenceNode* reference();
 	CallNode* call();
 

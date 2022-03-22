@@ -40,8 +40,9 @@ cast			: unary ("->" TYPE)*
 unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
 subscript		: primary ("[" expression "]")*
 primary			: NUMBER | CHAR | STRING | "(" expression ")"
-				| array | reference | call
+				| array | size_of | reference | call
 
 array			: "{" (expression ("," expression)*)? "}"
+size_of			: "?" ( "(" TYPE ")" | TYPE )
 reference		: "$" (IDENT | INTEGER)
 call			: IDENT "(" (expression ("," expression)*)? ")"

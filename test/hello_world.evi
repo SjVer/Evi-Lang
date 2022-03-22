@@ -1,6 +1,3 @@
 #apply "std/io"
 
-@main i32 () {
-	prints("Hello World!\n");
-	~ 0;
-}
+@main i32 () prints("Hello World!\n");

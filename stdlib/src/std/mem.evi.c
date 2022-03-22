@@ -25,8 +25,18 @@
 	SOFTWARE.
 */
 
+#include "__std_header_defs.hevi.h"
+
 // defined in c's libc:
-extern void* calloc(unsigned long n, unsigned long s);
-extern void* malloc(unsigned long s);
-extern void* realloc(void* a, unsigned long s);
-extern void free(void* a);
+
+extern evi_nll_t* alloca(evi_sze_t s);
+
+extern evi_nll_t* malloc(evi_sze_t s);
+
+extern evi_nll_t* calloc(evi_sze_t n, evi_sze_t s);
+
+extern evi_nll_t* malloc(evi_sze_t s);
+
+extern evi_nll_t* realloc(evi_nll_t* a, evi_sze_t s);
+
+extern evi_nll_t free(evi_nll_t* a);

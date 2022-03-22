@@ -29,6 +29,7 @@ class TypeChecker: public Visitor
 		VISIT(SubscriptNode);
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
+			VISIT(SizeOfNode);
 			VISIT(ReferenceNode);
 			VISIT(CallNode);
 	#undef VISIT

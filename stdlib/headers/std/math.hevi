@@ -28,29 +28,142 @@
 #info apply_once
 #flag __STD_MATH__
 
+#apply "std/__std_header_defs"
+
 \ =================================== Constants ====================================
 
-%PI dbl 3.141592653589793238462643383279502884;
+\ #macro NAN (0.0 / 0.0)
+
+\? e
+%M_E dbl 2.718281828459045235360287471352662498;
+
+\? log_2 e
+%M_LOG2E dbl 1.442695040888963407359924681001892137;
+
+\? log_10 e
+%M_LOG10E dbl 0.434294481903251827651128918916605082;
+
+\? log_e 2
+%M_LN2 dbl 0.693147180559945309417232121458176568;
+
+\? log_e 10
+%M_LN10 dbl 2.302585092994045684017991454684364208;
+
+\? pi
+%M_PI dbl 3.141592653589793238462643383279502884;
+
+\? pi/2
+%M_PI_2 dbl 1.570796326794896619231321691639751442;
+
+\? pi/4
+%M_PI_4 dbl 0.785398163397448309615660845819875721;
+
+\? 1/pi
+%M_1_PI dbl 0.318309886183790671537767526745028724;
+
+\? 2/pi
+%M_2_PI dbl 0.636619772367581343075535053490057448;
+
+\? 2/sqrt(pi)
+%M_2_SQRTPI dbl 1.128379167095512573896158903121545172;
+
+\? sqrt(2)
+%M_SQRT2 dbl 1.414213562373095048801688724209698079;
+
+\? 1/sqrt(2)
+%M_SQRT1_2 dbl 0.707106781186547524400844362104849039;
 
 \ =================================== Functions ====================================
 
-\? returns the square root of a given value
-\? @param 0 the value
-@sqrt dbl (dbl);
+\? Returns the arc cosine of x in radians.
+\? @param 0 x
+@acos dbl (dbl);
 
-\? returns the sine of a given value
-\? @param 0 the value
-@sin dbl (dbl);
+\? Returns the arc sine of x in radians.
+\? @param 0 x
+@asin dbl (dbl);
 
-\? returns the cosine of a given value
-\? @param 0 the value
+\? Returns the arc tangent of x in radians.
+\? @param 0 x
+@atan dbl (dbl);
+
+\? Returns the arc tangent in radians of y/x based on the
+\? signs of both values to determine the correct quadrant.
+\? @param 0 x
+\? @param 1 y
+@atan2 dbl (dbl dbl);
+
+\? Returns the cosine of a radian angle x.
+\? @param 0 x
 @cos dbl (dbl);
 
-\? returns the tangent of a given value
-\? @param 0 the value
-@tan dbl (dbl);
+\? Returns the hyperbolic cosine of x.
+\? @param 0 x
+@cosh dbl (dbl);
 
-\? returns a given value raised to a given power
-\? @param 0 the base value
-\? @param 1 the power
+\? Returns the sine of a radian angle x.
+\? @param 0 x
+@sin dbl (dbl);
+
+\? Returns the hyperbolic sine of x.
+\? @param 0 x
+@sinh dbl (dbl);
+
+\? Returns the hyperbolic tangent of x.
+\? @param 0 x
+@tanh dbl (dbl);
+
+\? Returns the value of e raised to the xth power.
+\? @param 0 x
+@exp dbl (dbl);
+
+\? The returned value is the mantissa and the integer pointed to by exponent
+\? is the exponent. The resultant value is x = mantissa * 2 ^ exponent.
+\? @param 0 x
+\? @param 1 exponent
+@frexp dbl (dbl i32*);
+
+\? Returns x multiplied by 2 raised to the power of exponent.
+\? @param 0 x
+\? @param 1 exponent
+@ldexp dbl (dbl i32);
+
+\? Returns the natural logarithm (base-e logarithm) of x.
+\? @param 0 x
+@log dbl (dbl);
+
+\? Returns the common logarithm (base-10 logarithm) of x.
+\? @param 0 x
+@log10 dbl (dbl);
+
+\? The returned value is the fraction component (part after the decimal),
+\? and sets integer to the integer component.
+\? @param 0 x
+\? @param 1 integer
+@modf dbl (dbl dbl*);
+
+\? Returns x raised to the power of y.
+\? @param 0 x
+\? @param 1 y
 @pow dbl (dbl dbl);
+
+\? Returns the square root of x.
+\? @param 0 x
+@sqrt dbl (dbl);
+
+\? Returns the smallest integer value greater than or equal to x.
+\? @param 0 x
+@ceil dbl (dbl);
+
+\? Returns the absolute value of x.
+\? @param 0 x
+@fabs dbl (dbl);
+
+\? Returns the largest integer value less than or equal to x.
+\? @param 0 x
+@floor dbl (dbl);
+
+\? Returns the remainder of x divided by y.
+\? @param 0 x
+\? @param 1 y
+@fmod dbl (dbl dbl);

@@ -29,6 +29,7 @@ class StmtNode;
 		class PrimaryNode;
 			class LiteralNode;
 			class ArrayNode;
+			class SizeOfNode;
 			class ReferenceNode;
 			class CallNode;
 
@@ -52,6 +53,7 @@ class Visitor
 		VISIT(GroupingNode);
 			VISIT(LiteralNode);
 			VISIT(ArrayNode);
+			VISIT(SizeOfNode);
 			VISIT(ReferenceNode);
 			VISIT(CallNode);
 	#undef VISIT
@@ -292,6 +294,17 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 				ACCEPT
 
 				vector<ExprNode*> _elements;
+			};
+
+			class SizeOfNode : public PrimaryNode
+			{
+				public:
+
+				SizeOfNode(Token token, ParsedType* type):
+					PrimaryNode(token), _type(type) {}
+				ACCEPT
+
+				ParsedType* _type;
 			};
 
 			class ReferenceNode: public PrimaryNode

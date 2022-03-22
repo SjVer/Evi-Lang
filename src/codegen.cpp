@@ -293,7 +293,7 @@ VISIT(FuncDeclNode)
 			llvm::Argument* arg = func->getArg(i);
 
 			// // Create an alloca for this variable.
-			llvm::AllocaInst* alloca = create_entry_block_alloca(arg->getType(), arg->getName().str());
+			llvm::AllocaInst* alloca = create_entry_block_alloca(arg->getType(), tools::fstr("_%d", i));
 
 			// // Store the initial value into the alloca.
 			_builder->CreateStore(arg, alloca);
@@ -918,25 +918,22 @@ VISIT(ArrayNode)
 	{
 		ExprNode* element = node->_elements[i];
 		element->accept(this);
-		// llvm::Value* val = create_cast(pop(), false, element->_cast_to->get_llvm_type(), element->_cast_to->is_signed());
 		llvm::Value* val = pop();
 
 		_builder->CreateStore(val, ptr);
 		
 		// move pointer one up (so to next element)
-		/* if(i == 1)
-		{
-			llvm::GetElementPtrInst* inst = llvm::GetElementPtrInst::CreateInBounds(
-				ptr, llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false)));
-			inst->setSourceElementType(node->_cast_to->get_llvm_type());
-			ptr = _builder->Insert(inst, "arrgeptmp");
-		}
-		else */
 		if(i + 1 < node->_elements.size()) ptr = _builder->CreateInBoundsGEP(
 			ptr, llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false)), "arrgeptmp");
 	}
-
+	
 	push(_builder->CreateInBoundsGEP(arr, (llvm::Value*[]){idx0, idx0}, "arrgeptmp"));
+}
+
+VISIT(SizeOfNode)
+{
+	llvm::TypeSize size = _top_module->getDataLayout().getTypeAllocSize(node->_type->get_llvm_type());
+	push(llvm::ConstantInt::get(node->_cast_to->get_llvm_type(), size, false));
 }
 
 VISIT(ReferenceNode)
