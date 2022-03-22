@@ -50,7 +50,7 @@ uint8_t printg(float f)
 
 uint8_t prints(char* str)
 {
-	return printf("%s\n", str);
+	return printf("%s", str);
 }
 
 uint64_t scani()

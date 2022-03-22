@@ -1,15 +1,10 @@
-#apply "std/mem"
 #apply "std/io"
 
-@main i32 ()
+@main i32 (i32 chr**)
 {
-	\ %size i32 5;
-
-	%arr i32* {1, 2, 3, 4, 5};
-	\ %arr i32* calloc($size, 4) -> i32*;
-
-	\ !!(%i i32 0; $i < $size; =i ++$i;)
-	\ 	=arr[$i] $i;
-
-	\ !!(%i i32 0; $i < 5; =i ++$i;) printi($arr[$i]);
+	!!(%i i32 0; $i < $0; =i ++$i;)
+	{
+		prints($1[$i]);
+		printc('\n');
+	}
 }

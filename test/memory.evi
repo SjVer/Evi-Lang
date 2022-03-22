@@ -1,4 +1,4 @@
-#apply "std-mem"
+#apply "std/mem"
 
 @main i32 (i32 chr**)
 {

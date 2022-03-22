@@ -910,8 +910,8 @@ VISIT(ArrayNode)
 	arr->setAlignment(llvm::Align(node->_cast_to->get_alignment()));
 
 	// get base pointer to array
-	llvm::Value* ptr = _builder->CreateInBoundsGEP(arr, 
-		llvm::ConstantInt::get(__context, llvm::APInt(64, 0, false)), "arrgeptmp");
+	llvm::Value* idx0 = llvm::ConstantInt::get(__context, llvm::APInt(64, 0, false));
+	llvm::Value* ptr = _builder->CreateInBoundsGEP(arr, (llvm::Value*[]){idx0, idx0}, "arrgeptmp");
 
 	// iterate over elements
 	for(int i = 0; i < node->_elements.size(); i++)
@@ -932,10 +932,11 @@ VISIT(ArrayNode)
 			ptr = _builder->Insert(inst, "arrgeptmp");
 		}
 		else */
-		ptr = _builder->CreateInBoundsGEP(ptr, llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false)), "arrgeptmp");
+		if(i + 1 < node->_elements.size()) ptr = _builder->CreateInBoundsGEP(
+			ptr, llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false)), "arrgeptmp");
 	}
 
-	push(arr);
+	push(_builder->CreateInBoundsGEP(arr, (llvm::Value*[]){idx0, idx0}, "arrgeptmp"));
 }
 
 VISIT(ReferenceNode)

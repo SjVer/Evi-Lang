@@ -60,30 +60,47 @@ void Preprocessor::process_lines(vector<string> lines)
 
 vector<string> Preprocessor::remove_comments(vector<string> lines)
 {
-	bool block_comment = false;
+	bool in_block_comment = false;
+	bool in_string = false;
+	bool in_character = false;
 
 	for(auto& line : lines)
 	{
 		for(int i = 0; i < line.length(); i++)
 		{
-			if(block_comment)
+			if(in_block_comment)
 			{
 				if(i + 1 < line.length() && line[i] == ':' && line[i + 1] == '\\')
 				{
-					block_comment = false;
+					in_block_comment = false;
 					line[i] = ' ';
 					line[++i] = ' ';
 				}
 				else line[i] = ' ';
 			}
+			else if(in_string)
+			{
+				// check for end of string
+				if(line[i] == '"' && line[i - 1] != '\\') in_string = false;
+			}
+			else if(in_character)
+			{
+				// check for end of character
+				if(line[i] == '\'' && line[i - 1] != '\\') in_character = false;
+			}
 			else if(i + 1 < line.length() && line[i] == '\\' && line[i + 1] == ':') // start block comment
 			{
-				block_comment = true;
+				in_block_comment = true;
 				line[i] = ' ';
 				line[++i] = ' ';
 			}
 			else if(line[i] == '\\')  // line comment
+			{
+				// just rest with whitespaces
 				while(i < line.length()) line[i++] = ' ';
+			}
+			else if(line[i] == '"') in_string = true; // start string 
+			else if(line[i] == '\'') in_character = true; // start char 
 		}
 	}
 

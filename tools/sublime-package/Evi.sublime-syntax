@@ -356,6 +356,16 @@ contexts:
           pop: true
         - include: invalids
 
+    - match: ^\s*(#) ([0-9]+)
+      captures:
+        1: keyword.preprocessor.linemarker.evi
+        2: constant.numeric.decimal.evi
+      push:
+        - include: string-char
+        - match: $\n?
+          pop: true
+        - include: invalids
+
   terminator:
     - match: ';'
       scope: punctuation.terminator.expression.evi

@@ -1,4 +1,4 @@
-#apply "std-io"
+#apply "std/io"
 
 @fib i32 () {
 	\ initialize first and second terms
@@ -8,22 +8,22 @@
 	%tn i32 $t1 + $t2;
 
 	\ get no. of terms from user
-	\ prints("Enter the number of terms: ");
+	prints("Enter the number of terms: ");
 	%n i32 scani();
 
 	\ print the first two terms t1 and t2
 	\ printf("Fibonacci Series: %d, %d, ", $t1, $t2);
-	\ prints("Fibbonaci Series: ");
+	prints("Fibbonaci Series: ");
 	printi($t1);
 	printi($t2);
 
 	\ print 3rd to nth terms
-  	!!(%i i32 3; $i <= $n; =i = ++$i;) {
+  	!!(%i i32 3; $i <= $n; =i ++$i;) {
 	    printi($tn);
 	    \ printf("%d, ", $tn);
-	    =t1 = $t2;
-	    =t2 = $tn;
-	    =tn = $t1 + $t2;
+	    =t1 $t2;
+	    =t2 $tn;
+	    =tn $t1 + $t2;
 	}
 }
 
