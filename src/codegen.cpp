@@ -904,10 +904,8 @@ VISIT(LiteralNode)
 
 VISIT(ArrayNode)
 {
-	llvm::ArrayType* arrtype = llvm::ArrayType::get(node->_cast_to->copy_element_of()->get_llvm_type(), node->_elements.size());
-	llvm::Type* ptrtype = node->_cast_to->get_llvm_type();
-
 	// alloca array
+	llvm::ArrayType* arrtype = llvm::ArrayType::get(node->_cast_to->copy_element_of()->get_llvm_type(), node->_elements.size());
 	llvm::AllocaInst* arr = new llvm::AllocaInst(arrtype, 0, string("arrtmp"), _builder->GetInsertBlock());
 	arr->setAlignment(llvm::Align(node->_cast_to->get_alignment()));
 
@@ -926,8 +924,15 @@ VISIT(ArrayNode)
 		_builder->CreateStore(val, ptr);
 		
 		// move pointer one up (so to next element)
-		ptr = _builder->CreateInBoundsGEP(ptrtype, ptr,
-			llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false)), "arrgeptmp");
+		/* if(i == 1)
+		{
+			llvm::GetElementPtrInst* inst = llvm::GetElementPtrInst::CreateInBounds(
+				ptr, llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false)));
+			inst->setSourceElementType(node->_cast_to->get_llvm_type());
+			ptr = _builder->Insert(inst, "arrgeptmp");
+		}
+		else */
+		ptr = _builder->CreateInBoundsGEP(ptr, llvm::ConstantInt::get(__context, llvm::APInt(64, 1, false)), "arrgeptmp");
 	}
 
 	push(arr);
