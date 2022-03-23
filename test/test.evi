@@ -1,5 +1,7 @@
 #apply "std/io"
 
+@printf i8 (chr* ...);
+
 @main i32 (i32 chr**)
 {
 	!!(%i i8; $i < $0; =i ++$i;)

@@ -446,16 +446,20 @@ StmtNode* Parser::function_declaration()
 
 	// get parameters
 	vector<ParsedType*> params;
-	while(!check(TOKEN_RIGHT_PAREN)) do // && !_panic_mode) do
+	bool is_variadic = false;
+	if(!check(TOKEN_RIGHT_PAREN)) do
 	{
 		if (params.size() >= 255) error_at_current("Parameter count exceeded limit of 255.");
+		else if(match(TOKEN_ELIPSES))
+		{
+			is_variadic = true;
+			break;
+		}
 		else
 		{
 			ParsedType* type = consume_type("Expected type as parameter.");
-			// if(_panic_mode) break;
 			params.push_back(type);
 		}
-
 	} while (check(TOKEN_TYPE));
 
 	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");

@@ -312,7 +312,6 @@ Token Scanner::scanToken()
 		case '~': return makeToken(TOKEN_TILDE);
 		case '@': return makeToken(TOKEN_AT);
 		case ';': return makeToken(TOKEN_SEMICOLON);
-		case '.': return makeToken(TOKEN_DOT);
 
 		// two-character
 		case '+': return makeToken(match('+') ? TOKEN_PLUS_PLUS   	: TOKEN_PLUS);
@@ -328,6 +327,10 @@ Token Scanner::scanToken()
 		case '?': return match('?') ? makeToken(TOKEN_QUESTION_QUESTION) : makeToken(TOKEN_QUESTION);
 		case ':': return match(':') ? makeToken(TOKEN_COLON_COLON) : makeToken(TOKEN_COLON);
 		case '!': return match('!') ? makeToken(TOKEN_BANG_BANG) : makeToken(TOKEN_BANG);
+
+		case '.': return match('.') ? match('.') ? makeToken(TOKEN_ELIPSES)
+												 : errorToken("Unexpected character '.'.")
+									: makeToken(TOKEN_DOT);
 
 		// literals
 		case '$': return reference();
@@ -395,6 +398,7 @@ char *getTokenStr(TokenType type)
 		case TOKEN_GREATER_EQUAL: return "GREATER_EQUAL";
 		case TOKEN_LESS_EQUAL: return "LESS_EQUAL";
 		case TOKEN_ARROW: return "ARROW";
+		case TOKEN_ELIPSES: return "ELIPSES";
 
 		// Literals.
 		case TOKEN_IDENTIFIER: return "IDENTIFIER";

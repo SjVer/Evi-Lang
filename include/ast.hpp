@@ -87,14 +87,16 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 
 		// body = nullptr if only declaration
 		FuncDeclNode(Token token, string identifier, ParsedType* ret_type,
-					 vector<ParsedType*> params, StmtNode* body):
+					 vector<ParsedType*> params, bool is_variadic, StmtNode* body):
 			StmtNode(token), _identifier(identifier), 
-			_ret_type(ret_type), _params(params), _body(body) {}
+			_ret_type(ret_type), _params(params), 
+			_is_variadic(is_variadic), _body(body) {}
 		ACCEPT
 
 		string _identifier;
 		ParsedType* _ret_type;
 		vector<ParsedType*> _params;
+		bool _is_variadic;
 		StmtNode* _body; // nullptr if only declared
 	};
 
