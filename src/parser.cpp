@@ -460,29 +460,30 @@ StmtNode* Parser::function_declaration()
 			ParsedType* type = consume_type("Expected type as parameter.");
 			params.push_back(type);
 		}
-	} while (check(TOKEN_TYPE));
+	} while (check(TOKEN_TYPE) || check(TOKEN_ELIPSES));
 
-	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, is_variadic ? "Expect ')' after '...'." : "Expect ')' after parameters.");
 
 	// get body?
 	if(match(TOKEN_SEMICOLON))
 	{
 		// declaration
-		add_function(&nametok, {ret_type, params, false, false, tok});
-		return new FuncDeclNode(tok, name, ret_type, params, nullptr);
+		add_function(&nametok, {ret_type, params, is_variadic, false, false, tok});
+		return new FuncDeclNode(tok, name, ret_type, params, is_variadic, nullptr);
 	}
 	else
 	{
 		// definition
-		add_function(&nametok, {ret_type, params, true, false, tok});
+		FuncProperties props = {ret_type, params, is_variadic, true, false, tok};
+		add_function(&nametok, props);
 
 		scope_up();
-		_current_scope.func_props = FuncProperties{ret_type, params, true, false, tok};
+		_current_scope.func_props = props;
 		
 		StmtNode* body = statement();
 
 		scope_down();
-		return new FuncDeclNode(tok, name, ret_type, params, body);
+		return new FuncDeclNode(tok, name, ret_type, params, is_variadic, body);
 	}
 }
 
@@ -1053,29 +1054,31 @@ CallNode* Parser::call()
 
 	vector<ExprNode*> args;
 	FuncProperties funcprops = get_function_props(name);
+	int paramscount = funcprops.params.size();
 
 	CONSUME_OR_RET_NULL(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
 	
 	if(!check(TOKEN_RIGHT_PAREN)) do
 	{
 		args.push_back(expression());
-		if(args.size() > funcprops.params.size()) break;
+		if(!funcprops.variadic && args.size() > paramscount) break;
 	
 	} while(match(TOKEN_COMMA));
 
-	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
-
-	if(args.size() != funcprops.params.size())
+	if((funcprops.variadic && args.size() < paramscount)
+	||(!funcprops.variadic && args.size() != paramscount))
 	{
 		HOLD_PANIC();
-		error_at(&tok, tools::fstr("Expected %d argument%s, but %d were given.",
-			funcprops.params.size(), funcprops.params.size() == 1 ? "" : "s", args.size()));
+		error_at(&tok, tools::fstr("Expected %s%d argument%s, but %d were given.",
+			funcprops.variadic ? "at least " : "", paramscount, paramscount == 1 ? "" : "s", args.size()));
 		if(!PANIC_HELD) note_declaration("Function", name, &funcprops.token);
 		return nullptr;
 	}
 
+	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
+
 	vector<ParsedType*> lexparams; for(ParsedType*& p : funcprops.params) lexparams.push_back(p);
-	return funcprops.invalid ? nullptr : new CallNode(tok, name, args, funcprops.ret_type, lexparams);
+	return funcprops.invalid ? nullptr : new CallNode(tok, name, args, funcprops.ret_type, lexparams, paramscount);
 }
 
 // ======================= misc. =======================

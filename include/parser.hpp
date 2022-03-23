@@ -27,6 +27,7 @@ private:
 	{
 		ParsedType* ret_type;
 		vector<ParsedType*> params;
+		bool variadic;
 		bool defined;
 		bool invalid = false;
 		Token token;

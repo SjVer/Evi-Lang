@@ -65,6 +65,7 @@ class CodeGenerator: public Visitor
 	stack<llvm::Value*>* _value_stack;
 	map<string, llvm::Function*> _functions;
 	map<string, pair<llvm::Value*, ParsedType*>> _named_values;
+	uint _string_literal_count;
 
 	void error_at(Token *token, string message);
 	void warning_at(Token *token, string message);

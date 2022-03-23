@@ -716,7 +716,7 @@ VISIT(ReferenceNode)
 
 VISIT(CallNode)
 {
-	for(int i = 0; i < node->_arguments.size(); i++)
+	for(int i = 0; i < node->_func_params_count; i++)
 	{
 		node->_arguments[i]->accept(this);
 		ParsedType* exprtype = pop();

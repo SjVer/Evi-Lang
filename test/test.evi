@@ -1,9 +1,9 @@
 #apply "std/io"
 
-@printf i8 (chr* ...);
-
 @main i32 (i32 chr**)
 {
-	!!(%i i8; $i < $0; =i ++$i;)
-		prints($1[$i]);
+	printf("Hello World!\n");
+	printf("One == %d\n", 1);
+	printf("One and Two: %d, %f\n", 1, 2.0);
+	printf("nothing\n", 1, 2, 3);
 }

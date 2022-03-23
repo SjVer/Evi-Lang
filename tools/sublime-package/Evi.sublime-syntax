@@ -246,14 +246,17 @@ contexts:
           push:
             - include: comments
             - meta_scope: meta.parameter_list.evi
-            - include: comments, pre-directive
 
             - match: '\b{{type}}\b|\*'
               scope: variable.parameter.evi
+            - match: '\.\.\.'
+              scope: keyword.operator.variadic.evi
+
             - match: \)
               pop: true
-            - match: \S
-              scope: invalid.illegal.evi
+
+            - include: comments
+            - include: invalids
           pop: true
 
   expression-stmt:

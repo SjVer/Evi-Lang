@@ -87,16 +87,17 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 
 		// body = nullptr if only declaration
 		FuncDeclNode(Token token, string identifier, ParsedType* ret_type,
-					 vector<ParsedType*> params, bool is_variadic, StmtNode* body):
+					 vector<ParsedType*> params, bool variadic, StmtNode* body):
+
 			StmtNode(token), _identifier(identifier), 
 			_ret_type(ret_type), _params(params), 
-			_is_variadic(is_variadic), _body(body) {}
+			_variadic(variadic), _body(body) {}
 		ACCEPT
 
 		string _identifier;
 		ParsedType* _ret_type;
 		vector<ParsedType*> _params;
-		bool _is_variadic;
+		bool _variadic;
 		StmtNode* _body; // nullptr if only declared
 	};
 
@@ -326,16 +327,18 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 			{
 				public:
 
-				CallNode(Token token, string ident, vector<ExprNode*> arguments,
-						 ParsedType* ret_t_type, vector<ParsedType*> expected_arg_types):
+				CallNode(Token token, string ident, vector<ExprNode*> arguments, ParsedType* ret_t_type,
+						 vector<ParsedType*> expected_arg_types, int func_params_count):
 					PrimaryNode(token), _ident(ident), _arguments(arguments),
-					_ret_type(ret_t_type), _expected_arg_types(expected_arg_types) {}
+					_ret_type(ret_t_type), _expected_arg_types(expected_arg_types),
+					_func_params_count(func_params_count) {}
 				ACCEPT
 
 				string _ident;
 				vector<ExprNode*> _arguments;
 				ParsedType* _ret_type;
 				vector<ParsedType*> _expected_arg_types;
+				int _func_params_count;
 			};
 
 #undef ACCEPT

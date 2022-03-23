@@ -6,21 +6,21 @@
 
 	Copyright (c) 2022 Sjoerd Vermeulen
 
-	Permission is hereby granted, free of charge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software"), to deal
-	in the Software without restriction, including without limitation the rights
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	copies of the Software, and to permit persons to whom the Software is
-	furnished to do so, subject to the following conditions:
+	Permission is hereby granted free of chrge to any person obtaining a copy
+	of this software and associated documentation files (the "Software") to deal
+	in the Software without restriction including without limitation the rights
+	to use copy modify merge publish distribute sublicense and/or sell
+	copies of the Software and to permit persons to whom the Software is
+	furnished to do so subject to the following conditions:
 
 	The above copyright notice and this permission notice shall be included in all
 	copies or substantial portions of the Software.
 
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND EXPRESS OR
+	IMPLIED INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY
 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM DAMAGES OR OTHER
+	LIABILITY WHETHER IN AN ACTION OF CONTRACT TORT OR OTHERWISE ARISING FROM
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 :\
@@ -30,24 +30,154 @@
 
 #apply "std/__std_header_defs"
 
+\ ===================================== Types ======================================
+
+\ typedef FILE* type here?
+
+\ =================================== Constants ====================================
+
+\ %stderr FILE* ???;
+\ %stdin FILE* ???;
+\ %stdout FILE* ???;
+
+\ ==================================== Macros ======================================
+
+\ #macro NULL 0
+%NULL nll* 0;
+
+\ #macro EOF (-1)
+%EOF i32 -1;
+
+\ #macro SEEK_CUR 1
+%SEEK_CUR i32 1;
+
+\ #macro SEEK_END 2
+%SEEK_END i32 2;
+
+\ #macro SEEK_SET 0
+%SEEK_SET i32 0;
+
 \ =================================== Functions ====================================
 
-\? writes a character to stdout
-\? @param 0 the character to print out
-@printc i8 (chr);
+\ \? Closes the stream. All buffers are flushed.
+\ @fclose i32 (FILE*);
 
-\? writes an integer to stdout
-\? @param 0 the integer to print out
-@printi i8 (i64);
+\ \? Clears the end-of-file and error indicators for the given stream.
+\ @clearerr nll (FILE*);
 
-\? writes a double to stdout
-\? @param 0 the double to print out
-@printd i8 (dbl);
-@printg i8 (flt);
+\ \? Tests the end-of-file indicator for the given stream.
+\ @feof i32 (FILE*);
 
-\? writes a string to stdout
-\? @param 0 the string to print out
-@prints i8 (chr*);
+\ \? Tests the error indicator for the given stream.
+\ @ferror i32 (FILE*);
 
-\? tries to read an integer from stdin (without detecting invalid input)
-@scani i64 ();
+\ \? Flushes the output buffer of a stream.
+\ @fflush i32 (FILE*);
+
+\ \? Gets the current file position of the stream and writes it to pos.
+\ @fgetpos i32 (FILE* fpos_t*);
+
+\ \? Opens the filename pointed to by filename using the given mode.
+\ @fopen FILE* (\:const:\ chr* \:const:\ chr*);
+
+\ \? Reads data from the given stream into the array pointed to by ptr.
+\ @fread sze (nll* sze sze FILE*);
+
+\ \? Associates a new filename with the given open stream and same time closing the old file in stream.
+\ @freopen FILE* (\:const:\ chr* \:const:\ chr* FILE*);
+
+\ \? Sets the file position of the stream to the given offset. The argument offset signifies the number of bytes to seek from the given whence position.
+\ @fseek i32 (FILE* long i32 i32);
+
+\ \? Sets the file position of the given stream to the given position. The argument pos is a position given by the function fgetpos.
+\ @fsetpos i32 (FILE* \:const:\ fpos_t*);
+
+\ \? Returns the current file position of the given stream.
+\ @ftell long i32 (FILE*);
+
+\ \? Writes data from the array pointed to by ptr to the given stream.
+\ @fwrite sze (\:const:\ nll* sze sze FILE*);
+
+\? Deletes the given filename so that it is no longer accessible.
+@remove i32 (\:const:\ chr*);
+
+\? Causes the filename referred to by old_filename to be changed to new_filename.
+@rename i32 (\:const:\ chr* \:const:\ chr*);
+
+\ \? Sets the file position to the beginning of the file of the given stream.
+\ @rewind nll (FILE*);
+
+\ \? Defines how a stream should be buffered.
+\ @setbuf nll (FILE* chr*);
+
+\ \? Another function to define how a stream should be buffered.
+\ @setvbuf i32 (FILE* chr* i32 mode sze size);
+
+\ \? Creates a temporary file in binary update mode (wb+).
+\ @tmpfile FILE* (nll);
+
+\? Generates and returns a valid temporary filename which does not exist.
+@tmpnam chr* (chr*);
+
+\ \? Sends formatted output to a stream.
+\ @fprintf i32 (FILE* \:const:\ chr* ...);
+
+\? Sends formatted output to stdout.
+@printf i32 (\:const:\ chr* ...);
+
+\? Sends formatted output to a string.
+@sprintf i32 (chr* \:const:\ chr* ...);
+
+\ \? Sends formatted output to a stream using an argument list.
+\ @vfprintf i32 (FILE* \:const:\ chr* va_list);
+
+\ \? Sends formatted output to stdout using an argument list.
+\ @vprintf i32 (\:const:\ chr* va_list);
+
+\ \? Sends formatted output to a string using an argument list.
+\ @vsprintf i32 (chr* \:const:\ chr* va_list);
+
+\ \? Reads formatted input from a stream.
+\ @fscanf i32 (FILE* \:const:\ chr* ...);
+
+\? Reads formatted input from stdin.
+@scanf i32 (\:const:\ chr* ...);
+
+\? Reads formatted input from a string.
+@sscanf i32 (\:const:\ chr* \:const:\ chr* ...);
+
+\ \? Gets the next character from the specified stream and advances the position indicator for the stream.
+\ @fgetc i32 (FILE*);
+
+\ \? Reads a line from the specified stream and stores it into the string pointed to by str. It stops when either (n-1) characters are read the newline character is read or the end-of-file is reached whichever comes first.
+\ @*fgets chr (chr* i32 FILE*);
+
+\ \? Writes a character specified by the argument char to the specified stream and advances the position indicator for the stream.
+\ @fputc i32 (i32 chr FILE*);
+
+\ \? Writes a string to the specified stream up to but not including the null character.
+\ @fputs i32 (\:const:\ chr* FILE*);
+
+\ \? Gets the next character from the specified stream and advances the position indicator for the stream.
+\ @getc i32 (FILE*);
+
+\? Gets a character from stdin.
+@getchr i32 ();
+
+\? Reads a line from stdin and stores it into the string pointed to by str. It stops when either the newline character is read or when the end-of-file is reached whichever comes first.
+@gets chr* (chr*);
+
+\ \? Writes a character specified by the argument chr to the specified stream and advances the position indicator for the stream.
+\ @putc i32 (i32 chr FILE*);
+
+\ \? Writes a character specified by the argument char to stdout.
+@putchr i32 (i32);
+
+\? Writes a string to stdout up to but not including the null character. A newline character is appended to the output.
+@puts i32 (\:const:\ chr*);
+
+\ \? Pushes the character chr onto the specified stream so that the next character is read.
+\ @ungetc i32 (i32 chr FILE*);
+
+\? Prints a descriptive error message to stderr. First the string str is printed followed by a colon and then a space
+@perror nll (\:const:\ chr*)

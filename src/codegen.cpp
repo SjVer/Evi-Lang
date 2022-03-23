@@ -132,6 +132,7 @@ void CodeGenerator::prepare()
 	_top_module->setTargetTriple(_target_triple);
 
 	_value_stack = new stack<llvm::Value*>();
+	_string_literal_count = 0;
 }
 
 void CodeGenerator::finish()
@@ -274,7 +275,7 @@ VISIT(FuncDeclNode)
 	{
 		for(ParsedType*& type : node->_params) params.push_back(type->get_llvm_type());
 		
-		llvm::FunctionType* functype = llvm::FunctionType::get(node->_ret_type->get_llvm_type(), params, false);
+		llvm::FunctionType* functype = llvm::FunctionType::get(node->_ret_type->get_llvm_type(), params, node->_variadic);
 		func = llvm::Function::Create(functype, llvm::Function::ExternalLinkage, node->_identifier, *_top_module);
 		
 		_functions[node->_identifier] = func;
@@ -853,6 +854,7 @@ VISIT(SubscriptNode)
 VISIT(LiteralNode)
 {
 	ParsedType* type = from_token_type(node->_token.type);
+	// llvm::Value* constant;
 	llvm::Constant* constant;
 
 	switch(node->_token.type)
@@ -882,16 +884,18 @@ VISIT(LiteralNode)
 			llvm::ArrayType* stringtype = llvm::ArrayType::get(chartype, chars.size());
 
 			// Create the declaration statement
-			constant = _top_module->getOrInsertGlobal(".str", stringtype);
-			llvm::GlobalVariable* globaldecl = (llvm::GlobalVariable*)constant;
+			constant = _top_module->getOrInsertGlobal(tools::fstr(".str.%d", _string_literal_count), stringtype);
+			llvm::GlobalVariable* global = (llvm::GlobalVariable*)constant;
 
-			globaldecl->setInitializer(llvm::ConstantArray::get(stringtype, chars));
-			globaldecl->setConstant(true);
-			globaldecl->setLinkage(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
-			globaldecl->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
-			globaldecl->setAlignment(llvm::MaybeAlign(1));
+			global->setInitializer(llvm::ConstantArray::get(stringtype, chars));
+			global->setConstant(true);
+			global->setLinkage(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
+			global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+			global->setAlignment(llvm::MaybeAlign(1));
 
-			constant = globaldecl;
+			_string_literal_count++;
+			// constant = _builder->CreateInBoundsGEP(global, llvm::ConstantInt::get(__context, llvm::APInt(64, 0, false)));
+			constant = global;
 			break;
 		}
 		default: assert(false);
@@ -908,6 +912,8 @@ VISIT(ArrayNode)
 	llvm::ArrayType* arrtype = llvm::ArrayType::get(node->_cast_to->copy_element_of()->get_llvm_type(), node->_elements.size());
 	llvm::AllocaInst* arr = new llvm::AllocaInst(arrtype, 0, string("arrtmp"), _builder->GetInsertBlock());
 	arr->setAlignment(llvm::Align(node->_cast_to->get_alignment()));
+
+	;
 
 	// get base pointer to array
 	llvm::Value* idx0 = llvm::ConstantInt::get(__context, llvm::APInt(64, 0, false));
@@ -978,9 +984,12 @@ VISIT(CallNode)
 	{
 		node->_arguments[i]->accept(this);
 
-		llvm::Type* casttype = callee->getArg(i)->getType();
-		args.push_back(create_cast(pop(), false, casttype, node->_expected_arg_types[i]->is_signed()));
-		// args.push_back(pop());
+		if(i < node->_func_params_count)
+		{
+			llvm::Type* casttype = callee->getArg(i)->getType();
+			args.push_back(create_cast(pop(), false, casttype, node->_expected_arg_types[i]->is_signed()));
+		}
+		else args.push_back(pop());
 	}
 
 	if(AS_LEX(node->_ret_type) == TYPE_VOID && !node->_ret_type->is_pointer())
