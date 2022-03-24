@@ -913,8 +913,6 @@ VISIT(ArrayNode)
 	llvm::AllocaInst* arr = new llvm::AllocaInst(arrtype, 0, string("arrtmp"), _builder->GetInsertBlock());
 	arr->setAlignment(llvm::Align(node->_cast_to->get_alignment()));
 
-	;
-
 	// get base pointer to array
 	llvm::Value* idx0 = llvm::ConstantInt::get(__context, llvm::APInt(64, 0, false));
 	llvm::Value* ptr = _builder->CreateInBoundsGEP(arr, (llvm::Value*[]){idx0, idx0}, "arrgeptmp");

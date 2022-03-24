@@ -174,6 +174,7 @@ void Parser::generate_lint()
 				for(auto const& param : func.second.params)
 					LINT_OUTPUT_ARRAY_ITEM(param->to_string());
 				LINT_OUTPUT_ARRAY_END();
+				LINT_OUTPUT_PAIR_F("variadic", func.second.variadic ? "true" : "false", %s);
 
 				LINT_OUTPUT_OBJECT_END();
 			}
@@ -189,6 +190,7 @@ void Parser::generate_lint()
 					for(auto const& param : func.second.params)
 						LINT_OUTPUT_ARRAY_ITEM(param->to_string());
 					LINT_OUTPUT_ARRAY_END();
+					LINT_OUTPUT_PAIR_F("variadic", func.second.variadic ? "true" : "false", %s);
 
 					LINT_OUTPUT_OBJECT_END();
 				}						
@@ -219,18 +221,21 @@ void Parser::generate_lint()
 			#pragma region get token
 			#define IS_WANTED_TOKEN(token) \
 				(token.type == TOKEN_IDENTIFIER || token.type == TOKEN_VARIABLE_REF || token.type == TOKEN_PARAMETER_REF)
-
+			
 			// if cursor is after identifier use previous instead
 			Token token = IS_WANTED_TOKEN(_current) ? _current :
 						  IS_WANTED_TOKEN(_previous) ? _previous :
 						  (advance(false), _current);
-
+						//   IS_WANTED_TOKEN((advance(false), _current)) ? _current
+						//   : _current_call_token.file ? _current_call_token : _current;
+			
 			#undef IS_WANTED_TOKEN
 			#pragma endregion
 			string name(token.start, token.length);
 			Token decltok;
 
 			#define INVALID() { LINT_OUTPUT_PAIR_F("invalid", "true", %s); LINT_OUTPUT_END_PLAIN_OBJECT(); break; }
+
 			LINT_OUTPUT_START_PLAIN_OBJECT();
 
 			if(token.type == TOKEN_VARIABLE_REF)
@@ -252,7 +257,6 @@ void Parser::generate_lint()
 
 			LINT_OUTPUT_PAIR("file", *decltok.file);
 			LINT_OUTPUT_PAIR_F("line", decltok.line, %d);
-			// LINT_OUTPUT_PAIR_F("column", get_token_col(&decltok, lint_args.tab_width), %d);
 			LINT_OUTPUT_PAIR_F("column", get_token_col(&decltok), %d);
 			LINT_OUTPUT_PAIR_F("length", decltok.length, %d);
 
@@ -1049,6 +1053,8 @@ ReferenceNode* Parser::reference()
 CallNode* Parser::call()
 {
 	Token tok = _previous;
+	// _current_call_token = tok;
+
 	string name = PREV_TOKEN_STR;
 	if(!check_function(name)) error_at(&tok, "Function does not exist in current scope.");
 
@@ -1077,6 +1083,8 @@ CallNode* Parser::call()
 
 	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
 
+	// _current_call_token = { TOKEN_ERROR, nullptr, nullptr, 0, 0, nullptr };
+
 	vector<ParsedType*> lexparams; for(ParsedType*& p : funcprops.params) lexparams.push_back(p);
 	return funcprops.invalid ? nullptr : new CallNode(tok, name, args, funcprops.ret_type, lexparams, paramscount);
 }
@@ -1098,6 +1106,7 @@ Status Parser::parse(string infile, const char* source, AST* astree)
 	_panic_mode = false;
 	_error_dispatcher = ErrorDispatcher();
 
+	// _current_call_token = { TOKEN_ERROR, nullptr, nullptr, 0, 0, nullptr };
 	_main_file = infile;
 
 	advance();

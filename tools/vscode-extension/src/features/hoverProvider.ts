@@ -1,6 +1,6 @@
 import { HoverProvider, Hover, MarkedString, TextDocument, CancellationToken, Position, workspace, window } from 'vscode';
 import { textToMarkedString } from './utils/markedTextUtil';
-import { callEviLint, eviLintType, getDocumentation } from './utils/eviLintUtil';
+import { callEviLint, eviLintType, getDocumentationAsString } from './utils/eviLintUtil';
 import eviSymbols = require('./eviSymbols');
 
 const constantRegexes: { [regex: string]: string } = {
@@ -59,7 +59,7 @@ export default class EviHoverProvider implements HoverProvider {
 
 			// found!
 			if(signature.length) {
-				const documentation = await getDocumentation(document, position);
+				const documentation = await getDocumentationAsString(document, position);
 				return new Hover([{ language: 'evi', value: signature }, documentation], wordRange);
 			}
 		}
@@ -73,13 +73,14 @@ export default class EviHoverProvider implements HoverProvider {
 
 				signature = `@${func.identifier} ${func.return_type} (`;
 				for (let param in func.parameters) signature += func.parameters[param] + ' ';
+				if (func.variadic) signature += '... ';
 				if (signature.endsWith(' ')) signature = signature.substring(0, signature.length - 1);
 				signature += ')';
 			});
 
 			// found!
 			if(signature.length) {
-				const documentation = await getDocumentation(document, position);
+				const documentation = await getDocumentationAsString(document, position);
 				return new Hover([{ language: 'evi', value: signature }, documentation], wordRange);
 			}
 		}

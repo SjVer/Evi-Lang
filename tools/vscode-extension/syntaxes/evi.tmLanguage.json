@@ -235,6 +235,7 @@
 			"begin": "\\s",
 			
 			"patterns": [
+				{ "match": "\\.\\.\\.", "name": "keyword.operator.variadic.evi" },
 				{ "include": "#types" },
 				{ "match": "\\(", "name": "punctuation.section.parameters.begin.evi" },
 				{ "include": "#illegals" }
@@ -562,17 +563,8 @@
 					"match": "chr"
 				},
 				{
-					"begin": "(\\|)",
-					"beginCaptures": { "1": { "name": "punctuation.definition.array.begin.evi" }},
-					
-					"name": "meta.array.type.evi",
-					"patterns": [
-						{ "include": "#numbers" },
-						{ "include": "#illegals" }
-					],
-	
-					"end": "(\\|)",
-					"endCaptures": { "1": { "name": "punctuation.definition.array.end.evi" }}
+					"name": "storage.type.size.evi",
+					"match": "sze"
 				}
 			]
 		},

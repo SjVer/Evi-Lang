@@ -127,6 +127,7 @@ private:
 	#define PANIC_HELD (_old_panic_mode_from_macro_hold_panic)
 
 	string _main_file;
+	// Token _current_call_token;
 
 	#define PREV_TOKEN_STR std::string(_previous.start, _previous.length)
 };

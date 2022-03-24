@@ -1,7 +1,9 @@
-#apply "std/io"
+#apply "std/math"
 
-@main i32 (i32 chr**)
+@iseven bln (i128)
 {
-	printf("%d vs %d\n", 1 -> bln, 1 -> i1);
-	~ 0;
+	??(mod($0, 2) == 0)
+		~ 1;
+	::
+		~ 0;
 }

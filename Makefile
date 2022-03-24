@@ -37,10 +37,10 @@ OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
 APP = $(BINDIR)/$(APPNAME)
 DEP = $(OBJ:$(OBJDIR)/%.o=%.d)
 
-PHC = $(HEADERDIR)/pch.h
-PHCFLAGS = $(CXXFLAGS) -x c++-header $(PHC)
-# INC_PHC_FLAG = -include $(PHC)
-INC_PHC_FLAG = -include-pch $(PHC).gch
+PCH = $(HEADERDIR)/pch.h
+PCHFLAGS = $(CXXFLAGS) -x c++-header $(PCH)
+# INC_PCH_FLAG = -include $(PCH)
+INC_PCH_FLAG = -include-pch $(PCH).gch
 
 DEBUGDEFS = -DDEBUG -ggdb
 
@@ -72,14 +72,14 @@ $(APP): $(OBJ) | makedirs
 # $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
-	@$(CC) $(CXXFLAGS) -I$(HEADERDIR)/$(TARGET) $(INC_PHC_FLAG) -I $(HEADERDIR) -o $@ -c $<
+	@$(CC) $(CXXFLAGS) -I$(HEADERDIR)/$(TARGET) $(INC_PCH_FLAG) -I $(HEADERDIR) -o $@ -c $<
 	@printf "\b\b done!\n"
 	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
 
 # Builds phc's
 pch: $(PCH)
-	@printf "[pch] compiling $(PHC)..."
-	@$(CC) $(PHCFLAGS)
+	@printf "[pch] compiling $(PCH)..."
+	@$(CC) $(PCHFLAGS)
 	@printf "\b\b done!\n"
 
 stdlib: makedirs
@@ -164,6 +164,7 @@ newfile:
 	touch $(SRCDIR)/$(name).cpp
 	touch $(HEADERDIR)/$(name).hpp
 
+.PHONY: man
 man:
 	@cp tools/evi-man tools/evi-man.tmp
 	@DATE=$$(date +"%a %d, %Y") && sed -i -e "s/<<<DATE>>>/$$DATE/g" tools/evi-man.tmp
@@ -173,8 +174,8 @@ man:
 
 .PHONY: maybe-pch
 maybe-pch:
-ifeq ("$(wildcard $(PCH).gch)","")
-	@$(MAKE) --no-print-directory pch
+ifeq ($(wildcard $(PCH).gch),)
+	@# $(MAKE) --no-print-directory pch
 endif
 
 deb: maybe-pch $(APP) stdlib man

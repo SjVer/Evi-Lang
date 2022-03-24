@@ -107,28 +107,31 @@ vector<string> Preprocessor::remove_comments(vector<string> lines)
 	return lines;
 }
 
-string Preprocessor::find_header(string name)
+string Preprocessor::find_header(string basename)
 {
-	string hname = name + ".hevi";
-	name += ".evi";
+	string hname = basename + ".hevi";
+	string name = basename + ".evi";
 
 	// first look in current directory
-	if(ifstream(name).is_open()) return name;
-	else if(ifstream(hname).is_open()) return hname;
+	if(ifstream(hname).is_open()) return hname;
+	else if(ifstream(name).is_open()) return name;
 
 	// look in each include path
 	for(int i = 0; i < include_paths_count; i++)
 	{
-		string path = include_paths[i] + (PATH_SEPARATOR + name);
 		string hpath = include_paths[i] + (PATH_SEPARATOR + hname);
+		string path = include_paths[i] + (PATH_SEPARATOR + name);
 
-		if(ifstream(path).is_open()) return path;
-		else if(ifstream(hpath).is_open()) return hpath;
+		if(ifstream(hpath).is_open()) return hpath;
+		else if(ifstream(path).is_open()) return path;
 	}
 
 	// otherwise look in stdlib
-	if(ifstream(STDLIB_DIR + name).is_open()) return STDLIB_DIR + name;
-	else if(ifstream(STDLIB_DIR + hname).is_open()) return STDLIB_DIR + hname;
+	string hpath = STDLIB_DIR + (PATH_SEPARATOR + hname);
+	string path = STDLIB_DIR + (PATH_SEPARATOR + name);
+
+ 	if(ifstream(hpath).is_open()) return hpath;
+	else if(ifstream(path).is_open()) return path;
 
 	return "";
 }

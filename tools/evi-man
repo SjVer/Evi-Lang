@@ -31,20 +31,8 @@ Compile and assemble but do not link.
 
 .INDENT 0.0
 .TP
-.B \--ld-flags
-Display the flags passed to the linker.
-.UNINDENT
-
-.INDENT 0.0
-.TP
 .B \--emit-llvm
 Emit llvm IR instead of an executable.
-.UNINDENT
-
-.INDENT 0.0
-.TP
-.B \-E
-Preprocess only but do not compile or link.
 .UNINDENT
 
 .INDENT 0.0
@@ -73,6 +61,36 @@ Output to OUTFILE instead of to standard output.
 
 .INDENT 0.0
 .TP
+.B \-p, --preprocess-only
+Preprocess only but do not compile or link.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \--print-ld-flags
+Display the flags passed to the linker.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \--print-staticlib-dir
+Display the directory of the evi static library.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \--print-stdlib-dir
+Display the standard library header directory.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \--usage
+Display a usage information message.
+.UNINDENT
+
+.INDENT 0.0
+.TP
 .B \-v, --verbose
 Produce verbose output.
 .UNINDENT
@@ -85,14 +103,8 @@ Display a help message.
 
 .INDENT 0.0
 .TP
-.B \--usage
-Give a short usage message
-.UNINDENT
-
-.INDENT 0.0
-.TP
 .B \-V, --version
-Print program version
+Display compiler version information.
 .UNINDENT
 
 

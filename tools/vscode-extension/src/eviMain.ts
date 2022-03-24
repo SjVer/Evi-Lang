@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { execSync } from 'child_process';
 
 import EviCompletionItemProvider from './features/completionItemProvider';
 import EviHoverProvider from './features/hoverProvider';
@@ -11,6 +12,15 @@ export function activate(context: vscode.ExtensionContext): any {
 
 	// let validator = new EviValidationProvider();
 	// validator.activate(context.subscriptions);
+
+	// set status bar
+	let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
+	try {
+		const output = execSync(vscode.workspace.getConfiguration('evi').get<string>('eviExecutablePath') + ' --version').toString();
+		statusbarItem.text = output.replace('evi ', 'Evi: ');
+		statusbarItem.show();
+	}
+	catch (error) { vscode.window.showErrorMessage(`Failed to get Evi version:\n\"${error}\"`); }
 
 	// refresh diagnostics if neccesary
 	if (vscode.window.activeTextEditor) eviDiagnosticsChangeActiveEditorCallback(vscode.window.activeTextEditor);

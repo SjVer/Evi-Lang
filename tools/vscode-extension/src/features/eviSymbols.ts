@@ -146,6 +146,10 @@ export const types: IEntries = {
 		signature: "double precision float"
 	},
 	
+	'sze': {
+		description: "unsigned integral",
+		signature: "size"
+	},
 	'bln': {
 		description: "unsigned 1-bit boolean",
 		signature: "boolean"
@@ -157,5 +161,11 @@ export const types: IEntries = {
 	'nll': {
 		description: "null/void type",
 		signature: "null/void"
+	},
+
+
+	'...': {
+		description: "variadic arguments operator",
+		signature: "variadic"
 	},
 }

@@ -1,5 +1,6 @@
 #define ARGP_NO_EXIT
 #define ARGP_NO_HELP
+
 #include <argp.h>
 #include <regex>
 #include "lint.hpp"
@@ -10,7 +11,6 @@
 #include "preprocessor.hpp"
 #include "codegen.hpp"
 #include "debug.hpp"
-
 
 // ================= arg stuff =======================
 
@@ -27,6 +27,8 @@ static char args_doc[] = "file...";
 #define ARG_LINT_TYPE 4
 #define ARG_LINT_POS 5
 #define ARG_LINT_TAB_WIDTH 6
+#define ARG_STD_DIR 7
+#define ARG_STATLIB_DIR 8
 
 /* This structure is used by main to communicate with parse_opt. */
 struct arguments
@@ -47,16 +49,21 @@ bool lint_pos_given = false;
 
 static struct argp_option options[] =
 {
-	{"help", 'h', 0, 0, "Display a help message."},
-	{"verbose", 'v', 0, 0, "Produce verbose output."},
-	{"output",  'o', "OUTFILE", 0, "Output to OUTFILE instead of to standard output."},
-	{0, 'E', 0, 0, "Preprocess only but do not compile or link."},
-	{"link", 'l', "FILE", 0, "Link with FILE."},
-	{"include", 'i', "DIRECTORY", 0, "Add DIRECTORY to include search path."},
-	{"compile-only", 'c', 0, 0, "Compile and assemble but do not link."},
-	{"emit-llvm",  ARG_EMIT_LLVM, 0, 0, "Emit llvm IR instead of an executable."},
-	{"generate-ast",  ARG_GEN_AST, 0, 0, "Generate AST image (for debugging purposes)."},
-	{"ld-flags",  ARG_LD_FLAGS, 0, 0, "Display the flags passed to the linker."},
+	{"help", 				'h', 			 0, 		  0, "Display a help message."},
+	{"version", 			'V', 			 0, 		  0, "Display compiler version information."},
+	{"usage", 				'u', 			 0, 		  0, "Display a usage information message."},
+
+	{"verbose", 			'v', 			 0, 		  0, "Produce verbose output."},
+	{"output",  			'o', 			 "OUTFILE",   0, "Output to OUTFILE instead of to standard output."},
+	{"preprocess-only", 	'p', 			 0, 		  0, "Preprocess only but do not compile or link."},
+	{"link", 				'l', 			 "FILE", 	  0, "Link with FILE."},
+	{"include", 			'i', 			 "DIRECTORY", 0, "Add DIRECTORY to include search path."},
+	{"compile-only", 		'c', 			 0, 		  0, "Compile and assemble but do not link."},
+	{"emit-llvm",  			ARG_EMIT_LLVM, 	 0, 		  0, "Emit llvm IR instead of an executable."},
+	{"generate-ast",  		ARG_GEN_AST, 	 0, 		  0, "Generate AST image (for debugging purposes)."},
+	{"print-ld-flags",  	ARG_LD_FLAGS, 	 0, 		  0, "Display the flags passed to the linker."},
+	{"print-stdlib-dir", 	ARG_STD_DIR, 	 0, 		  0, "Display the standard library header directory."},
+	{"print-staticlib-dir", ARG_STATLIB_DIR, 0, 		  0, "Display the directory of the evi static library."},
 
 	{"lint-type", ARG_LINT_TYPE, "TYPE", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
 	{"lint-pos", ARG_LINT_POS, "POS", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
@@ -80,6 +87,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'h':
 		argp_help(&argp, stdout, ARGP_HELP_STD_HELP, APP_NAME);
 		exit(0);
+	case 'V':
+		cout << argp_program_version << endl;
+		exit(0);
+	case 'u':
+		argp_usage(state);
+		exit(0);
+
 	case 'v':
 		arguments->verbose += 1;
 		break;
@@ -140,6 +154,18 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		string cccommand;
 		for(int i = 0; i < LD_ARGC; i++) { cccommand += (const char*[]){LD_ARGS}[i]; cccommand += " "; }
 		cout << cccommand << endl;
+		exit(0);
+		break;
+	}
+	case ARG_STD_DIR:
+	{
+		cout << STDLIB_DIR << endl;
+		exit(0);
+		break;
+	}
+	case ARG_STATLIB_DIR:
+	{
+		cout << STATICLIB_DIR << endl;
 		exit(0);
 		break;
 	}
@@ -210,9 +236,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 void check_main_function(AST* astree)
 {
-	FuncDeclNode* mainfunc = nullptr;
+	if(lint_args.type != LINT_NONE) return;
 
 	// search for main func declaration
+	FuncDeclNode* mainfunc = nullptr;
 	for(auto& node : *astree)
 		if(!mainfunc && dynamic_cast<FuncDeclNode*>(node) && ((FuncDeclNode*)node)->_identifier == "main")
 				mainfunc = (FuncDeclNode*)node;

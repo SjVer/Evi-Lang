@@ -12,6 +12,7 @@ Status TypeChecker::check(string path, const char* source, AST* astree)
 
 	for(auto& node : *astree)
 	{
+		if(!node) continue;
 		node->accept(this);
 		pop();
 		_panic_mode = false;

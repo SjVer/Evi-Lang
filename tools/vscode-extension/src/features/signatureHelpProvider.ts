@@ -4,6 +4,7 @@ import { BackwardIterator } from './utils/backwardIterator';
 
 export default class EviSignatureHelpProvider implements SignatureHelpProvider {
 
+
 	public async provideSignatureHelp(document: TextDocument, position: Position, _token: CancellationToken): Promise<SignatureHelp | null> {
 		if (!workspace.getConfiguration('evi').get<boolean>('suggestions', true)) return null;
 
@@ -26,15 +27,22 @@ export default class EviSignatureHelpProvider implements SignatureHelpProvider {
 				params.push(func.parameters[param]);
 				signature += func.parameters[param] + ' ';
 			}
+			if (func.variadic) {
+				signature += "...";
+				params.push("... ");
+			}
 			if (signature.endsWith(' ')) signature = signature.substring(0, signature.length - 1);
 			signature += ')';
 		});
 		if(!signature.length) return Promise.reject("Function not found.");
 
 		const doc = await getDocumentation(document, position);
-		let signatureInfo = new SignatureInformation(signature, doc);
-		params.forEach(param => signatureInfo.parameters.push({ label: param, documentation: undefined }));
+		let signatureInfo = new SignatureInformation(signature, doc.main);
+		params.forEach(param => signatureInfo.parameters.push({ label: param, documentation: doc.params[signatureInfo.parameters.length] }));
 		
+		console.log(signatureInfo.parameters as any);
+		console.log(Math.min(paramCount, signatureInfo.parameters.length - 1));
+
 		let ret = new SignatureHelp();
 		ret.signatures.push(signatureInfo);
 		ret.activeSignature = 0;

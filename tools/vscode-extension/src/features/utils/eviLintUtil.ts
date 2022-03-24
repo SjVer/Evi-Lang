@@ -15,7 +15,7 @@ export enum eviLintType {
 export interface eviLintPosition { file: string, line: number, column: number, length: number };
 export interface eviLintDeclaration { position: eviLintPosition };
 export interface eviLintErrors { errors: { position: eviLintPosition, message: string, related: { position: eviLintPosition, message: string }[] }[] };
-export interface eviLintFunctions { functions: { identifier: string, return_type: string, parameters: string[] }[] };
+export interface eviLintFunctions { functions: { identifier: string, return_type: string, parameters: string[], variadic: boolean }[] };
 export interface eviLintVariables { variables: { identifier: string, type: string }[] };
 
 let do_log: boolean = workspace.getConfiguration('evi').get<boolean>('logDebugInfo');
@@ -114,7 +114,8 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 				result.functions.push({
 					identifier: func,
 					return_type: data[func]['return type'],
-					parameters: data[func]['parameters']
+					parameters: data[func]['parameters'],
+					variadic: data[func]['variadic'] 
 				});
 			}
 			log(result as any);
@@ -134,13 +135,17 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 	} } catch (e) { log(e); }
 }
 
-export async function getDocumentation(document: TextDocument, position: Position): Promise<MarkdownString> {
+
+
+export interface FuncDocumentation { main: string, params: string[], ret?: string };
+
+export async function getDocumentation(document: TextDocument, position: Position): Promise<FuncDocumentation> {
 	// get defenition location of function
 	const declaration: eviLintDeclaration = callEviLint(document, eviLintType.getDeclaration, position);
-	if (!declaration) return new MarkdownString("Function declaration not found.");
+	if (!declaration) return { main: "Function declaration not found.", params: [] };
 	
 	let delcdoc: TextDocument = await workspace.openTextDocument(Uri.file(declaration.position.file));
-	if (!delcdoc) return new MarkdownString("Could not open file " + declaration.position.file);
+	if (!delcdoc) return { main: "Could not open file " + declaration.position.file, params: [] };
 
 	let it = new BackwardIterator(delcdoc, declaration.position.column, declaration.position.line);
 
@@ -163,23 +168,38 @@ export async function getDocumentation(document: TextDocument, position: Positio
 	while (doc.startsWith("\n")) doc = doc.slice(1);
 
 	// get parameters
-	let params: { [key: string]: string } = { };
+	let params: string[] = [];
 	const paramRegex = /\n\s*\@param\s+([0-9]+)\s+(.*)\n/;
 	while (paramRegex.test(doc)) {
 		const match = doc.match(paramRegex);
 		doc = doc.replace(match[0], "\n");
-		params[match[1]] = match[2];
+		params.push(match[2]);
 	}
-	for (const param in params) doc += `\n*@param* \`${param}\` - ${params[param]}`;
+	// for (const param in params) doc += `\n*@param* \`${param}\` - ${params[param]}`;
 	
 	// get return type
+	let ret: string = undefined;
 	const retRegex = /\n\s*\@ret\s+(.*)\n/;
 	if (retRegex.test(doc)) {
 		const match = doc.match(retRegex);
 		doc = doc.replace(match[0], "\n");
-		doc += `\n*@ret* - ${match[1]}`;
+		// doc += `\n*@ret* - ${match[1]}`;
+		ret = match[1];
 	}
 
-	// format final documentation
-	return new MarkdownString(doc.trim().replaceAll("\n", " \\\n"));
+	return { main: doc, params: params, ret: ret };
+	// // format final documentation
+	// return new MarkdownString(doc.trim().replaceAll("\n", " \\\n"));
+}
+
+export async function getDocumentationAsString(document: TextDocument, position: Position): Promise<MarkdownString> {
+	const doc: FuncDocumentation = await getDocumentation(document, position);
+
+	let text = doc.main
+	for (let i = 0; i < doc.params.length; i++)
+		text += `\n*@param* \`${i}\` - ${doc.params[i]}`;
+	if (doc.ret)
+		text += `\n*@ret* - ${doc.ret}`;
+	
+	return new MarkdownString(text.trim().replaceAll("\n", " \\\n"));
 }
