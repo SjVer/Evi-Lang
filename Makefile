@@ -77,7 +77,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
 
 # Builds phc's
-pch:
+pch: $(PCH)
 	@printf "[pch] compiling $(PHC)..."
 	@$(CC) $(PHCFLAGS)
 	@printf "\b\b done!\n"
@@ -163,6 +163,6 @@ man:
 	@mv tools/evi-man.tmp.gz $(BINDIR)/evi-man.gz
 
 
-deb: $(APP) stdlib man
+deb: pch $(APP) stdlib man
 	@test $(target) || ( echo "target not given! ('make newfile target=TARGET')"; false )
 	@python3 tools/debian-package/generate-deb.py $(target) $(BINDIR)
