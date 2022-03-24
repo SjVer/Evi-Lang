@@ -69,9 +69,9 @@ extern evi_chr_t* tmpnam(evi_chr_t* str);
 
 // extern evi_i32_t fprevi_i32_tf(FILE *stream, /*const*/ evi_chr_t* format, ...);
 
-extern evi_i32_t previ_i32_tf(/*const*/ evi_chr_t* format, ...);
+extern evi_i32_t printf(/*const*/ evi_chr_t* format, ...);
 
-extern evi_i32_t sprevi_i32_tf(evi_chr_t* str, /*const*/ evi_chr_t* format, ...);
+extern evi_i32_t sprintf(evi_chr_t* str, /*const*/ evi_chr_t* format, ...);
 
 // extern evi_i32_t vfprevi_i32_tf(FILE *stream, /*const*/ evi_chr_t* format, va_list arg);
 
@@ -95,13 +95,13 @@ extern evi_i32_t sscanf(/*const*/ evi_chr_t* str, /*const*/ evi_chr_t* format, .
 
 // extern evi_i32_t getc(FILE *stream);
 
-extern evi_i32_t getevi_chr_t();
+extern evi_i32_t getchar();
 
 extern evi_chr_t* gets(evi_chr_t* str);
 
 // extern evi_i32_t putc(evi_i32_t evi_chr_t, FILE *stream);
 
-extern evi_i32_t putevi_chr_t(evi_i32_t evi_chr_t);
+extern evi_i32_t putchar(evi_i32_t evi_chr_t);
 
 extern evi_i32_t puts(/*const*/ evi_chr_t* str);
 

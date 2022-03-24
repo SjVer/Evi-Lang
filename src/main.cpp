@@ -338,5 +338,6 @@ int main(int argc, char **argv)
 
 
 	free((void*)source);
+	DEBUG_PRINT_MSG("Exited sucessfully.");
 	return STATUS_SUCCESS;
 }

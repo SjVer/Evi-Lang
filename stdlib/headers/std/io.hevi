@@ -99,9 +99,14 @@
 \ @fwrite sze (\:const:\ nll* sze sze FILE*);
 
 \? Deletes the given filename so that it is no longer accessible.
+\? @param 0 the name of the file to be deleted
+\? @ret zero on success and -1 on error (errno is set appropriately)
 @remove i32 (\:const:\ chr*);
 
 \? Causes the filename referred to by old_filename to be changed to new_filename.
+\? @param 0 the name of the file to be renamed and/or moved
+\? @param 1 the new name for the file
+\? @ret zero on success and -1 on error (errno is set appropriately)
 @rename i32 (\:const:\ chr* \:const:\ chr*);
 
 \ \? Sets the file position to the beginning of the file of the given stream.
@@ -117,15 +122,29 @@
 \ @tmpfile FILE* (nll);
 
 \? Generates and returns a valid temporary filename which does not exist.
+\? Return value is a pointer to the C string containing the proposed name
+\? for a temporary file. If str was a null pointer, this points to an internal
+\? buffer that will be overwritten the next time this function is called.
+\? If str was not a null pointer, str is returned. If the function fails to
+\? create a suitable filename, it returns a null pointer
+\? @param 0 char pointer where the proposed tempname will be stored
+\? @ret see function documentation
 @tmpnam chr* (chr*);
 
 \ \? Sends formatted output to a stream.
 \ @fprintf i32 (FILE* \:const:\ chr* ...);
 
 \? Sends formatted output to stdout.
+\? @param 0 the format/string to print
+\? @param 1 optional replacement values for the format tags
+\? @ret the amount of printed characteres on success, otherwise a negative number
 @printf i32 (\:const:\ chr* ...);
 
 \? Sends formatted output to a string.
+\? @param 0 the pointer where the resulting string will be stored
+\? @param 1 the format/string to write to the buffer
+\? @param 2 optional replacement values for the format tags
+\? @ret the amount of written characteres on success, otherwise a negative number
 @sprintf i32 (chr* \:const:\ chr* ...);
 
 \ \? Sends formatted output to a stream using an argument list.
@@ -141,43 +160,58 @@
 \ @fscanf i32 (FILE* \:const:\ chr* ...);
 
 \? Reads formatted input from stdin.
+\? @param 0 the format for the input
+\? @param 1 the destinations for each inputted value
+\? @ret the amount of scanned values on success, otherwise EOF
 @scanf i32 (\:const:\ chr* ...);
 
 \? Reads formatted input from a string.
+\? @param 0 the string that will be used as input
+\? @param 1 the format for the input
+\? @param 2 the destinations for each inputted value
+\? @ret the amount of scanned values on success, otherwise EOF
 @sscanf i32 (\:const:\ chr* \:const:\ chr* ...);
 
-\ \? Gets the next character from the specified stream and advances the position indicator for the stream.
+\ \? Gets the next character from a stream and advances the position indicator for the stream.
 \ @fgetc i32 (FILE*);
 
-\ \? Reads a line from the specified stream and stores it into the string pointed to by str. It stops when either (n-1) characters are read the newline character is read or the end-of-file is reached whichever comes first.
+\ \? Reads a line from a stream and stores it into the string pointed to by str. It stops when either (n-1) characters are read the newline character is read or the end-of-file is reached whichever comes first.
 \ @*fgets chr (chr* i32 FILE*);
 
-\ \? Writes a character specified by the argument char to the specified stream and advances the position indicator for the stream.
+\ \? Writes a to a stream and advances the position indicator for the stream.
 \ @fputc i32 (i32 chr FILE*);
 
-\ \? Writes a string to the specified stream up to but not including the null character.
+\ \? Writes a string to a stream up to but not including the null character.
 \ @fputs i32 (\:const:\ chr* FILE*);
 
-\ \? Gets the next character from the specified stream and advances the position indicator for the stream.
+\ \? Gets the next character from a stream and advances the position indicator for the stream.
 \ @getc i32 (FILE*);
 
 \? Gets a character from stdin.
-@getchr i32 ();
+\? @ret the character read as an unsigned char cast to an int or EOF on end of file or error
+@getchar i32 ();
 
 \? Reads a line from stdin and stores it into the string pointed to by str. It stops when either the newline character is read or when the end-of-file is reached whichever comes first.
+\? @param 0 char pointer where the read line will be stored
+\? @ret returns the given char pointer on success, and NULL on error
 @gets chr* (chr*);
 
-\ \? Writes a character specified by the argument chr to the specified stream and advances the position indicator for the stream.
+\ \? Writes a character to a stream and advances the position indicator for the stream.
 \ @putc i32 (i32 chr FILE*);
 
-\ \? Writes a character specified by the argument char to stdout.
-@putchr i32 (i32);
+\? Writes a character to stdout.
+\? @param 0 the character to be written
+\? @ret the character casted to an int on success, or EOF on error
+@putchar i32 (i32);
 
 \? Writes a string to stdout up to but not including the null character. A newline character is appended to the output.
+\? @param 0 the string to be written
+\? @ret a positive number on success, or EOF on error
 @puts i32 (\:const:\ chr*);
 
-\ \? Pushes the character chr onto the specified stream so that the next character is read.
+\ \? Pushes the character chr onto a stream so that the next character is read.
 \ @ungetc i32 (i32 chr FILE*);
 
-\? Prints a descriptive error message to stderr. First the string str is printed followed by a colon and then a space
-@perror nll (\:const:\ chr*)
+\? Prints a descriptive error message to stderr. First the string is printed followed by a colon and then a space.
+\? @param 0 the message to print before the error itself
+@perror nll (\:const:\ chr*);

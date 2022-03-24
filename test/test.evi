@@ -2,8 +2,6 @@
 
 @main i32 (i32 chr**)
 {
-	printf("Hello World!\n");
-	printf("One == %d\n", 1);
-	printf("One and Two: %d, %f\n", 1, 2.0);
-	printf("nothing\n", 1, 2, 3);
+	printf("%d vs %d\n", 1 -> bln, 1 -> i1);
+	~ 0;
 }

@@ -450,13 +450,13 @@ HANDLER(flag)
 	string flag;
 	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
 
-	if(CHECK_FLAG(flag))
-	{
-		ERROR_F(_current_line_no, "Flag '%s' is already set.", flag.c_str());
-		return;
-	}
+	// if(CHECK_FLAG(flag))
+	// {
+	// 	ERROR_F(_current_line_no, "Flag '%s' is already set.", flag.c_str());
+	// 	return;
+	// }
 	
-	_flags.push_back(flag);
+	if(!CHECK_FLAG(flag)) _flags.push_back(flag);
 	// DEBUG_PRINT_F_MSG("Set flag '%s'", flag.c_str());
 
 	ASSERT_END_OF_LINE();
