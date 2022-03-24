@@ -7,7 +7,7 @@ The implementation of this language's parser is based on [clox](https://crafting
 In order to build the evi compiler and its standard library run the following commands in the root folder of this repository (after you've cloned it):
 
 ```sh
-make deb # generate debian package
+make deb target=amd64 # generate debian package
 ```
 
 and
