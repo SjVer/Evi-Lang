@@ -16,4 +16,6 @@ and
 sudo apt install ./bin/evi*.deb # install the debian package
 ```
 
+PS: llvm is required
+
 (This README is a w.i.p. obviously)

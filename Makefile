@@ -7,15 +7,15 @@ CC = clang++
 LLVMVERSION = 12
 CC_PATH = /usr/bin/clang
 LD_PATH = /usr/bin/ld
-# STATICLIB_DIR = /usr/lib/
-STATICLIB_DIR = $(PWD)/bin/
-# STDLIB_DIR = /usr/share/evi/stdlib
-STDLIB_DIR = $(PWD)/stdlib/headers/
+STATICLIB_DIR = /usr/lib/
+STDLIB_DIR = /usr/share/evi/stdlib
+# STATICLIB_DIR = $(PWD)/bin/
+# STDLIB_DIR = $(PWD)/stdlib/headers/
 TARGET = x86_64-linux-gnu
 
 MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -Wno-comment
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
-DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\" LIBC_VERSION=\"$(shell gcc -dumpversion)\"
+DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\" LIBC_VERSION=\"$(shell gcc -dumpversion)\" 
 CXXFLAGS = $(MUTE) $(addprefix -D,$(DEFS)) `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 
@@ -85,18 +85,32 @@ pch: $(PCH)
 stdlib: makedirs
 	@$(MAKE) --no-print-directory -f $(STDLIB_SRC_DIR)/Makefile stdlib
 
+cp-stdlib:
+	@sudo mkdir -p $(STDLIB_DIR)
+	@sudo cp -r $(STDLIB_SRC_DIR)/headers/* $(STDLIB_DIR)
+
 .PHONY: clean-stdlib
 clean-stdlib:
 	@$(MAKE) --no-print-directory -f $(STDLIB_SRC_DIR)/Makefile clean
 
-################### Cleaning rules for Unix-based OS ###################
+############################################################################
 
 # Cleans complete project
 .PHONY: clean
 clean:
 	@# $(RM) $(DELOBJ) $(DEP) $(APP)
-	@$(RM) -rf $(OBJDIR)
+	@# $(RM) -rf $(OBJDIR)
 	@$(RM) -rf $(BINDIR)
+
+.PHONY: makedirs
+makedirs:
+	@$(MKDIR) -p $(BINDIR)
+	@$(MKDIR) -p $(OBJDIR)
+
+.PHONY: remake
+remake: clean $(APP)
+
+############################################################################
 
 .PHONY: test
 test: $(APP)
@@ -120,19 +134,12 @@ test-debug: debug $(APP)
 .PHONY: routine
 routine: $(APP) run clean
 
-.PHONY: makedirs
-makedirs:
-	@$(MKDIR) -p $(BINDIR)
-	@$(MKDIR) -p $(OBJDIR)
-
-.PHONY: remake
-remake: clean $(APP)
+############################################################################
 
 .PHONY: printdebug
 printdebug:
 	@echo "debug mode set!"
 
-# .PHONY: debug
 debug: CXXFLAGS += $(DEBUGDEFS)
 debug: printdebug
 debug: $(APP)
@@ -145,9 +152,10 @@ debug-no-fold: debug
 valgrind: debug $(APP)
 	@valgrind bin/evi test/test.evi -o bin/test $(args)
 
+############################################################################
+
 git:
 	git add --all
-# 	git status
 	git commit -m $$(test "$(msg)" && echo '$(msg)' || echo upload)
 	git push origin main
 
@@ -165,10 +173,12 @@ man:
 
 .PHONY: maybe-pch
 maybe-pch:
-ifneq ("$(wildcard $(PCH))","")
-	@$(MAKE) pch
+ifeq ("$(wildcard $(PCH).gch)","")
+	@$(MAKE) --no-print-directory pch
 endif
 
 deb: maybe-pch $(APP) stdlib man
 	@test $(target) || ( echo "target not given! ('make newfile target=TARGET')"; false )
 	@python3 tools/debian-package/generate-deb.py $(target) $(BINDIR)
+
+############################################################################
