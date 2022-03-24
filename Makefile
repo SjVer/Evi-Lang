@@ -163,6 +163,12 @@ man:
 	@mv tools/evi-man.tmp.gz $(BINDIR)/evi-man.gz
 
 
-deb: pch $(APP) stdlib man
+.PHONY: maybe-pch
+maybe-pch:
+ifneq ("$(wildcard $(PCH))","")
+	@$(MAKE) pch
+endif
+
+deb: maybe-pch $(APP) stdlib man
 	@test $(target) || ( echo "target not given! ('make newfile target=TARGET')"; false )
 	@python3 tools/debian-package/generate-deb.py $(target) $(BINDIR)
