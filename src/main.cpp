@@ -251,8 +251,8 @@ void check_main_function(AST* astree)
 		ErrorDispatcher().warning_at_token(&mainfunc->_token, "Warning",
 			"Return type of function " COLOR_BOLD "'main'" COLOR_NONE " is not an integer type.");
 
-	else if(mainfunc->_params.size() != 2 || !mainfunc->_params[0]->eq(PTYPE(TYPE_INTEGER), true) || 
-			!mainfunc->_params[1]->eq(PTYPE(TYPE_CHARACTER)->copy_pointer_to()->copy_pointer_to(), true)) // incorrect args
+	else if(mainfunc->_params.size() != 0 && (mainfunc->_params.size() != 2 || !mainfunc->_params[0]->eq(PTYPE(TYPE_INTEGER), true) || 
+			!mainfunc->_params[1]->eq(PTYPE(TYPE_CHARACTER)->copy_pointer_to()->copy_pointer_to(), true))) // incorrect args
 		ErrorDispatcher().warning_at_token(&mainfunc->_token, "Warning", 
 			"Function " COLOR_BOLD "'main'" COLOR_NONE " does not have parameters similar to " COLOR_BOLD "'i32 chr**'" COLOR_NONE ".");
 

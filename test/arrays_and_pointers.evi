@@ -1,0 +1,20 @@
+#apply "std/io"
+#apply "std/mem"
+
+\ Main function
+@main i32 ()
+{
+	\ A normal pointer
+	%myfltptr flt*;
+
+	\ Strings and arrays
+	%mystring chr* "This is a string!";
+	%myarray i32* {1, 2, 3, 4};
+
+	\ Dereferencing and indexing
+	printf("mystring: %s\n", $mystring); \ prints 'This is a string!'
+	printf("mystring's first character: %c\n", $mystring[0]); \ prints 'T'
+	printf("myarray's third index: %d\n", $myarray[2]); \ prints '3'
+	
+	~ 0;
+}

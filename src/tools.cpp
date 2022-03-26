@@ -96,7 +96,8 @@ char tools::escchr(char ogchar)
         case '\\': return '\\';
         case '\'': return '\'';
         case '\"': return '\"';
-        default: return -1;
+	case '0': return '\0';
+	default: return -1;
     }
 }
 
@@ -107,7 +108,7 @@ const char* tools::unescchr(char escchar)
     {
         case '\a': return "\\a";
         case '\b': return "\\b";
-        case '\e': return "\\e";
+	case '\e': return "\\e":
         case '\f': return "\\f";
         case '\n': return "\\n";
         case '\r': return "\\r";
@@ -116,7 +117,8 @@ const char* tools::unescchr(char escchar)
         case '\\': return "\\\\";
         case '\'': return "\\\'";
         case '\"': return "\\\"";
-        default: return new char[2]{escchar, '\0'};
+	case '\0': return "\\0";
+	default: return new char[2]{escchar, '\0'};
     }
 }
 
@@ -131,8 +133,8 @@ string tools::unescstr(string str, bool ign_s_quotes, bool ign_d_quotes)
         {
             CASE('\a', "\\a");
             CASE('\b', "\\b");
-            CASE('\e', "\\e");
-            CASE('\f', "\\f");
+            CASE('\e'. "\\e");
+	    CASE('\f', "\\f");
             CASE('\n', "\\n");
             CASE('\r', "\\r");
             CASE('\t', "\\t");
@@ -140,6 +142,7 @@ string tools::unescstr(string str, bool ign_s_quotes, bool ign_d_quotes)
             CASE('\\', "\\\\");
             CASE('\'', (ign_s_quotes ? "\'" : "\\\'"));
             CASE('\"', (ign_d_quotes ? "\"" : "\\\""));
+	    // CASE('\0', "\\0");
             default: ret << str[i];
         }
         #undef CASE

@@ -137,7 +137,7 @@ static uint get_token_col(Token* token, int tab_width = -1)
 		for(int i = -col; tab_width >= 0 && i < 0; i++)
 			if(token->start[i] == '\t') col += tab_width;
 	
-	return col;
+	return col >= 0 ? col : 0;
 }
 
 #endif

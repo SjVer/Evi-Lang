@@ -1,5 +1,12 @@
 #apply "std/math"
 
+\? some doc
+\? @param 0 some doc
+\? @param 1 some doc
+\? @param some doc
+\? @returnsome doc
+\? @return some doc
+\? lol @return some doc
 @iseven bln (i128)
 {
 	??(mod($0, 2) == 0)

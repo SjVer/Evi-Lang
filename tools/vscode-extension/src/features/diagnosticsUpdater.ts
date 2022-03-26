@@ -1,12 +1,12 @@
 import { TextDocument, Position, Uri, Diagnostic, Range, DiagnosticSeverity, TextEditor, languages, TextDocumentChangeEvent, Location } from 'vscode';
-import { callEviLint, eviLintType, eviLintErrors } from './utils/eviLintUtil';
+import { callEviLint, eviLintType, eviLintDiagnostics } from './utils/eviLintUtil';
 
 const collection = languages.createDiagnosticCollection('evi');
 
 function eviDiagnosticsCallback(document: TextDocument): void {
 	if(!document) { collection.clear(); return; }
 
-	const errors: eviLintErrors = callEviLint(document, eviLintType.getErrors, new Position(0, 0));
+	const errors: eviLintDiagnostics = callEviLint(document, eviLintType.getDiagnostics, new Position(0, 0));
 	if(!errors) { console.log("evi lint failed to get errors."); return; }
 
 	let diagnostics: { [file: string]: Diagnostic[] } = {};
@@ -18,7 +18,7 @@ function eviDiagnosticsCallback(document: TextDocument): void {
 		const start: Position = new Position(error.position.line, error.position.column);
 		const end: Position = start.translate(0, error.position.length);
 
-		let diagnostic: Diagnostic = new Diagnostic(new Range(start, end), error.message, DiagnosticSeverity.Error);
+		let diagnostic: Diagnostic = new Diagnostic(new Range(start, end), error.message);
 		diagnostic.source = 'evi';
 		// diagnostic.code = some code for CodeActions,
 		diagnostic.relatedInformation = [];
@@ -33,6 +33,10 @@ function eviDiagnosticsCallback(document: TextDocument): void {
 				message: info.message,
 			});
 		});
+
+		// set severity
+		if(error.type == "error") diagnostic.severity = DiagnosticSeverity.Error;
+		else if(error.type == "warning") diagnostic.severity = DiagnosticSeverity.Warning;
 		
 		diagnostics[error.position.file].push(diagnostic);
 	});

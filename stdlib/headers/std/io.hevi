@@ -100,13 +100,13 @@
 
 \? Deletes the given filename so that it is no longer accessible.
 \? @param 0 the name of the file to be deleted
-\? @ret zero on success and -1 on error (errno is set appropriately)
+\? @return zero on success and -1 on error (errno is set appropriately)
 @remove i32 (\:const:\ chr*);
 
 \? Causes the filename referred to by old_filename to be changed to new_filename.
 \? @param 0 the name of the file to be renamed and/or moved
 \? @param 1 the new name for the file
-\? @ret zero on success and -1 on error (errno is set appropriately)
+\? @return zero on success and -1 on error (errno is set appropriately)
 @rename i32 (\:const:\ chr* \:const:\ chr*);
 
 \ \? Sets the file position to the beginning of the file of the given stream.
@@ -128,7 +128,7 @@
 \? If str was not a null pointer, str is returned. If the function fails to
 \? create a suitable filename, it returns a null pointer
 \? @param 0 char pointer where the proposed tempname will be stored
-\? @ret see function documentation
+\? @return see function documentation
 @tmpnam chr* (chr*);
 
 \ \? Sends formatted output to a stream.
@@ -137,14 +137,14 @@
 \? Sends formatted output to stdout.
 \? @param 0 the format/string to print
 \? @param 1 optional replacement values for the format tags
-\? @ret the amount of printed characteres on success, otherwise a negative number
+\? @return the amount of printed characteres on success, otherwise a negative number
 @printf i32 (\:const:\ chr* ...);
 
 \? Sends formatted output to a string.
 \? @param 0 the pointer where the resulting string will be stored
 \? @param 1 the format/string to write to the buffer
 \? @param 2 optional replacement values for the format tags
-\? @ret the amount of written characteres on success, otherwise a negative number
+\? @return the amount of written characteres on success, otherwise a negative number
 @sprintf i32 (chr* \:const:\ chr* ...);
 
 \ \? Sends formatted output to a stream using an argument list.
@@ -162,14 +162,14 @@
 \? Reads formatted input from stdin.
 \? @param 0 the format for the input
 \? @param 1 the destinations for each inputted value
-\? @ret the amount of scanned values on success, otherwise EOF
+\? @return the amount of scanned values on success, otherwise EOF
 @scanf i32 (\:const:\ chr* ...);
 
 \? Reads formatted input from a string.
 \? @param 0 the string that will be used as input
 \? @param 1 the format for the input
 \? @param 2 the destinations for each inputted value
-\? @ret the amount of scanned values on success, otherwise EOF
+\? @return the amount of scanned values on success, otherwise EOF
 @sscanf i32 (\:const:\ chr* \:const:\ chr* ...);
 
 \ \? Gets the next character from a stream and advances the position indicator for the stream.
@@ -188,12 +188,12 @@
 \ @getc i32 (FILE*);
 
 \? Gets a character from stdin.
-\? @ret the character read as an unsigned char cast to an int or EOF on end of file or error
+\? @return the character read as an unsigned char cast to an int or EOF on end of file or error
 @getchar i32 ();
 
 \? Reads a line from stdin and stores it into the string pointed to by str. It stops when either the newline character is read or when the end-of-file is reached whichever comes first.
 \? @param 0 char pointer where the read line will be stored
-\? @ret returns the given char pointer on success, and NULL on error
+\? @return returns the given char pointer on success, and NULL on error
 @gets chr* (chr*);
 
 \ \? Writes a character to a stream and advances the position indicator for the stream.
@@ -201,12 +201,12 @@
 
 \? Writes a character to stdout.
 \? @param 0 the character to be written
-\? @ret the character casted to an int on success, or EOF on error
+\? @return the character casted to an int on success, or EOF on error
 @putchar i32 (i32);
 
 \? Writes a string to stdout up to but not including the null character. A newline character is appended to the output.
 \? @param 0 the string to be written
-\? @ret a positive number on success, or EOF on error
+\? @return a positive number on success, or EOF on error
 @puts i32 (\:const:\ chr*);
 
 \ \? Pushes the character chr onto a stream so that the next character is read.

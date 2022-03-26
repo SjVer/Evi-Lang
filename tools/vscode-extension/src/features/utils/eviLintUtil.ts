@@ -7,14 +7,14 @@ import { tmpdir } from 'os';
 
 export enum eviLintType {
 	getDeclaration = 'declaration',
-	getErrors = 'errors',
+	getDiagnostics = 'errors',
 	getFunctions = 'functions',
 	getVariables = 'variables',
 }
 
 export interface eviLintPosition { file: string, line: number, column: number, length: number };
 export interface eviLintDeclaration { position: eviLintPosition };
-export interface eviLintErrors { errors: { position: eviLintPosition, message: string, related: { position: eviLintPosition, message: string }[] }[] };
+export interface eviLintDiagnostics { errors: { position: eviLintPosition, message: string, type: string, related: { position: eviLintPosition, message: string }[] }[] };
 export interface eviLintFunctions { functions: { identifier: string, return_type: string, parameters: string[], variadic: boolean }[] };
 export interface eviLintVariables { variables: { identifier: string, type: string }[] };
 
@@ -75,8 +75,8 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 			log(result as any);
 			return result;
 		}
-		case eviLintType.getErrors: {
-			let result: eviLintErrors = { errors: [] };
+		case eviLintType.getDiagnostics: {
+			let result: eviLintDiagnostics = { errors: [] };
 			data.forEach((error: any) => {
 				// gather related information
 				let related: { position: eviLintPosition, message: string }[] = [];
@@ -102,6 +102,7 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 						length: error['length'],
 					},
 					message: error['message'],
+					type: error['type'],
 					related: related,
 				});
 			});
@@ -159,6 +160,10 @@ export async function getDocumentation(document: TextDocument, position: Positio
 		if (c == "\n" && !doc.startsWith("\\?")) {
 			// end of documentation, remove last (non-doc) line
 			doc = doc.slice(doc.indexOf("\\?"));
+			
+			// test if there's actually a documentation
+			if(!doc.startsWith('\\?')) doc = "";
+
 			break;
 		}
 		doc = c + doc;
@@ -179,11 +184,11 @@ export async function getDocumentation(document: TextDocument, position: Positio
 	
 	// get return type
 	let ret: string = undefined;
-	const retRegex = /\n\s*\@ret\s+(.*)\n/;
+	const retRegex = /\n\s*\@return\s+(.*)\n/;
 	if (retRegex.test(doc)) {
 		const match = doc.match(retRegex);
 		doc = doc.replace(match[0], "\n");
-		// doc += `\n*@ret* - ${match[1]}`;
+		// doc += `\n*@return* - ${match[1]}`;
 		ret = match[1];
 	}
 
@@ -199,7 +204,7 @@ export async function getDocumentationAsString(document: TextDocument, position:
 	for (let i = 0; i < doc.params.length; i++)
 		text += `\n*@param* \`${i}\` - ${doc.params[i]}`;
 	if (doc.ret)
-		text += `\n*@ret* - ${doc.ret}`;
+		text += `\n*@return* - ${doc.ret}`;
 	
 	return new MarkdownString(text.trim().replaceAll("\n", " \\\n"));
 }

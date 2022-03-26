@@ -1,4 +1,4 @@
-import { HoverProvider, Hover, MarkedString, TextDocument, CancellationToken, Position, workspace, window } from 'vscode';
+import { HoverProvider, Hover, MarkedString, TextDocument, CancellationToken, Position, workspace, window, SemanticTokens } from 'vscode';
 import { textToMarkedString } from './utils/markedTextUtil';
 import { callEviLint, eviLintType, getDocumentationAsString } from './utils/eviLintUtil';
 import eviSymbols = require('./eviSymbols');
@@ -51,10 +51,9 @@ export default class EviHoverProvider implements HoverProvider {
 			// variable
 			// find type
 			let signature: string = "";
-			callEviLint(document, eviLintType.getVariables, position).functions.forEach(variable => {
-				window.showInformationMessage(word + " vs " + variable.identifier);
-				// if(signature.length || word != variable.identifier) return;
-				// signature = `%${variable.identifier} ${variable.type}`;
+			callEviLint(document, eviLintType.getVariables, position).variables.forEach(variable => {
+				if(signature.length || word != '$' + variable.identifier) return;
+				signature = `%${variable.identifier} ${variable.type}`;
 			});
 
 			// found!

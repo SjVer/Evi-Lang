@@ -10,7 +10,7 @@ void Parser::error_at(Token *token, string message)
 	_had_error = true;
 	_panic_mode = true;
 
-	if(lint_args.type == LINT_GET_ERRORS) lint_output_error_object(token, message, "warning");
+	if(lint_args.type == LINT_GET_ERRORS) lint_output_error_object(token, message, "error");
 	else if(lint_args.type == LINT_NONE)
 	{
 		_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
@@ -369,10 +369,10 @@ void Parser::synchronize(bool toplevel)
 
 	if(lint_args.type == LINT_GET_ERRORS) lint_output_error_object_end();
 
-	if(_current.type == TOKEN_SEMICOLON)
+	if(_previous.type == TOKEN_SEMICOLON)
 	{
 		advance();
-		return;
+		// return;
 	}
 
 	if(toplevel) while(!is_at_end())
@@ -389,6 +389,7 @@ void Parser::synchronize(bool toplevel)
 	else while(!is_at_end())
 	{
 		if(_previous.type == TOKEN_SEMICOLON) return;
+		//  { cerr << "---\n"; return; }
 
 		switch(_current.type)
 		{
@@ -509,7 +510,8 @@ StmtNode* Parser::variable_declaration()
 	} while(match(TOKEN_COMMA));
 
 	// get type
-	ParsedType* type = consume_type();
+	ParsedType* type = consume_type(nametokens.size() > 1 ? "Expected type after identifiers." : "Expected type after identifier.");
+	if(!type || type->_invalid) return nullptr;
 	type->_is_reference = true;
 
 	// add to locals for parser to use

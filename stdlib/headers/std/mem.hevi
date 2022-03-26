@@ -34,24 +34,24 @@
 
 \? Allocates a block of n bytes that will be freed when the calling function exists.
 \? @param 0 the size in bytes
-\? @ret the allocated block
+\? @return the allocated block
 @alloca nll* (sze);
 
 \? Allocates an array of n elements each of which will be n bytes in size.
 \? @param 0 the amount of elements
 \? @param 1 the size in bytes of each element
-\? @ret the allocated array
+\? @return the allocated array
 @calloc nll* (i32 i32);
 
 \? Allocates an array of n bytes and returns them uninitialized.
 \? @param 0 the size in bytes of the array
-\? @ret the allocated array
+\? @return the allocated array
 @malloc nll* (sze);
 
 \? Re-allocates memory extending it to a given size.
 \? @param 0 the address to re-allocate
 \? @param 1 the new size in bytes
-\? @ret a pointer to the address, or a null pointer if reallocation failed
+\? @return a pointer to the address, or a null pointer if reallocation failed
 @realloc nll* (nll* i32);
 
 \? Releases a block of memory block specified by address.
