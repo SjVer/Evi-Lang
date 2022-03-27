@@ -558,11 +558,13 @@ StmtNode* Parser::statement()
 	//		 		| return
 	// 				| block
 	// 				| expression ";"
+	//				| ";"
 
 	if	   (match(TOKEN_EQUAL			 ))	return assign_statement();
 	else if(match(TOKEN_QUESTION_QUESTION)) return if_statement();
 	else if(match(TOKEN_TILDE			 ))	return return_statement();
 	else if(match(TOKEN_BANG_BANG	 	 ))	return loop_statement();
+	else if(match(TOKEN_SEMICOLON	 	 ))	return nullptr;
 	else if(match(TOKEN_LEFT_BRACE		 ))	return block_statement();
 	else									return expression_statement();
 }
