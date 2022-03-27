@@ -155,7 +155,7 @@ valgrind: debug $(APP)
 ############################################################################
 
 git:
-	@$(MAKE) --no-print-directory -f wiki/Makefile git
+	@cd wiki && $(MAKE) --no-print-directory git
 
 #	git add --all
 	git commit -am $$(test "$(msg)" && echo '$(msg)' || echo upload)
