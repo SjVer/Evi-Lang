@@ -155,8 +155,10 @@ valgrind: debug $(APP)
 ############################################################################
 
 git:
-	git add --all
-	git commit -m $$(test "$(msg)" && echo '$(msg)' || echo upload)
+	@$(MAKE) --no-print-directory -f wiki/Makefile git
+
+#	git add --all
+	git commit -am $$(test "$(msg)" && echo '$(msg)' || echo upload)
 	git push origin main
 
 newfile:
@@ -175,7 +177,7 @@ man:
 .PHONY: maybe-pch
 maybe-pch:
 ifeq ($(wildcard $(PCH).gch),)
-	@# $(MAKE) --no-print-directory pch
+	@$(MAKE) --no-print-directory pch
 endif
 
 deb: maybe-pch $(APP) stdlib man
