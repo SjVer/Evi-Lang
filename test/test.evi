@@ -1,5 +1,4 @@
-\? Multiplies two integers and returns the result.
-\? @param 0 the first integer
-\? @param 1 the second integer
-\? @return the result of the multiplication, or -1 if an error occurred
-@multiply i32 (i32 i32);
+@main i32 ()
+{
+
+}

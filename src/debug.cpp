@@ -169,6 +169,8 @@ VISIT(BlockNode)
 
 	for(auto& subnode : node->_statements)
 	{
+		if(!subnode) continue;
+		
 		// node id will be _nodecount
 		CONNECT_NODES(thisnode, _nodecount);
 		subnode->accept(this);

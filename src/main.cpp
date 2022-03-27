@@ -297,7 +297,9 @@ int main(int argc, char **argv)
 
 	init_builtin_evi_types();
 	Status status;
-	#define ABORT_IF_UNSUCCESSFUL() if(status != STATUS_SUCCESS && lint_args.type == LINT_NONE) ABORT(status);
+	// #define ABORT_IF_UNSUCCESSFULL() if(status != STATUS_SUCCESS && lint_args.type == LINT_NONE) ABORT(status);
+	#define ABORT_IF_UNSUCCESSFULL() if(status != STATUS_SUCCESS) { if(lint_args.type == LINT_GET_ERRORS) \
+									 { LINT_OUTPUT_END_PLAIN_ARRAY(); cout << lint_output; exit(0); } ABORT(status); }
 
 
 	if(lint_args.type == LINT_GET_ERRORS) LINT_OUTPUT_START_PLAIN_ARRAY();
@@ -306,14 +308,14 @@ int main(int argc, char **argv)
 	// preprocess
 	Preprocessor* prepr = new Preprocessor();
 	status = prepr->preprocess(arguments.args[0], &source);
-	ABORT_IF_UNSUCCESSFUL();
+	ABORT_IF_UNSUCCESSFULL();
 	if(arguments.preprocess_only) { tools::writef(arguments.outfile, source); return STATUS_SUCCESS; }
 
 
 	// parse program
 	Parser* parser = new Parser();
 	status = parser->parse(arguments.args[0], source, &astree);
-	ABORT_IF_UNSUCCESSFUL();
+	ABORT_IF_UNSUCCESSFULL();
 
 
 	// check for function @main i32 (...)
@@ -324,7 +326,7 @@ int main(int argc, char **argv)
 	// type check
 	TypeChecker* checker = new TypeChecker();
 	status = checker->check(arguments.args[0], source, &astree);
-	ABORT_IF_UNSUCCESSFUL();
+	ABORT_IF_UNSUCCESSFULL();
 
 
 	// finish linting
@@ -354,14 +356,14 @@ int main(int argc, char **argv)
 	// codegen
 	CodeGenerator* codegen = new CodeGenerator();
 	status = codegen->generate(arguments.args[0], arguments.outfile, source, &astree);
-	ABORT_IF_UNSUCCESSFUL();
+	ABORT_IF_UNSUCCESSFULL();
 
 
 	// output
 	if(arguments.compile_only && !arguments.emit_llvm) status = codegen->emit_object(arguments.outfile);
 	else if(arguments.emit_llvm) status = codegen->emit_llvm(arguments.outfile);
 	else status = codegen->emit_binary(arguments.outfile, (const char**)arguments.linked, arguments.linkedc);
-	ABORT_IF_UNSUCCESSFUL();
+	ABORT_IF_UNSUCCESSFULL();
 
 
 	free((void*)source);

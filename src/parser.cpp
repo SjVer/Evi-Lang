@@ -1059,14 +1059,14 @@ CallNode* Parser::call()
 	Token tok = _previous;
 	// _current_call_token = tok;
 
+	CONSUME_OR_RET_NULL(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
+
 	string name = PREV_TOKEN_STR;
 	if(!check_function(name)) error_at(&tok, "Function does not exist in current scope.");
 
 	vector<ExprNode*> args;
 	FuncProperties funcprops = get_function_props(name);
 	int paramscount = funcprops.params.size();
-
-	CONSUME_OR_RET_NULL(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
 	
 	if(!check(TOKEN_RIGHT_PAREN)) do
 	{
