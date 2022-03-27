@@ -160,7 +160,8 @@
 				},
 				{
 					"name": "comment.line.documentation.evi",
-					"match": "\\\\\\?.*$"
+					"match": "\\\\\\?(?: (@param [0-9]+|@return) ).*$",
+					"captures": { "1": { "name": "entity.name.class.evi" } }
 				},
 				{
 					"name": "comment.line.evi",
@@ -263,7 +264,7 @@
 		},
 		"assignment":
 		{
-			"begin": "(=)\\s*(?:([a-zA-Z_]+[a-zA-Z0-9_]*)|(\\S+))",
+			"begin": "(=(?!=))\\s*(?:([a-zA-Z_]+[a-zA-Z0-9_]*)|(\\S+))",
 			"beginCaptures": {
 				"1": { "name": "keyword.operator.assignment.evi" },
 				"2": { "name": "variable.name.evi" },

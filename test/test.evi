@@ -1,16 +1,5 @@
-#apply "std/math"
-
-\? some doc
-\? @param 0 some doc
-\? @param 1 some doc
-\? @param some doc
-\? @returnsome doc
-\? @return some doc
-\? lol @return some doc
-@iseven bln (i128)
-{
-	??(mod($0, 2) == 0)
-		~ 1;
-	::
-		~ 0;
-}
+\? Multiplies two integers and returns the result.
+\? @param 0 the first integer
+\? @param 1 the second integer
+\? @return the result of the multiplication, or -1 if an error occurred
+@multiply i32 (i32 i32);

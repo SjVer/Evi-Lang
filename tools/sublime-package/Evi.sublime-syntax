@@ -285,7 +285,7 @@ contexts:
     - match: '\\\? (@param [0-9]+ |@return )'
       scope: punctuation.definition.comment.documentation.evi
       captures:
-        1: storage.type.class.evi
+        1: entity.name.constant.evi
       push:
         - meta_scope: comment.line.documentation.evi
         - match: $\n?
