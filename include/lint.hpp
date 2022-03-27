@@ -7,7 +7,7 @@
 typedef enum
 {
 	LINT_GET_DECLARATION,
-	LINT_GET_ERRORS,
+	LINT_GET_DIAGNOSTICS,
 	LINT_GET_FUNCTIONS,
 	LINT_GET_VARIABLES,
 
@@ -19,10 +19,10 @@ static const char* get_lint_type_string(LintType type)
 	#define CASE(type, str) case type: return str
 	switch(type)
 	{
-		CASE(LINT_GET_DECLARATION, "declaration");
-		CASE(LINT_GET_ERRORS, "errors");
-		CASE(LINT_GET_FUNCTIONS, "functions");
-		CASE(LINT_GET_VARIABLES, "variables");
+		CASE(LINT_GET_DECLARATION, "get-declaration");
+		CASE(LINT_GET_DIAGNOSTICS, "get-diagnostics");
+		CASE(LINT_GET_FUNCTIONS, "get-functions");
+		CASE(LINT_GET_VARIABLES, "get-variables");
 
 		default: return nullptr;
 	}
@@ -64,7 +64,7 @@ extern std::string lint_output;
 #define LINT_OUTPUT_ARRAY_END() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "], "; }
 #define LINT_OUTPUT_ARRAY_ITEM(value) { lint_output += '"' + value + "\", "; }
 
-void lint_output_error_object(Token* token, string message, const char* type);
-void lint_output_error_object_end();
+void lint_output_diagnostic_object(Token* token, string message, const char* type);
+void lint_output_diagnostic_object_end();
 
 #endif

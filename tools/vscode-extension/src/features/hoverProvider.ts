@@ -9,7 +9,7 @@ const constantRegexes: { [regex: string]: string } = {
 	/*strings */ "^(\"(\\.|.)*\")$": "chr*",
 }
 
-const identRegex: RegExp = /[a-zA-Z_]+[a-zA-Z0-9_]*/;
+const functionRegex: RegExp = /[a-zA-Z_]+[a-zA-Z0-9_]*/;
 
 export default class EviHoverProvider implements HoverProvider {
 
@@ -62,7 +62,7 @@ export default class EviHoverProvider implements HoverProvider {
 				return new Hover([{ language: 'evi', value: signature }, documentation], wordRange);
 			}
 		}
-		else if(identRegex.test(word))
+		else if(functionRegex.test(word))
 		{
 			// function?
 			// find params and whatnot
@@ -73,8 +73,7 @@ export default class EviHoverProvider implements HoverProvider {
 				signature = `@${func.identifier} ${func.return_type} (`;
 				for (let param in func.parameters) signature += func.parameters[param] + ' ';
 				if (func.variadic) signature += '... ';
-				if (signature.endsWith(' ')) signature = signature.substring(0, signature.length - 1);
-				signature += ')';
+				signature = signature.trim() + ')';
 			});
 
 			// found!

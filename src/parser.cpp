@@ -10,7 +10,7 @@ void Parser::error_at(Token *token, string message)
 	_had_error = true;
 	_panic_mode = true;
 
-	if(lint_args.type == LINT_GET_ERRORS) lint_output_error_object(token, message, "error");
+	if(lint_args.type == LINT_GET_DIAGNOSTICS) lint_output_diagnostic_object(token, message, "error");
 	else if(lint_args.type == LINT_NONE)
 	{
 		_error_dispatcher.error_at_token(token, "Syntax Error", message.c_str());
@@ -43,7 +43,7 @@ void Parser::note_declaration(string type, string name, Token* token)
 {
 	const char* msg = strdup((type + " '" + name + "' declared here:").c_str());
 
-	if(lint_args.type == LINT_GET_ERRORS)
+	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
 		// // remove "], }, " at end of error object
 		// lint_output.erase(lint_output.end() - 6);
@@ -367,7 +367,7 @@ void Parser::synchronize(bool toplevel)
 {
 	_panic_mode = false;
 
-	if(lint_args.type == LINT_GET_ERRORS) lint_output_error_object_end();
+	if(lint_args.type == LINT_GET_DIAGNOSTICS) lint_output_diagnostic_object_end();
 
 	if(_previous.type == TOKEN_SEMICOLON)
 	{
@@ -1058,10 +1058,10 @@ CallNode* Parser::call()
 {
 	Token tok = _previous;
 	// _current_call_token = tok;
+	string name = PREV_TOKEN_STR;
 
 	CONSUME_OR_RET_NULL(TOKEN_LEFT_PAREN, "Expected '(' after identifier.");
 
-	string name = PREV_TOKEN_STR;
 	if(!check_function(name)) error_at(&tok, "Function does not exist in current scope.");
 
 	vector<ExprNode*> args;

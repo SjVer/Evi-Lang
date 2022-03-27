@@ -102,7 +102,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arguments->output_given = true;
 		break;
 
-	case 'E':
+	case 'p':
 		arguments->preprocess_only = true;
 		break;
 	case 'l':
@@ -298,11 +298,11 @@ int main(int argc, char **argv)
 	init_builtin_evi_types();
 	Status status;
 	// #define ABORT_IF_UNSUCCESSFULL() if(status != STATUS_SUCCESS && lint_args.type == LINT_NONE) ABORT(status);
-	#define ABORT_IF_UNSUCCESSFULL() if(status != STATUS_SUCCESS) { if(lint_args.type == LINT_GET_ERRORS) \
+	#define ABORT_IF_UNSUCCESSFULL() if(status != STATUS_SUCCESS) { if(lint_args.type == LINT_GET_DIAGNOSTICS) \
 									 { LINT_OUTPUT_END_PLAIN_ARRAY(); cout << lint_output; exit(0); } ABORT(status); }
 
 
-	if(lint_args.type == LINT_GET_ERRORS) LINT_OUTPUT_START_PLAIN_ARRAY();
+	if(lint_args.type == LINT_GET_DIAGNOSTICS) LINT_OUTPUT_START_PLAIN_ARRAY();
 
 
 	// preprocess
@@ -330,7 +330,7 @@ int main(int argc, char **argv)
 
 
 	// finish linting
-	if(lint_args.type == LINT_GET_ERRORS)
+	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
 		LINT_OUTPUT_END_PLAIN_ARRAY();
 		cout << lint_output;

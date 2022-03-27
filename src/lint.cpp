@@ -4,7 +4,7 @@
 lint_args_t lint_args = { LINT_NONE, -1, {0, 0} };
 std::string lint_output;
 
-void lint_output_error_object(Token* token, string message, const char* type)
+void lint_output_diagnostic_object(Token* token, string message, const char* type)
 {
 	LINT_OUTPUT_START_PLAIN_OBJECT();
 
@@ -19,7 +19,7 @@ void lint_output_error_object(Token* token, string message, const char* type)
 	LINT_OUTPUT_ARRAY_START("related");
 }
 
-void lint_output_error_object_end()
+void lint_output_diagnostic_object_end()
 {
 	LINT_OUTPUT_ARRAY_END();
 	LINT_OUTPUT_OBJECT_END();

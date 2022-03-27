@@ -6,10 +6,10 @@ import { basename, dirname, join } from 'path';
 import { tmpdir } from 'os';
 
 export enum eviLintType {
-	getDeclaration = 'declaration',
-	getDiagnostics = 'errors',
-	getFunctions = 'functions',
-	getVariables = 'variables',
+	getDeclaration = 'get-declaration',
+	getDiagnostics = 'get-diagnostics',
+	getFunctions = 'get-functions',
+	getVariables = 'get-variables',
 }
 
 export interface eviLintPosition { file: string, line: number, column: number, length: number };
@@ -35,20 +35,24 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 	
 	const dir = dirname(document.fileName);
 	const eviExec = workspace.getConfiguration('evi').get<string>('eviExecutablePath');
-	const cmd = `${eviExec} ${tmpfile} ` +
+	const workspacefolder = workspace.getWorkspaceFolder(document.uri).uri.fsPath;
+
+	let cmd = `${eviExec} ${tmpfile} ` +
 				`--include="${dir}" ` +
 				`--lint-type="${type}" ` +
 				`--lint-pos="${position.line + 1}:${position.character}" ` +
 				`--lint-tab-width="${workspace.getConfiguration('editor').get<number>('tabSize')}" `;
-
-	if (tmpfile.endsWith('.evilint_tmp')) rm(tmpfile, () => {});
+	workspace.getConfiguration('evi').get<string[]>('includeSearchPaths').forEach(path =>
+		cmd += ` --include=${path}`.replace('${workspaceFolder}', workspacefolder));
 
 	log("\nlint cmd: " + cmd);
-
+	
 	let output: string;
 	try { output = execSync(cmd).toString(); }
-	catch (error) { window.showErrorMessage(`Failed to execute Evi binary:\n\"${error}\"`); }
-
+	// catch (error) { window.showErrorMessage(`Failed to execute Evi binary:\n\"${error}\"`); }
+	catch (error) { console.log(`Failed to execute Evi binary:\n\"${error}\"`); }
+	if (tmpfile.endsWith('.evilint_tmp')) rm(tmpfile, () => {});
+	
 	// remove ansii escape codes
 	output = output.replace(RegExp(String.fromCharCode(0x1b) + "\\[([0-9]+;)?[0-9]+m", "g"), '');
 
@@ -56,7 +60,8 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 	
 	let data: any;
 	try { data = JSON.parse(output); }
-	catch (error) { window.showErrorMessage(`Failed to parse data returned by Evi binary:\n"${error}"\nData: "${output}"`); return undefined }
+	// catch (error) { window.showErrorMessage(`Failed to parse data returned by Evi binary:\n"${error}"\nData: "${output}"`); return undefined }
+	catch (error) { console.log(`Failed to parse data returned by Evi binary:\n"${error}"\nData: "${output}"`); return undefined }
 
 	try { switch (type)
 	{
@@ -136,15 +141,13 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 	} } catch (e) { log(e); }
 }
 
-
-
 export interface FuncDocumentation { main: string, params: string[], ret?: string };
 
 export async function getDocumentation(document: TextDocument, position: Position): Promise<FuncDocumentation> {
 	// get defenition location of function
 	const declaration: eviLintDeclaration = callEviLint(document, eviLintType.getDeclaration, position);
 	if (!declaration) return { main: "Function declaration not found.", params: [] };
-	
+
 	let delcdoc: TextDocument = await workspace.openTextDocument(Uri.file(declaration.position.file));
 	if (!delcdoc) return { main: "Could not open file " + declaration.position.file, params: [] };
 
@@ -163,7 +166,7 @@ export async function getDocumentation(document: TextDocument, position: Positio
 			
 			// test if there's actually a documentation
 			if(!doc.startsWith('\\?')) doc = "";
-
+			
 			break;
 		}
 		doc = c + doc;
@@ -171,6 +174,7 @@ export async function getDocumentation(document: TextDocument, position: Positio
 	// replace comment tokens with just newlines
 	doc = doc.replace(/\n?\\\?\s*/g, "\n") + "\n";
 	while (doc.startsWith("\n")) doc = doc.slice(1);
+
 
 	// get parameters
 	let params: string[] = [];
@@ -180,7 +184,6 @@ export async function getDocumentation(document: TextDocument, position: Positio
 		doc = doc.replace(match[0], "\n");
 		params.push(match[2]);
 	}
-	// for (const param in params) doc += `\n*@param* \`${param}\` - ${params[param]}`;
 	
 	// get return type
 	let ret: string = undefined;
@@ -193,8 +196,6 @@ export async function getDocumentation(document: TextDocument, position: Positio
 	}
 
 	return { main: doc, params: params, ret: ret };
-	// // format final documentation
-	// return new MarkdownString(doc.trim().replaceAll("\n", " \\\n"));
 }
 
 export async function getDocumentationAsString(document: TextDocument, position: Position): Promise<MarkdownString> {

@@ -140,7 +140,7 @@ string Preprocessor::find_header(string basename)
 
 void Preprocessor::error_at_line(uint line, const char* message)
 {
-	if(lint_args.type == LINT_GET_ERRORS)
+	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
 		LINT_OUTPUT_START_PLAIN_OBJECT();
 
@@ -152,7 +152,7 @@ void Preprocessor::error_at_line(uint line, const char* message)
 		LINT_OUTPUT_PAIR("type", "error");
 
 		LINT_OUTPUT_ARRAY_START("related");
-		lint_output_error_object_end();
+		lint_output_diagnostic_object_end();
 	}
 	else if(lint_args.type == LINT_NONE)
 	{
@@ -292,7 +292,7 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 	#undef CASE
 }
 
-void Preprocessor::handle_directive(string line, uint _current_line_no)
+void Preprocessor::handle_directive(string line, uint line_no)
 {
 	// get first word and make sure it's a valid directive
 	string first_word = line.substr(0, line.find(' '));
@@ -300,8 +300,7 @@ void Preprocessor::handle_directive(string line, uint _current_line_no)
 
  	if(dirtype == DIR_INVALID)
 	{
-		if(!IN_FALSE_BRANCH)
-			ERROR_F(_current_line_no, "Invalid preprocessor directive: '#%s'.", first_word.c_str())
+		if(!IN_FALSE_BRANCH) ERROR_F(line_no, "Invalid preprocessor directive: '#%s'.", first_word.c_str())
 		else SUBMIT_LINE("");
 		return; // report the error but keep on chuckin'
 	}
@@ -313,7 +312,7 @@ void Preprocessor::handle_directive(string line, uint _current_line_no)
 
 // ===============================================================
 
-bool Preprocessor::handle_pragma(vector<string> args, uint _current_line_no)
+bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
 {
 	string cmd = args[0];
 	args.erase(args.begin());
@@ -326,17 +325,17 @@ bool Preprocessor::handle_pragma(vector<string> args, uint _current_line_no)
 	else if(cmd == "error")
 	{
 		string msg;
-		if(!consume_string(&args[0], &msg, _current_line_no) || args.size() != 1) return false;
+		if(!consume_string(&args[0], &msg, line_no) || args.size() != 1) return false;
 
-		ERROR(_current_line_no, msg.c_str());
+		ERROR(line_no, msg.c_str());
 		return true;
 	}
 	else if(cmd == "warning")
 	{
 		string msg;
-		if(!consume_string(&args[0], &msg, _current_line_no) || args.size() != 1) return false;
+		if(!consume_string(&args[0], &msg, line_no) || args.size() != 1) return false;
 
-		_error_dispatcher.warning_at_line(_current_line_no, _current_file.c_str(), "Preprocessor Warning", msg.c_str());
+		_error_dispatcher.warning_at_line(line_no, _current_file.c_str(), "Preprocessor Warning", msg.c_str());
 		return true;
 	}
 
@@ -387,8 +386,10 @@ HANDLER(apply)
 	// DEBUG_PRINT_F_MSG("Found header '%s' at '%s'.", header.c_str(), path.c_str());
 	string source = tools::readf(path);
 
-	// process text
 	_current_file = path;
+	_current_line_no = 0;
+
+	// process text
 	vector<string> lines = tools::split_string(source, "\n");
 	lines = remove_comments(lines);
 	LINE_MARKER(0);
@@ -397,8 +398,9 @@ HANDLER(apply)
 	// continue current file
 	_current_file = oldfile;
 	_current_line_no = old_lineno;
-	LINE_MARKER(_current_line_no);
+	_apply_depth--;
 
+	LINE_MARKER(_current_line_no);
 	ASSERT_END_OF_LINE();
 }
 

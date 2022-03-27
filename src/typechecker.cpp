@@ -29,12 +29,12 @@ void TypeChecker::error_at(Token *token, string message)
 	_panic_mode = true;
 	_had_error = true;
 
-	if(lint_args.type == LINT_GET_ERRORS)
+	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
-		lint_output_error_object(token, message, "error");
+		lint_output_diagnostic_object(token, message, "error");
 		
 		// TODO:? array and surrounding object ended in synchronize()
-		lint_output_error_object_end();
+		lint_output_diagnostic_object_end();
 	}
 	else if(lint_args.type == LINT_NONE)
 	{
@@ -53,12 +53,12 @@ void TypeChecker::error_at(Token *token, string message)
 void TypeChecker::warning_at(Token *token, string message)
 {
 	if(_panic_mode) return;
-	else if(lint_args.type == LINT_GET_ERRORS)
+	else if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
-		lint_output_error_object(token, message, "warning");
+		lint_output_diagnostic_object(token, message, "warning");
 
 		// TODO:? array and surrounding object ended in synchronize()
-		lint_output_error_object_end();
+		lint_output_diagnostic_object_end();
 	}
 	else if(lint_args.type == LINT_NONE)
 		_error_dispatcher.warning_at_token(token, "Type Inference Warning", message.c_str());

@@ -11,7 +11,7 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 		let result: CompletionItem[] = [];
 		let added: any = {};
 
-		let shouldProvideCompletionItems = workspace.getConfiguration('evi').get<boolean>('suggestions', true);
+		let shouldProvideCompletionItems = workspace.getConfiguration('editor').get<boolean>('acceptSuggestionOnCommitCharacter', true);
 		if (!shouldProvideCompletionItems) return Promise.resolve(result);
 
 		let range = document.getWordRangeAtPosition(position);
@@ -78,7 +78,12 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 				let word = func.identifier;
 				if (matches(word) && !added[word]) {
 					added[word] = true;
-					const signature = `@${func.identifier} ${func.return_type}`;
+
+					let signature = `@${func.identifier} ${func.return_type} (`;
+					func.parameters.forEach(param => signature += param + ' ');
+					if(func.variadic) signature += '... ';
+					signature = signature.trim() + ')';
+
 					result.push(createNewProposal(CompletionItemKind.Function, word, { signature: signature }));
 				}
 			}

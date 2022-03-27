@@ -54,15 +54,27 @@
                         "default": "/usr/bin/evi",
                         "description": "The path to the Evi executable (/usr/bin/evi by default)"
                     },
-                    "evi.suggestions": {
-                        "type": "boolean",
-                        "default": true,
-                        "description": "Enable code suggestions"
-                    },
                     "evi.logDebugInfo": {
                         "type": "boolean",
                         "default": false,
                         "description": "Log debugging information to the console (requires reload)"
+                    },
+                    "evi.includeSearchPaths": {
+                        "type": "array",
+                        "default": [ ],
+                        "description": "A list of the paths used to search for included files."
+                    }
+                }
+            }
+        ],
+        "taskDefinitions": [
+            {
+                "type": "evi",
+                "properties": {
+                    "flags": {
+                        "type": "array",
+                        "examples": [ "--include=include/", "--compile-only" ],
+                        "description": "The arguments passed to the compiler."
                     }
                 }
             }

@@ -1,4 +1,14 @@
+#apply "std/io"
+
+\? Returns zero.
+\? @return the integer 0
+@zero i32 () ~ 0;
+
 @main i32 ()
 {
+	%myvar i32 zero();
 
+	puts("Hello World!");
+
+	~ $myvar;
 }

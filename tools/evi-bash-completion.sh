@@ -9,7 +9,7 @@ _evi_autocomplete()
         -h|--help|--usage|-V|--version)
             return
             ;;
-        -l|--link)
+        -l|--link|-o|--output)
             _filedir
             return
             ;;
@@ -27,6 +27,6 @@ _evi_autocomplete()
         return
     fi
 
-    _filedir '@(evi)'
+    _filedir '@(evi|hevi|evii)'
 } &&
 complete -F _evi_autocomplete evi
