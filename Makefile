@@ -157,8 +157,8 @@ valgrind: debug $(APP)
 git:
 	@cd wiki && $(MAKE) --no-print-directory git || true
 
-#	git add --all
-	git commit -am $$(test "$(msg)" && echo '$(msg)' || echo upload)
+	git add --all
+	git commit -m $$(test "$(msg)" && echo '$(msg)' || echo upload)
 	git push origin main
 
 newfile:
