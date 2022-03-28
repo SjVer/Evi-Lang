@@ -1,16 +1,32 @@
+\ Include the standard io functions
 #apply "std/io"
+
+\ Set debug mode flag
+#flag DEBUG_MODE
 
 \? Returns twice the given value.
 \? @param 0 the value to double
 \? @return double the given value
 @double flt (flt) ~ $0 * 2.0;
 
-@main i32 ()
+\ The entry point
+@main i32 (i64 chr**)
 {
+	\ Welcome to the Evi programming language!
 	puts("Hello World!");
-	
-	%myvar i32 double(7);
-	printf("7 * 2 = %g\n", $myvar);
 
+	#ifset DEBUG_MODE
+		puts("Executing in debug mode!");
+	#else
+		puts("Executing in normal mode!");
+	#endif
+	
+	%myvar i32 double(7.0);
+	printf("7.0 * 2.0 = %g\n", $myvar);
+	
+	=myvar double(16);
+	printf("16 * 2 = %d\n", $myvar -> i32);
+
+	\ Return exit status
 	~ 0;
 }
