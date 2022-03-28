@@ -25,6 +25,8 @@
 	SOFTWARE.
 :\
 
+#ifnset __STDLIB_HEADER__
+
 \ mark file as stdlib header
 #flag __STDLIB_HEADER__
 
@@ -35,3 +37,5 @@
 \ #macro __COMPILER_VERSION__ {{version}}
 \ #macro __COMPILER_BUILD_TARGET__ {{target}}
 \ #macro __COMPILER_BUILD_DATE__ {{date}}
+
+#endif \ __STDLIB_HEADER__

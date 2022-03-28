@@ -43,15 +43,17 @@ private:
 	typedef void(Preprocessor::*DirectiveHandler)(string);
 
 	// methods
-	#define ERR_PROMPT "Preprocessing Error"
 	#define ERROR(line, msg) { error_at_line(line, msg); }
 	#define ERROR_F(line, format, ...) { error_at_line(line, tools::fstr(format, __VA_ARGS__).c_str()); }
+	#define WARNING(line, msg) { warning_at_line(line, msg); }
+	#define WARNING_F(line, format, ...) { warning_at_line(line, tools::fstr(format, __VA_ARGS__).c_str()); }
 
 	void process_lines(vector<string> lines);
 	vector<string> remove_comments(vector<string> lines);
 	string find_header(string name);
 
 	void error_at_line(uint line, const char* message);
+	void warning_at_line(uint line, const char* message);
 
 	string strip_start(string str);
 	bool consume_identifier(string* str, string* dest, uint line);

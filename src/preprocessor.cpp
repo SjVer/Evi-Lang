@@ -156,8 +156,30 @@ void Preprocessor::error_at_line(uint line, const char* message)
 	}
 	else if(lint_args.type == LINT_NONE)
 	{
-		_error_dispatcher.error_at_line(line, _current_file.c_str(), ERR_PROMPT, message);
+		_error_dispatcher.error_at_line(line, _current_file.c_str(), "Preprocessing Error", message);
 		_had_error = true;
+	}
+}
+
+void Preprocessor::warning_at_line(uint line, const char* message)
+{
+	if(lint_args.type == LINT_GET_DIAGNOSTICS)
+	{
+		LINT_OUTPUT_START_PLAIN_OBJECT();
+
+		LINT_OUTPUT_PAIR("file", _current_file);
+		LINT_OUTPUT_PAIR_F("line", line, %d);
+		LINT_OUTPUT_PAIR_F("column", 0, %d);
+		LINT_OUTPUT_PAIR_F("length", 0, %d);
+		LINT_OUTPUT_PAIR("message", tools::replacestr(message, "\"", "\\\""));
+		LINT_OUTPUT_PAIR("type", "warning");
+
+		LINT_OUTPUT_ARRAY_START("related");
+		lint_output_diagnostic_object_end();
+	}
+	else if(lint_args.type == LINT_NONE)
+	{
+		_error_dispatcher.warning_at_line(line, _current_file.c_str(), "Preprocessing Warning", message);
 	}
 }
 
@@ -455,11 +477,11 @@ HANDLER(flag)
 	string flag;
 	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
 
-	// if(CHECK_FLAG(flag))
-	// {
-	// 	ERROR_F(_current_line_no, "Flag '%s' is already set.", flag.c_str());
-	// 	return;
-	// }
+	if(CHECK_FLAG(flag))
+	{
+		WARNING_F(_current_line_no, "Flag '%s' is already set.", flag.c_str());
+		return;
+	}
 	
 	if(!CHECK_FLAG(flag)) _flags.push_back(flag);
 	// DEBUG_PRINT_F_MSG("Set flag '%s'", flag.c_str());

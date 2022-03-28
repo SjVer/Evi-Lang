@@ -1,7 +1,7 @@
 {
     "name": "evi-lang",
     "displayName": "Evi-Lang",
-    "description": "Evi syntax highlighting extension",
+    "description": "Evi programming language extension",
     "version": "0.0.1",
     "publisher": "SjVer",
     "author": {
@@ -11,7 +11,9 @@
     },
     "categories": [
         "Programming Languages",
-        "Snippets"
+        "Snippets",
+        "Linters",
+        "Testing"
     ],
     "engines": {
         "vscode": "^1.63.0"
@@ -90,15 +92,9 @@
         "watch": "clear; tsc --build --watch ",
         "clean": "clear; tsc --build --clean"
     },
-    "dependencies": {
-        "gulp": "^4.0.2",
-        "vscode-nls": "^4.0.0",
-        "which": "^2.0.2"
-    },
     "devDependencies": {
         "@types/node": "16.x",
-        "@types/vscode": "^1.51.0",
-        "@types/which": "^2.0.0"
+        "@types/vscode": "^1.51.0"
     },
     "repository": {
         "type": "git",
