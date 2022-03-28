@@ -277,8 +277,11 @@ Preprocessor::DirectiveType Preprocessor::get_directive_type(string str)
 {
 		 if(str == "apply")  return DIR_APPLY;
 	else if(str == "info")	 return DIR_INFO;
+
 	else if(str == "file")	 return DIR_FILE;
 	else if(str == "line")	 return DIR_LINE;
+
+	else if(str == "macro")	 return DIR_MACRO;
 
 	else if(str == "flag")	 return DIR_FLAG;
 	else if(str == "unflag") return DIR_UNFLAG;
@@ -298,8 +301,11 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 	{
 		CASE(DIR_APPLY, apply);
 		CASE(DIR_INFO, info);
+
 		CASE(DIR_FILE, file);
 		CASE(DIR_LINE, line);
+
+		CASE(DIR_MACRO, macro);
 
 		CASE(DIR_FLAG, flag);
 		CASE(DIR_UNFLAG, unflag);
@@ -445,6 +451,7 @@ HANDLER(info)
 	}
 }
 
+
 HANDLER(file)
 {
 	if(IN_FALSE_BRANCH) { SUBMIT_LINE(""); return; }
@@ -466,6 +473,12 @@ HANDLER(line)
 	LINE_MARKER(_current_line_no);
 
 	ASSERT_END_OF_LINE();
+}
+
+
+HANDLER(macro)
+{
+
 }
 
 

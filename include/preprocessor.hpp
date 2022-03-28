@@ -26,9 +26,12 @@ private:
 	{
 		DIR_APPLY,
 		DIR_INFO,
+
 		DIR_FILE,
 		DIR_LINE,
 		
+		DIR_MACRO,
+
 		DIR_FLAG,
 		DIR_UNFLAG,
 
@@ -69,8 +72,11 @@ private:
 	#define HANDLER(name) void handle_directive_##name(string line)
 		HANDLER(apply);
 		HANDLER(info);
+
 		HANDLER(file);
 		HANDLER(line);
+
+		HANDLER(macro);
 
 		HANDLER(flag);
 		HANDLER(unflag);
