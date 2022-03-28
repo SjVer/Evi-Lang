@@ -353,6 +353,18 @@ contexts:
           pop: true
         - include: invalids
 
+    - match: ^\s*#(macro)
+      scope: keyword.preprocessor.macro.evi
+      push:
+        - match: '{{ident}}'
+          scope: entity.name.constant.preprocessor.evi
+          push:
+            - meta_scope: meta.preprocessor.macro.evi
+            - match: $\n?
+              pop: true
+            - include: main
+        - include: invalids
+
     - match: ^\s*#(ifset|ifnset)
       scope: keyword.preprocessor.conditional.evi
       push:

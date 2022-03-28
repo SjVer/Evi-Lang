@@ -1,8 +1,3 @@
-#apply "std/io"
-#apply "std/math"
-
-@main i32 ()
-{
-	printf("cos 3 = %g\n", cos(3) -> dbl);
-	~ 0;
-}
+#macro TEST 123
+#file "this" \comment
+TEST#
