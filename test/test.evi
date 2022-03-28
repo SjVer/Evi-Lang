@@ -1,14 +1,16 @@
 #apply "std/io"
 
-\? Returns zero.
-\? @return the integer 0
-@zero i32 () ~ 0;
+\? Returns twice the given value.
+\? @param 0 the value to double
+\? @return double the given value
+@double flt (flt) ~ $0 * 2.0;
 
 @main i32 ()
 {
-	%myvar i32 zero();
-
 	puts("Hello World!");
+	
+	%myvar i32 double(7);
+	printf("7 * 2 = %g\n", $myvar);
 
-	~ $myvar;
+	~ 0;
 }

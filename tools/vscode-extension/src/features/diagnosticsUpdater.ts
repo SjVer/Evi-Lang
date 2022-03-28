@@ -3,11 +3,14 @@ import { callEviLint, eviLintType, eviLintDiagnostics } from './utils/eviLintUti
 
 const collection = languages.createDiagnosticCollection('evi');
 
-function eviDiagnosticsCallback(document: TextDocument): void {
+function eviDiagnosticsCallback(document: TextDocument, retry: boolean = false): void {
 	if(!document) { collection.clear(); return; }
 
 	const errors: eviLintDiagnostics = callEviLint(document, eviLintType.getDiagnostics, new Position(0, 0));
-	if(!errors) { console.log("evi lint failed to get errors."); return; }
+	if(!errors) {
+		if(!retry) eviDiagnosticsCallback(document, true);
+		else { console.log("evi lint failed to get errors."); return; }
+	}
 
 	let diagnostics: { [file: string]: Diagnostic[] } = {};
 	
