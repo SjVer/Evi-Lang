@@ -45,18 +45,24 @@ private:
 
 	typedef void(Preprocessor::*DirectiveHandler)(string);
 
-	// methods
-	#define ERROR(line, msg) { error_at_line(line, msg); }
-	#define ERROR_F(line, format, ...) { error_at_line(line, tools::fstr(format, __VA_ARGS__).c_str()); }
-	#define WARNING(line, msg) { warning_at_line(line, msg); }
-	#define WARNING_F(line, format, ...) { warning_at_line(line, tools::fstr(format, __VA_ARGS__).c_str()); }
+	typedef struct
+	{
 
+	} MacroProperties;
+
+	// macros
+	#define ERROR(lineno, line, msg) { error_at_line(lineno, msg, line); }
+	#define ERROR_F(lineno, line, format, ...) { error_at_line(lineno, tools::fstr(format, __VA_ARGS__).c_str(), line); }
+	#define WARNING(lineno, line, msg) { warning_at_line(lineno, msg, line); }
+	#define WARNING_F(lineno, line, format, ...) { warning_at_line(lineno, tools::fstr(format, __VA_ARGS__).c_str(), line); }
+
+	// methods
 	void process_lines(vector<string> lines);
 	vector<string> remove_comments(vector<string> lines);
 	string find_header(string name);
 
-	void error_at_line(uint line, const char* message);
-	void warning_at_line(uint line, const char* message);
+	void error_at_line(uint line, const char* message, string whole_line = "");
+	void warning_at_line(uint line, const char* message, string whole_line = "");
 
 	string strip_start(string str);
 	bool consume_identifier(string* str, string* dest, uint line);
@@ -92,8 +98,10 @@ private:
 	vector<string> _lines;
 	string _current_file;
 	uint _current_line_no;
+	string _current_original_line;
 
 	vector<string> _flags;
+	map<string, MacroProperties>* _macros;
 	stack<bool>* _branches;
 	
 	vector<string> _blocked_files;

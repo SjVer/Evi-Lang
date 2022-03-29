@@ -18,6 +18,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	_current_file = infile;
 	_current_line_no = 0;
 	_branches = new stack<bool>();
+	_macros = new map<string, MacroProperties>();
 	_apply_depth = 0;
 	_error_dispatcher = ErrorDispatcher();
 	_had_error = false;
@@ -47,6 +48,7 @@ void Preprocessor::process_lines(vector<string> lines)
 	{
 		_current_line_no++;
 
+		_current_original_line = lines[line_idx];
 		string line_str = strip_start(lines[line_idx]);
 		
 		if(line_str[0] == '#') // handle directives
@@ -56,6 +58,8 @@ void Preprocessor::process_lines(vector<string> lines)
 		
 		else SUBMIT_LINE(lines[line_idx]);
 	}
+
+	if(_branches->size()) error_at_line(_current_line_no, "Expected #endif.", "");
 }
 
 vector<string> Preprocessor::remove_comments(vector<string> lines)
@@ -138,7 +142,7 @@ string Preprocessor::find_header(string basename)
 
 // ===============================================================
 
-void Preprocessor::error_at_line(uint line, const char* message)
+void Preprocessor::error_at_line(uint line, const char* message, string whole_line)
 {
 	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
@@ -157,11 +161,16 @@ void Preprocessor::error_at_line(uint line, const char* message)
 	else if(lint_args.type == LINT_NONE)
 	{
 		_error_dispatcher.error_at_line(line, _current_file.c_str(), "Preprocessing Error", message);
+		if(whole_line.length())
+		{
+			cerr << endl;
+			_error_dispatcher.print_line_marked(line, whole_line, COLOR_RED);
+		}
 		_had_error = true;
 	}
 }
 
-void Preprocessor::warning_at_line(uint line, const char* message)
+void Preprocessor::warning_at_line(uint line, const char* message, string whole_line)
 {
 	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
@@ -180,6 +189,11 @@ void Preprocessor::warning_at_line(uint line, const char* message)
 	else if(lint_args.type == LINT_NONE)
 	{
 		_error_dispatcher.warning_at_line(line, _current_file.c_str(), "Preprocessing Warning", message);
+		if(whole_line.length())
+		{
+			cerr << endl;
+			_error_dispatcher.print_token_marked(line, whole_line, COLOR_PURPLE);
+		}
 	}
 }
 
@@ -206,7 +220,7 @@ bool Preprocessor::consume_identifier(string* str, string* dest, uint line)
 	// check if correct
 	if(i == 0)
 	{
-		ERROR_F(line, "Expected identifier, not '%s'.", str->substr(0, str->find(' ')).c_str());
+		ERROR_F(line, "Expected identifier, not '%s'.", *str, str->substr(0, str->find(' ')).c_str());
 		return false;
 	}
 
@@ -224,7 +238,7 @@ bool Preprocessor::consume_string(string* str, string* dest, uint line)
 	// consume first "
 	if((*str)[0] != '"')
 	{
-		ERROR_F(line, "Expected string, not '%s'.", str->substr(0, str->find(' ')).c_str());
+		ERROR_F(line, *str, "Expected string, not '%s'.", str->substr(0, str->find(' ')).c_str());
 		return false;
 	}
 
@@ -235,7 +249,7 @@ bool Preprocessor::consume_string(string* str, string* dest, uint line)
 	// check if correct
 	if(i == str->length())
 	{
-		ERROR_F(line, "Expected string, not '%s'.", str->substr(0, str->find(' ')).c_str());
+		ERROR_F(line, *str, "Expected string, not '%s'.", str->substr(0, str->find(' ')).c_str());
 		return false;
 	}
 
@@ -258,7 +272,7 @@ bool Preprocessor::consume_integer(string* str, uint* dest, uint line)
 	// check if correct
 	if(i != str->length() && (*str)[i] != ' ')
 	{
-		ERROR_F(line, "Expected integer, not '%s'.", str->substr(0, str->find(' ')).c_str());
+		ERROR_F(line, *str, "Expected integer, not '%s'.", str->substr(0, str->find(' ')).c_str());
 		return false;
 	}
 
@@ -328,7 +342,7 @@ void Preprocessor::handle_directive(string line, uint line_no)
 
  	if(dirtype == DIR_INVALID)
 	{
-		if(!IN_FALSE_BRANCH) ERROR_F(line_no, "Invalid preprocessor directive: '#%s'.", first_word.c_str())
+		if(!IN_FALSE_BRANCH) ERROR_F(line_no, _current_original_line, "Invalid preprocessor directive: '#%s'.", first_word.c_str())
 		else SUBMIT_LINE("");
 		return; // report the error but keep on chuckin'
 	}
@@ -355,7 +369,7 @@ bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
 		string msg;
 		if(!consume_string(&args[0], &msg, line_no) || args.size() != 1) return false;
 
-		ERROR(line_no, msg.c_str());
+		ERROR(line_no, "", msg.c_str());
 		return true;
 	}
 	else if(cmd == "warning")
@@ -363,7 +377,8 @@ bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
 		string msg;
 		if(!consume_string(&args[0], &msg, line_no) || args.size() != 1) return false;
 
-		_error_dispatcher.warning_at_line(line_no, _current_file.c_str(), "Preprocessor Warning", msg.c_str());
+		// _error_dispatcher.warning_at_line(line_no, _current_file.c_str(), "Preprocessor Warning", msg.c_str());
+		WARNING(line_no, "", msg.c_str());
 		return true;
 	}
 
@@ -375,11 +390,13 @@ bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
 #define HANDLER(name) void Preprocessor::handle_directive_##name(string line)
 #define TRY_TO(code) { if(!(code)) return; }
 #define CHECK_FLAG(flag) (std::find(_flags.begin(), _flags.end(), flag) != _flags.end())
-#define ASSERT_END_OF_LINE() { if(strip_start(line).length()) ERROR(_current_line_no, "Expected newline"); return; }
+#define CHECK_MACRO(macro) (_macros->find(macro) != _macros->end())
+#define ASSERT_END_OF_LINE() { if(strip_start(line).length()) ERROR(_current_line_no, line, "Expected newline"); return; }
 
 HANDLER(apply)
 {
 	if(IN_FALSE_BRANCH) { SUBMIT_LINE(""); return; }
+	
 
 	string oldfile = _current_file;
 	uint old_lineno = _current_line_no;
@@ -394,7 +411,7 @@ HANDLER(apply)
 
 	if(!path.length()) // find_header failed
 	{
-		ERROR_F(_current_line_no, "Could not find header '%s'.", header.c_str());
+		ERROR_F(_current_line_no, _current_original_line, "Could not find header '%s'.", header.c_str());
 		SUBMIT_LINE("");
 		return;
 	}
@@ -406,7 +423,7 @@ HANDLER(apply)
 	}
 	else if(_apply_depth > MAX_APPLY_DEPTH) // too deep
 	{
-		ERROR_F(_current_line_no, "Inclusion depth surpassed limit of %d.", MAX_APPLY_DEPTH);
+		ERROR_F(_current_line_no, _current_original_line, "Inclusion depth surpassed limit of %d.", MAX_APPLY_DEPTH);
 		SUBMIT_LINE("");
 		return;
 	}
@@ -441,12 +458,12 @@ HANDLER(info)
 	vector<string> args = tools::split_string(line, " ");
 	if(!args.size() || !args[0].length())
 	{
-		ERROR(_current_line_no, "Expected arguments after #info.");
+		ERROR(_current_line_no, _current_original_line, "Expected arguments after #info.");
 		return;
 	}
 	else if(!handle_pragma(args, _current_line_no))
 	{
-		ERROR_F(_current_line_no, "Invalid arguments for '#info %s'.", args[0].c_str());
+		ERROR_F(_current_line_no, _current_original_line, "Invalid arguments for '#info %s'.", args[0].c_str());
 		return;
 	}
 }
@@ -458,7 +475,6 @@ HANDLER(file)
 
 	// get filename
 	TRY_TO(consume_string(&line, &_current_file, _current_line_no));
-	// DEBUG_PRINT_F_MSG("Set filename to '%s'.", _current_file.c_str());
 	LINE_MARKER(_current_line_no);
 
 	ASSERT_END_OF_LINE();
@@ -478,7 +494,25 @@ HANDLER(line)
 
 HANDLER(macro)
 {
+	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) return;
+
+	string ident;
+	TRY_TO(consume_identifier(&line, &ident, _current_line_no));
+
+	if(CHECK_FLAG(ident))
+	{
+		ERROR(_current_line_no, _current_original_line, "Flag with identical name already set.");
+		return;
+	}
+	else if(CHECK_MACRO(ident))
+	{
+		ERROR(_current_line_no, _current_original_line, "Macro with identical name already defined.");
+		return;
+	}
+
 	
+	cout << line << endl;
 }
 
 
@@ -492,12 +526,16 @@ HANDLER(flag)
 
 	if(CHECK_FLAG(flag))
 	{
-		WARNING_F(_current_line_no, "Flag '%s' is already set.", flag.c_str());
+		WARNING_F(_current_line_no, _current_original_line, "Flag '%s' is already set.", flag.c_str());
+		return;
+	}
+	else if(CHECK_MACRO(flag))
+	{
+		ERROR(_current_line_no, _current_original_line, "Macro with identical name already defined.");
 		return;
 	}
 	
 	if(!CHECK_FLAG(flag)) _flags.push_back(flag);
-	// DEBUG_PRINT_F_MSG("Set flag '%s'", flag.c_str());
 
 	ASSERT_END_OF_LINE();
 }
@@ -506,18 +544,17 @@ HANDLER(unflag)
 {
 	SUBMIT_LINE("");
 	if(IN_FALSE_BRANCH) return;
-
+	
 	string flag;
 	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
 
 	if(!CHECK_FLAG(flag))
 	{
-		ERROR_F(_current_line_no, "Flag '%s' is not set.", flag.c_str());
+		ERROR_F(_current_line_no, _current_original_line, "Flag '%s' is not set.", flag.c_str());
 		return;
 	}
 	
 	_flags.erase(find(_flags.begin(), _flags.end(), flag));
-	// DEBUG_PRINT_F_MSG("Unset flag '%s'", flag.c_str());
 
 	ASSERT_END_OF_LINE();
 }
@@ -530,7 +567,6 @@ HANDLER(ifset)
 
 	string flag;
 	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
-	// DEBUG_PRINT_F_MSG("Started if-branch with '%s'", flag.c_str());
 	_branches->push(CHECK_FLAG(flag));
 	
 	ASSERT_END_OF_LINE();
@@ -543,7 +579,6 @@ HANDLER(ifnset)
 
 	string flag;
 	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
-	// DEBUG_PRINT_F_MSG("Started if-not-branch with '%s'", flag.c_str());
 	_branches->push(!CHECK_FLAG(flag));
 
 	ASSERT_END_OF_LINE();
@@ -553,7 +588,7 @@ HANDLER(else)
 {
 	if(!_branches->size())
 	{
-		ERROR(_current_line_no, "Stray '#else'.");
+		ERROR(_current_line_no, _current_original_line, "Stray '#else'.");
 		return;
 	}
 	_branches->top() = !_branches->top();
@@ -566,7 +601,7 @@ HANDLER(endif)
 {
 	if(!_branches->size())
 	{
-		ERROR(_current_line_no, "Stray '#endif'.");
+		ERROR(_current_line_no, _current_original_line, "Stray '#endif'.");
 		return;
 	}
 	_branches->pop();
@@ -582,4 +617,5 @@ HANDLER(endif)
 #undef HANDLER
 #undef TRY_TO
 #undef CHECK_FLAG
+#undef CHECK_MACRO
 #undef ASSERT_END_OF_LINE

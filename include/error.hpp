@@ -25,6 +25,7 @@ class ErrorDispatcher
     //     _source(source) {}
 
     void print_token_marked(Token *token, ccp color);
+    void print_line_marked(uint line_no, string line, ccp color);
 
     void error(ccp prompt, ccp message);
     void error_at_token(Token *token, ccp prompt, ccp message);

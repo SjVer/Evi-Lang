@@ -19,7 +19,7 @@ variables:
 
   # types
   inttype: '(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1'
-  type: '(?:{{inttype}}|flt|dbl|bln|nll|chr|sze)(?:\s*\*)*'
+  type: '(!\s*)?(?:{{inttype}}|flt|dbl|bln|nll|chr|sze)(?:\s*\*)*'
 
 contexts:
   prototype:
@@ -300,7 +300,7 @@ contexts:
 
   escaped-char:
     # - match: \\(?:\\|[abefnrtv\'"?]|[0-3][0-9]{0,2}|[4-7][0-9]?|x[a-fA-F0-9]+|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8})
-    - match: \\(?:a|b|e|f|n|r|t|v|\\|\'|\")
+    - match: \\(?:a|b|e|f|n|r|t|v|\\|\'|\"|0)
       scope: constant.character.escape.c
     - match: \\.
       scope: invalid.illegal.unknown-escape.c
@@ -318,72 +318,81 @@ contexts:
         scope: constant.other.placeholder.evi
 
   pre-directive:
-    - match: ^\s*#apply
+    - match: ^\s*#\s*apply\b
       scope: keyword.preprocessor.apply.evi
       push:
+        - include: pre-directive-end
         - include: string-char
         - match: $\n?
           pop: true
         - include: invalids
 
-    - match: ^\s*#(flag|unflag)
+    - match: ^\s*#\s*(flag|unflag)\b
       scope: keyword.preprocessor.flag.evi
       push:
+        - include: pre-directive-end
         - match: '[A-Za-z_]+[A-Za-z_0-9]*'
           scope: entity.name.constant.preprocessor.evi
         - match: $\n?
           pop: true
         - include: invalids
 
-    - match: ^\s*#(line)
+    - match: ^\s*#\s*line\b
       scope: keyword.preprocessor.line.evi
       push:
+        - include: pre-directive-end
         - match: '[0-9]+'
           scope: constant.numeric.decimal.evi
         - match: $\n?
           pop: true
         - include: invalids
 
-    - match: ^\s*#(file)
+    - match: ^\s*#\s*file\b
       scope: keyword.preprocessor.file.evi
       push:
+        - include: pre-directive-end
         - match: '\".*\"'
           scope: string.quoted.double.evi
         - match: $\n?
           pop: true
         - include: invalids
 
-    - match: ^\s*#(macro)
+    - match: ^\s*#\s*macro\b
       scope: keyword.preprocessor.macro.evi
       push:
+        - include: pre-directive-end
         - match: '{{ident}}'
           scope: entity.name.constant.preprocessor.evi
           push:
             - meta_scope: meta.preprocessor.macro.evi
-            - match: $\n?
-              pop: true
-            - include: main
+            - include: pre-directive-end
+            - include: statement
+            - include: expression
+
         - include: invalids
 
-    - match: ^\s*#(ifset|ifnset)
+    - match: ^\s*#\s*(ifset|ifnset)\b
       scope: keyword.preprocessor.conditional.evi
       push:
+        - include: pre-directive-end
         - match: '[A-Za-z_]+[A-Za-z_0-9]*'
           scope: entity.name.constant.preprocessor.evi
         - match: $\n?
           pop: true
         - include: invalids
 
-    - match: ^\s*#(else|endif)
+    - match: ^\s*#\s*(else|endif)\b
       scope: keyword.preprocessor.conditional.evi
       push:
+        - include: pre-directive-end
         - match: $\n?
           pop: true
         - include: invalids
 
-    - match: ^\s*#(info)
+    - match: ^\s*#\s*info\b
       scope: keyword.preprocessor.pragma.evi
       push:
+        - include: pre-directive-end
         - include: string-char
         - match: '[A-Za-z_0-9]+'
           scope: meta.preprocessor.pragma.args.evi
@@ -391,15 +400,20 @@ contexts:
           pop: true
         - include: invalids
 
-    - match: ^\s*(#) ([0-9]+)
+    - match: ^\s*(#) ([0-9]+)\b
       captures:
         1: keyword.preprocessor.linemarker.evi
         2: constant.numeric.decimal.evi
       push:
+        - include: pre-directive-end
         - include: string-char
         - match: $\n?
           pop: true
         - include: invalids
+
+  pre-directive-end:
+    - match: (?=(?:\\|\\:))|(?<!\\)(?=\n)
+      pop: true
 
   terminator:
     - match: ';'

@@ -149,16 +149,13 @@ void ErrorDispatcher::print_token_marked(Token *token, ccp color)
 		*/
 
 		int prefixlen = tools::fstr(" %3d| ", token->line).length();
-		for(int i = 0; i < prefixlen; i++)
-			markerline +=  ' ';
+		markerline +=  string(prefixlen, ' ');
 
 		for(int i = 0; i < tok_ln_before_tok_len; i++)
 			markerline +=  token->source[tok_ln_begin + i] == '\t' ? '\t' : ' ';
 
-
 		markerline += string(color) + "^";
-		for(int i = 0; i < token->length - 1; i++)
-			markerline += '~';
+		markerline += string(token->length - 1, '~');
 
 		markerline += COLOR_NONE;
 	}
@@ -166,6 +163,18 @@ void ErrorDispatcher::print_token_marked(Token *token, ccp color)
 	// print it all out
 	cerr << tokenline << endl;
 	cerr << markerline << endl;
+}
+
+void ErrorDispatcher::print_line_marked(uint line_no, string line, ccp color)
+{
+	string prefix = tools::fstr(" %3d| ", line_no);
+
+	cerr << prefix + line << endl;
+
+	cerr << COLOR_RED;
+	cerr << string(prefix.length(), ' ') + ('^' + string(line.length() - 1, '~'));
+	cerr << COLOR_NONE;
+	cerr << endl;
 }
 
 void ErrorDispatcher::__dispatch(ccp color, ccp prompt, ccp message)
