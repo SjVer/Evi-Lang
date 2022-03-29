@@ -6,6 +6,8 @@
 		{ "include": "#pre-directives" },
 		{ "include": "#comments" },
 
+		{ "include": "#macros" },
+
 		{ "include": "#funcdeclarations" },
 		{ "include": "#declarations" },
 		
@@ -39,7 +41,7 @@
 					]
 				},
 				{
-					"begin": "^\\s*((#)\\s*(flag|unflag))\\b\\s*",
+					"begin": "^\\s*((#)\\s*(flag|unset))\\b\\s*",
 					"beginCaptures": {
 						"1": {
 							"name": "keyword.control.directive.evi"
@@ -52,8 +54,28 @@
 					"name": "meta.preprocessor.flag.evi",
 					"patterns": [
 						{
-							"match": "[a-zA-Z_]+[a-zA-Z0-9_]*",
+							"match": "[a-zA-Z_][a-zA-Z0-9_]*",
 							"name": "entity.name.function.preprocessor.flag.evi"
+						},
+						{ "include": "#illegals" }
+					]
+				},
+				{
+					"begin": "^\\s*((#)\\s*(undef))\\b\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.directive.evi"
+						},
+						"2": {
+							"name": "punctuation.definition.directive.undef.evi"
+						}
+					},
+					"end": "(?=(?:\\\\|\\\\:))|(?<!\\\\)(?=\\n)",
+					"name": "meta.preprocessor.flag.evi",
+					"patterns": [
+						{
+							"match": "[a-zA-Z_][a-zA-Z0-9_]*",
+							"name": "entity.name.function.preprocessor.macro.evi"
 						},
 						{ "include": "#illegals" }
 					]
@@ -76,6 +98,23 @@
 					]
 				},
 				{
+					"begin": "^\\s*((#)\\s*(macro))\\b\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\s+|(\\S*))",
+					"beginCaptures": {
+						"1": { "name": "keyword.control.directive.evi" },
+						"2": { "name": "punctuation.definition.directive.macro.evi" },
+						"4": { "name": "entity.name.function.preprocessor.macro.evi" },
+						"5": { "name": "invalid.misplaced.evi" }
+					},
+					"end": "(?=(?:\\\\|\\\\:))|(?<!\\\\)(?=\\n)",
+					"name": "meta.preprocessor.macro.evi",
+					"patterns": [
+						{ "include": "#funcdeclaratoins" },
+						{ "include": "#declarations" },
+						{ "include": "#operators" },
+						{ "include": "#separators" }
+					]
+				},
+				{
 					"begin": "^\\s*((#)\\s*(file))\\b\\s*",
 					"beginCaptures": {
 						"1": {
@@ -93,7 +132,7 @@
 					]
 				},
 				{
-					"begin": "^\\s*((#)\\s*(ifset|ifnset))\\b\\s*",
+					"begin": "^\\s*((#)\\s*(ifset|ifnset|ifdef|ifndef))\\b\\s*",
 					"beginCaptures": {
 						"1": {
 							"name": "keyword.control.directive.evi"
@@ -106,8 +145,8 @@
 					"name": "meta.preprocessor.flag.evi",
 					"patterns": [
 						{
-							"match": "[a-zA-Z_]+[a-zA-Z0-9_]*",
-							"name": "entity.name.function.preprocessor.flag.evi"
+							"match": "[a-zA-Z_][a-zA-Z0-9_]*",
+							"name": "entity.name.function.preprocessor.evi"
 						},
 						{ "include": "#illegals" }
 					]
@@ -136,6 +175,7 @@
 							"match": "[a-zA-Z0-9_]+",
 							"name": "punctuation.definition.directive.info.evi"
 						},
+						{ "include": "#expressions" },
 						{ "include": "#illegals" }
 					]
 				},
@@ -177,6 +217,8 @@
 			"patterns": [
 				{ "include": "#pre-directives" },
 				{ "include": "#comments" },
+				
+				{ "include": "#macros" },
 
 				{ "include": "#vardeclarations" },
 				{ "include": "#statements" },
@@ -189,7 +231,7 @@
 		"vardeclarations":
 		{
 			"name": "meta.declaration.variable.evi",
-			"match": "(%)\\s*(?:([a-zA-Z_]+[a-zA-Z0-9_]*)(?:\\s*,\\s*([a-zA-Z_]+[a-zA-Z0-9_]*))*)?",
+			"match": "(%)\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)(?:\\s*,\\s*([a-zA-Z_][a-zA-Z0-9_]*))*)?",
 			"captures": { 
 				"1": { "name": "keyword.declaration.variable.evi" },
 				"2": { "name": "entity.name.variable.evi" },
@@ -218,7 +260,7 @@
 		{
 			"name": "meta.declaration.function.evi",
 
-			"begin": "(@)\\s*([a-zA-Z_]+[a-zA-Z0-9_]*)?",
+			"begin": "(@)\\s*([a-zA-Z_][a-zA-Z0-9_]*)?",
 			"beginCaptures": {
 				"1": { "name": "keyword.declaration.function.evi" },
 				"2": { "name": "entity.name.function.declaration.evi" } },
@@ -253,6 +295,8 @@
 				{ "include": "#pre-directives" },
 				{ "include": "#comments" },
 
+				{ "include": "#macros" },
+
 				{ "include": "#separators" },
 				
 				{ "include": "#assignment" },
@@ -264,7 +308,7 @@
 		},
 		"assignment":
 		{
-			"begin": "(=(?!=))\\s*(?:([a-zA-Z_]+[a-zA-Z0-9_]*)|(\\S+))",
+			"begin": "(=(?!=))\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)|(\\S+))",
 			"beginCaptures": {
 				"1": { "name": "keyword.operator.assignment.evi" },
 				"2": { "name": "variable.name.evi" },
@@ -316,6 +360,8 @@
 			"patterns": [
 				{ "include": "#pre-directives" },
 				{ "include": "#comments" },
+
+				{ "include": "#macros" },
 
 				{ "include": "#types" },
 				{ "include": "#operators" },
@@ -391,20 +437,23 @@
 			]
 		},
 
-
+		"macros": {
+			"match": "[a-zA-Z_][a-zA-Z0-9_]*#",
+			"name": "entity.name.function.preprocessor.macro.invoke.evi"
+		},
 		"variables": 
 		{
 			"patterns": [
 				{
 					"name": "variable.name.evi",
-					"match": "(\\$)([a-zA-Z_]+[a-zA-Z0-9_]*)"
+					"match": "(\\$)([a-zA-Z_][a-zA-Z0-9_]*)"
 				},
 				{
 					"name": "variable.parameter.evi",
 					"match": "(\\$)([0-9]+)"
 				},
 				{
-					"begin": "([a-zA-Z_]+[a-zA-Z0-9_]*)\\s*\\(",
+					"begin": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
 					"beginCaptures": {
 						"1": { "name": "entity.name.function.evi"}
 					},

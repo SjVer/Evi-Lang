@@ -13,10 +13,10 @@ STDLIB_DIR = /usr/share/evi/stdlib
 # STDLIB_DIR = $(PWD)/stdlib/headers/
 TARGET = x86_64-linux-gnu
 
-MUTE = -Wall -Wno-varargs -Wno-write-strings -Wno-sign-compare -Wno-unused-function -Wno-comment
+MUTE = varargs write-strings sign-compare unused-function comment dangling-gsl
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
-DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\" LIBC_VERSION=\"$(shell gcc -dumpversion)\" 
-CXXFLAGS = $(MUTE) $(addprefix -D,$(DEFS)) `$(LLVMFLAGS)`
+DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\" LIBC_VERSION=\"$(shell gcc -dumpversion)\" TARGET=\"$(TARGET)\"
+CXXFLAGS = -Wall $(addprefix -Wno-,$(MUTE)) $(addprefix -D,$(DEFS)) `$(LLVMFLAGS)`
 LDFLAGS = `$(LLVMFLAGS) --ldflags --system-libs --libs`
 
 # Makefile settings - Can be customized.
@@ -86,8 +86,8 @@ stdlib: makedirs
 	@$(MAKE) --no-print-directory -f $(STDLIB_SRC_DIR)/Makefile stdlib
 
 cp-stdlib:
-	@sudo mkdir -p $(STDLIB_DIR)
-	@sudo cp -r $(STDLIB_SRC_DIR)/headers/* $(STDLIB_DIR)
+	sudo mkdir -p $(STDLIB_DIR)
+	sudo cp -r $(STDLIB_SRC_DIR)/headers/* $(STDLIB_DIR)
 
 .PHONY: clean-stdlib
 clean-stdlib:

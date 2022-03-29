@@ -1,5 +1,6 @@
 #include "preprocessor.hpp"
 #include "tools.hpp"
+#include <regex>
 
 int include_paths_count = 0;
 char* include_paths[MAX_INCLUDE_PATHS] = {};
@@ -8,11 +9,11 @@ char* include_paths[MAX_INCLUDE_PATHS] = {};
 #define SUBMIT_LINE_F(format, ...) _lines.push_back(tools::fstr(format, __VA_ARGS__))
 #define IN_FALSE_BRANCH (_branches->size() && !_branches->top())
 #define LINE_MARKER(line) SUBMIT_LINE_F("# %d \"%s\"", line, _current_file.c_str())
+#define CHECK_MACRO(macro) (_macros->find(macro) != _macros->end())
 
 Status Preprocessor::preprocess(string infile, const char** source)
 {
 	// prepare sum shit
-	// _source = strdup(*source);
 	_source = *source;
 	_lines = vector<string>();
 	_current_file = infile;
@@ -22,6 +23,8 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	_apply_depth = 0;
 	_error_dispatcher = ErrorDispatcher();
 	_had_error = false;
+
+	initialize_builtin_macros();
 
 	vector<string> lines = tools::split_string(string(*source), "\n");
 	lines = remove_comments(lines);
@@ -56,10 +59,43 @@ void Preprocessor::process_lines(vector<string> lines)
 		else if(IN_FALSE_BRANCH)
 			SUBMIT_LINE("");
 		
-		else SUBMIT_LINE(lines[line_idx]);
+		else SUBMIT_LINE(handle_plain_line(lines[line_idx]));
 	}
 
 	if(_branches->size()) error_at_line(_current_line_no, "Expected #endif.", "");
+}
+
+string Preprocessor::handle_plain_line(string line)
+{
+	cmatch match; // index 0 is whole match
+	regex regexp(MACRO_INVOKE_REGEX);
+
+	while(regex_search(line.c_str(), match, regexp))
+	{
+		string macro = match[1].str();
+
+		// check if macro exists
+		if(!CHECK_MACRO(macro))
+		{
+			Token tok = generate_token(line, macro + '#');
+			const char* msg = strdup(tools::fstr("Macro '%s' is not defined.", macro.c_str()).c_str());
+
+			_error_dispatcher.error_at_token(&tok, "Preprocessing Error", msg);
+			cerr << endl;
+			_error_dispatcher.print_token_marked(&tok, COLOR_RED);
+
+			_had_error = true;
+			return line;
+		}
+
+		// get macro properties
+		MacroProperties props = _macros->at(macro);
+		string format = props.has_getter ? (props.getter)(this) : props.format;
+
+		// replace 
+		line = regex_replace(line, regexp, format);
+	}
+	return line;
 }
 
 vector<string> Preprocessor::remove_comments(vector<string> lines)
@@ -111,35 +147,6 @@ vector<string> Preprocessor::remove_comments(vector<string> lines)
 	return lines;
 }
 
-string Preprocessor::find_header(string basename)
-{
-	string hname = basename + ".hevi";
-	string name = basename + ".evi";
-
-	// first look in current directory
-	if(ifstream(hname).is_open()) return hname;
-	else if(ifstream(name).is_open()) return name;
-
-	// look in each include path
-	for(int i = 0; i < include_paths_count; i++)
-	{
-		string hpath = include_paths[i] + (PATH_SEPARATOR + hname);
-		string path = include_paths[i] + (PATH_SEPARATOR + name);
-
-		if(ifstream(hpath).is_open()) return hpath;
-		else if(ifstream(path).is_open()) return path;
-	}
-
-	// otherwise look in stdlib
-	string hpath = STDLIB_DIR + (PATH_SEPARATOR + hname);
-	string path = STDLIB_DIR + (PATH_SEPARATOR + name);
-
- 	if(ifstream(hpath).is_open()) return hpath;
-	else if(ifstream(path).is_open()) return path;
-
-	return "";
-}
-
 // ===============================================================
 
 void Preprocessor::error_at_line(uint line, const char* message, string whole_line)
@@ -170,6 +177,15 @@ void Preprocessor::error_at_line(uint line, const char* message, string whole_li
 	}
 }
 
+void Preprocessor::error_at_token(Token* token, const char* message)
+{
+	_error_dispatcher.error_at_token(token, "Preprocessing Error", message);
+	cerr << endl;
+	_error_dispatcher.print_token_marked(token, COLOR_RED);
+
+	_had_error = true;
+}
+
 void Preprocessor::warning_at_line(uint line, const char* message, string whole_line)
 {
 	if(lint_args.type == LINT_GET_DIAGNOSTICS)
@@ -192,9 +208,32 @@ void Preprocessor::warning_at_line(uint line, const char* message, string whole_
 		if(whole_line.length())
 		{
 			cerr << endl;
-			_error_dispatcher.print_token_marked(line, whole_line, COLOR_PURPLE);
+			_error_dispatcher.print_line_marked(line, whole_line, COLOR_PURPLE);
 		}
 	}
+}
+
+void Preprocessor::warning_at_token(Token* token, const char* message)
+{
+	_error_dispatcher.warning_at_token(token, "Preprocessing Warning", message);
+	cerr << endl;
+	_error_dispatcher.print_token_marked(token, COLOR_PURPLE);
+}
+
+// will assume that the first appearance of token is the correct one
+Token Preprocessor::generate_token(string line, string token)
+{
+	int offset = 0;
+	while(line.substr(offset, token.length()) != token) offset++;
+	const char* src = strdup(line.c_str());
+	return Token{
+		TOKEN_ERROR,
+		src,
+		src + offset,
+		(int)token.length(),
+		(int)_current_line_no,
+		&_current_file
+	};
 }
 
 // ===============================================================
@@ -209,7 +248,7 @@ string Preprocessor::strip_start(string str)
 }
 
 // errors handled in the function
-bool Preprocessor::consume_identifier(string* str, string* dest, uint line)
+bool Preprocessor::consume_identifier(string* str, string* dest, uint line, const char* errformat)
 {
 	*str = strip_start(*str);
 
@@ -220,7 +259,7 @@ bool Preprocessor::consume_identifier(string* str, string* dest, uint line)
 	// check if correct
 	if(i == 0)
 	{
-		ERROR_F(line, "Expected identifier, not '%s'.", *str, str->substr(0, str->find(' ')).c_str());
+		ERROR_F(line, errformat, *str, str->substr(0, str->find(' ')).c_str());
 		return false;
 	}
 
@@ -238,18 +277,22 @@ bool Preprocessor::consume_string(string* str, string* dest, uint line)
 	// consume first "
 	if((*str)[0] != '"')
 	{
-		ERROR_F(line, *str, "Expected string, not '%s'.", str->substr(0, str->find(' ')).c_str());
+		Token tok = generate_token(*str, str->substr(0, str->find(' ')));
+		error_at_token(&tok, "Expected string, but found no matching '\"'.");
 		return false;
 	}
 
 	// find index of second "
 	int i;
-	for(i = 1; i < str->length() && (*str)[i] != '"'; i++) {}
+	for(i = 1; i < str->length() && (*str)[i] != '"'; i++) {
+		// cout << tools::fstr("in string: '%c'. (%d < %d)\n", (*str)[i], i, str->length());
+	}
 
 	// check if correct
 	if(i == str->length())
 	{
-		ERROR_F(line, *str, "Expected string, not '%s'.", str->substr(0, str->find(' ')).c_str());
+		Token tok = generate_token(*str, str->substr(0, str->find(' ')));
+		error_at_token(&tok, "Expected string.");
 		return false;
 	}
 
@@ -296,12 +339,15 @@ Preprocessor::DirectiveType Preprocessor::get_directive_type(string str)
 	else if(str == "line")	 return DIR_LINE;
 
 	else if(str == "macro")	 return DIR_MACRO;
+	else if(str == "undef")	 return DIR_UNDEF;
 
 	else if(str == "flag")	 return DIR_FLAG;
-	else if(str == "unflag") return DIR_UNFLAG;
+	else if(str == "unset")  return DIR_UNSET;
 
 	else if(str == "ifset")	 return DIR_IFSET;
 	else if(str == "ifnset") return DIR_IFNSET;
+	else if(str == "ifdef")	 return DIR_IFDEF;
+	else if(str == "ifndef") return DIR_IFNDEF;
 	else if(str == "else")	 return DIR_ELSE;
 	else if(str == "endif")	 return DIR_ENDIF;
 
@@ -320,12 +366,15 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 		CASE(DIR_LINE, line);
 
 		CASE(DIR_MACRO, macro);
+		CASE(DIR_UNDEF, undef);
 
 		CASE(DIR_FLAG, flag);
-		CASE(DIR_UNFLAG, unflag);
+		CASE(DIR_UNSET, unset);
 
 		CASE(DIR_IFSET, ifset);
 		CASE(DIR_IFNSET, ifnset);
+		CASE(DIR_IFDEF, ifdef);
+		CASE(DIR_IFNDEF, ifndef);
 		CASE(DIR_ELSE, else);
 		CASE(DIR_ENDIF, endif);
 
@@ -354,35 +403,76 @@ void Preprocessor::handle_directive(string line, uint line_no)
 
 // ===============================================================
 
-bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
+string Preprocessor::find_header(string basename)
 {
-	string cmd = args[0];
-	args.erase(args.begin());
+	string hname = basename + ".hevi";
+	string name = basename + ".evi";
 
-	if(cmd == "apply_once")
+	// first look in current directory
+	if(ifstream(hname).is_open()) return hname;
+	else if(ifstream(name).is_open()) return name;
+
+	// look in each include path
+	for(int i = 0; i < include_paths_count; i++)
+	{
+		string hpath = include_paths[i] + (PATH_SEPARATOR + hname);
+		string path = include_paths[i] + (PATH_SEPARATOR + name);
+
+		if(ifstream(hpath).is_open()) return hpath;
+		else if(ifstream(path).is_open()) return path;
+	}
+
+	// otherwise look in stdlib
+	string hpath = STDLIB_DIR + (PATH_SEPARATOR + hname);
+	string path = STDLIB_DIR + (PATH_SEPARATOR + name);
+
+ 	if(ifstream(hpath).is_open()) return hpath;
+	else if(ifstream(path).is_open()) return path;
+
+	return "";
+}
+
+Preprocessor::PragmaStatus Preprocessor::handle_pragma(string pragma, string args, uint line_no)
+{
+	Token __err_tok; // used by END_OF_LINE macro
+	#define END_OF_LINE (strip_start(args).length() > 0 ? (\
+		error_at_token((__err_tok = generate_token(_current_original_line, args), &__err_tok), \
+		"Expected newline."), false) : true)
+
+	if(pragma == "apply_once")
 	{
 		_blocked_files.push_back(_current_file);
-		return args.size() == 0;
+		return END_OF_LINE ? PRAGMA_SUCCESS : PRAGMA_NO_NEWLINE;
 	}
-	else if(cmd == "error")
+	else if(pragma == "error")
 	{
 		string msg;
-		if(!consume_string(&args[0], &msg, line_no) || args.size() != 1) return false;
+		if(!consume_string(&args, &msg, line_no)) return PRAGMA_ERROR_HANDLED;
+		return END_OF_LINE ? PRAGMA_SUCCESS : PRAGMA_NO_NEWLINE;
 
 		ERROR(line_no, "", msg.c_str());
-		return true;
+		return PRAGMA_SUCCESS;
 	}
-	else if(cmd == "warning")
+	else if(pragma == "warning")
 	{
 		string msg;
-		if(!consume_string(&args[0], &msg, line_no) || args.size() != 1) return false;
+		if(!consume_string(&args, &msg, line_no)) return PRAGMA_ERROR_HANDLED;
+		if(!END_OF_LINE) return PRAGMA_NO_NEWLINE;
 
-		// _error_dispatcher.warning_at_line(line_no, _current_file.c_str(), "Preprocessor Warning", msg.c_str());
 		WARNING(line_no, "", msg.c_str());
-		return true;
+		return PRAGMA_SUCCESS;
+	}
+	else if(pragma == "region")
+	{
+		return END_OF_LINE ? PRAGMA_SUCCESS : PRAGMA_NO_NEWLINE;
+	}
+	else if(pragma == "endregion")
+	{
+		return END_OF_LINE ? PRAGMA_SUCCESS : PRAGMA_NO_NEWLINE;
 	}
 
-	return false;
+	return PRAGMA_NONEXISTENT;
+	#undef END_OF_LINE
 }
 
 // ===============================================================
@@ -390,7 +480,6 @@ bool Preprocessor::handle_pragma(vector<string> args, uint line_no)
 #define HANDLER(name) void Preprocessor::handle_directive_##name(string line)
 #define TRY_TO(code) { if(!(code)) return; }
 #define CHECK_FLAG(flag) (std::find(_flags.begin(), _flags.end(), flag) != _flags.end())
-#define CHECK_MACRO(macro) (_macros->find(macro) != _macros->end())
 #define ASSERT_END_OF_LINE() { if(strip_start(line).length()) ERROR(_current_line_no, line, "Expected newline"); return; }
 
 HANDLER(apply)
@@ -454,17 +543,31 @@ HANDLER(info)
 	SUBMIT_LINE("");
 	if(IN_FALSE_BRANCH) return;
 
-	// get arguments and check if there are any
-	vector<string> args = tools::split_string(line, " ");
-	if(!args.size() || !args[0].length())
+	// get pragma and arguments and check if there are any
+	string pragma; if(!consume_identifier(&line, &pragma, _current_line_no))
 	{
-		ERROR(_current_line_no, _current_original_line, "Expected arguments after #info.");
+		ERROR(_current_line_no, _current_original_line, "Expected pragma after '#info'.");
 		return;
 	}
-	else if(!handle_pragma(args, _current_line_no))
+
+	PragmaStatus status = handle_pragma(pragma, line, _current_line_no);
+	switch(status)
 	{
-		ERROR_F(_current_line_no, _current_original_line, "Invalid arguments for '#info %s'.", args[0].c_str());
-		return;
+		case PRAGMA_SUCCESS: return;
+		case PRAGMA_ERROR_HANDLED: return;
+		case PRAGMA_NONEXISTENT:
+		{
+			Token tok = generate_token(_current_original_line, pragma);
+			warning_at_token(&tok, tools::fstr("Nonexistent pragma '%s' ignored.", pragma.c_str()).c_str());
+			return;
+		}
+		case PRAGMA_INVALID_ARGS:
+		{
+			Token tok = generate_token(_current_original_line, pragma);
+			error_at_token(&tok, tools::fstr("Invalid arguments for '#info %s'.", pragma.c_str()).c_str());
+			return;
+		}
+		case PRAGMA_NO_NEWLINE: return;
 	}
 }
 
@@ -507,14 +610,31 @@ HANDLER(macro)
 	}
 	else if(CHECK_MACRO(ident))
 	{
-		ERROR(_current_line_no, _current_original_line, "Macro with identical name already defined.");
+		WARNING(_current_line_no, _current_original_line, "Macro with identical name already defined.");
 		return;
 	}
 
-	
-	cout << line << endl;
+	_macros->insert(pair<string, MacroProperties>(ident, {false, strip_start(line), nullptr}));
 }
 
+HANDLER(undef)
+{
+	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) return;
+	
+	string macro;
+	TRY_TO(consume_identifier(&line, &macro, _current_line_no));
+
+	if(!CHECK_MACRO(macro))
+	{
+		ERROR_F(_current_line_no, _current_original_line, "Macro '%s' is not defined.", macro.c_str());
+		return;
+	}
+	
+	_macros->erase(macro);
+
+	ASSERT_END_OF_LINE();
+}
 
 HANDLER(flag)
 {
@@ -540,7 +660,7 @@ HANDLER(flag)
 	ASSERT_END_OF_LINE();
 }
 
-HANDLER(unflag)
+HANDLER(unset)
 {
 	SUBMIT_LINE("");
 	if(IN_FALSE_BRANCH) return;
@@ -580,6 +700,30 @@ HANDLER(ifnset)
 	string flag;
 	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
 	_branches->push(!CHECK_FLAG(flag));
+
+	ASSERT_END_OF_LINE();
+}
+
+HANDLER(ifdef)
+{
+	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) { _branches->push(false); return; }
+
+	string flag;
+	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
+	_branches->push(CHECK_MACRO(flag));
+	
+	ASSERT_END_OF_LINE();
+}
+
+HANDLER(ifndef)
+{
+	SUBMIT_LINE("");
+	if(IN_FALSE_BRANCH) { _branches->push(false); return; }
+
+	string flag;
+	TRY_TO(consume_identifier(&line, &flag, _current_line_no));
+	_branches->push(!CHECK_MACRO(flag));
 
 	ASSERT_END_OF_LINE();
 }

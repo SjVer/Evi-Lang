@@ -33,9 +33,46 @@
 \ mark compiler type
 #flag __OFFICIAL_EVI_COMPILER__
 
-\ compiler information
-\ #macro __COMPILER_VERSION__ {{version}}
-\ #macro __COMPILER_BUILD_TARGET__ {{target}}
-\ #macro __COMPILER_BUILD_DATE__ {{date}}
+\ compiler information (should be built-in)
+#info region
+
+#ifndef __COMPILER_NAME__
+\ comment line below to mute warning
+#info warning "macro __COMPILER_NAME__ in stdlib header not defined by compiler!"
+#macro __COMPILER_NAME__ "unknown"
+#endif
+
+#ifndef __COMPILER_VERSION__
+\ comment line below to mute warning
+#info warning "macro __COMPILER_VERSION__ in stdlib header not defined by compiler!"
+#macro __COMPILER_VERSION__ "unknown"
+#endif
+
+#ifndef __COMPILER_BUILD_TARGET__
+\ comment line below to mute warning
+#info warning "macro __COMPILER_BUILD_TARGET__ in stdlib header not defined by compiler!"
+#macro __COMPILER_BUILD_TARGET__ "unkown"
+#endif
+
+#ifndef __COMPILER_BUILD_DATE__
+\ comment line below to mute warning
+#info warning "macro __COMPILER_BUILD_DATE__ in stdlib header not defined by compiler!"
+#macro __COMPILER_BUILD_DATE__ "unknown"
+#endif
+
+#ifndef __COMPILER_BUILD_TIME__
+\ comment line below to mute warning
+#info warning "macro __COMPILER_BUILD_TIME__ in stdlib header not defined by compiler!"
+#macro __COMPILER_BUILD_TIME__ "unknown"
+#endif
+
+#info endregion
+
+\ operating system
+#ifndef __OPERATING_SYSTEM__
+\ comment line below to mute warning
+#info warning "macro __OPERATING_SYSTEM__ in stdlib header not defined by compiler!"
+#macro __OPERATING_SYSTEM__ "unkown"
+#endif
 
 #endif \ __STDLIB_HEADER__

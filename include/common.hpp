@@ -57,6 +57,13 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #define EVI_VERSION_0 0
 #define EVI_VERSION_1 0
 #define EVI_VERSION_2 1
+
+// build target
+#ifndef TARGET
+#pragma warning "TARGET not set! Defaulting to \"unkown\"."
+#define TARGET "unkown"
+#endif
+
 #pragma endregion
 
 // macros

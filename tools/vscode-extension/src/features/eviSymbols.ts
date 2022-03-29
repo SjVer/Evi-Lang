@@ -50,15 +50,33 @@ export const directives: IEntries = {
 		signature: "#line LINENO"
 	},
 
+	'macro': {
+		description: "define macro directive",
+		signature: "#macro MACRO body"
+	},
+	'undef': {
+		description: "undefine macro directive",
+		signature: "#undef MACRO"
+	},
+
 	'flag': {
 		description: "set flag directive",
 		signature: "#flag FLAG"
 	},
-	'unflag': {
+	'unset': {
 		description: "unset flag directive",
-		signature: "#unflag FLAG"
+		signature: "#unset FLAG"
 	},
 
+
+	'ifdef': {
+		description: "if-macro-is-defined directive",
+		signature: "#ifdef MACRO"
+	},
+	'ifndef': {
+		description: "if-macro-is-not-defined directive",
+		signature: "#ifndef MACRO"
+	},
 	'ifset': {
 		description: "if-flag-is-set directive",
 		signature: "#ifset FLAG"

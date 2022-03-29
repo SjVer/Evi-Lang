@@ -20,8 +20,10 @@ public:
 		_error_dispatcher() {}
 	Status preprocess(string infile, const char** source);
 
-private:
+// private:
 	// types
+	#pragma region types
+
 	typedef enum
 	{
 		DIR_APPLY,
@@ -31,41 +33,67 @@ private:
 		DIR_LINE,
 		
 		DIR_MACRO,
+		DIR_UNDEF,
 
 		DIR_FLAG,
-		DIR_UNFLAG,
+		DIR_UNSET,
 
 		DIR_IFSET,
 		DIR_IFNSET,
+		DIR_IFDEF,
+		DIR_IFNDEF,
 		DIR_ELSE,
 		DIR_ENDIF,
 
 		DIR_INVALID
 	} DirectiveType;
+	typedef void (Preprocessor::*DirectiveHandler)(string);
 
-	typedef void(Preprocessor::*DirectiveHandler)(string);
-
+	typedef string (*BuiltinMacroGetter)(Preprocessor*);
 	typedef struct
 	{
-
+		bool has_getter = false;
+		string format;
+		BuiltinMacroGetter getter;
 	} MacroProperties;
 
+	typedef enum
+	{
+		PRAGMA_SUCCESS,
+		PRAGMA_ERROR_HANDLED,
+		PRAGMA_NONEXISTENT,
+		PRAGMA_INVALID_ARGS,
+		PRAGMA_NO_NEWLINE,
+	} PragmaStatus;
+
+	#pragma endregion
+
 	// macros
+	#pragma region macros
 	#define ERROR(lineno, line, msg) { error_at_line(lineno, msg, line); }
 	#define ERROR_F(lineno, line, format, ...) { error_at_line(lineno, tools::fstr(format, __VA_ARGS__).c_str(), line); }
 	#define WARNING(lineno, line, msg) { warning_at_line(lineno, msg, line); }
 	#define WARNING_F(lineno, line, format, ...) { warning_at_line(lineno, tools::fstr(format, __VA_ARGS__).c_str(), line); }
+	#define MACRO_INVOKE_REGEX "([a-zA-Z_][a-zA-Z0-9_]*)#"
+	#pragma endregion
 
 	// methods
+	#pragma region methods
+	void initialize_builtin_macros();
+
 	void process_lines(vector<string> lines);
+	string handle_plain_line(string line);
 	vector<string> remove_comments(vector<string> lines);
-	string find_header(string name);
 
 	void error_at_line(uint line, const char* message, string whole_line = "");
+	void error_at_token(Token* token, const char* message);
 	void warning_at_line(uint line, const char* message, string whole_line = "");
+	void warning_at_token(Token* token, const char* message);
+	Token generate_token(string line, string token);
 
 	string strip_start(string str);
-	bool consume_identifier(string* str, string* dest, uint line);
+	bool consume_identifier(string* str, string* dest, uint line,
+							const char* errformat = "Expected identifier, not '%s'.");
 	bool consume_string(string* str, string* dest, uint line);
 	bool consume_integer(string* str, uint* dest, uint line);
 
@@ -73,8 +101,12 @@ private:
 	DirectiveHandler get_directive_handler(DirectiveType type);
 	void handle_directive(string line, uint line_no);
 
-	bool handle_pragma(vector<string> args, uint line_no);
+	string find_header(string name);
+	PragmaStatus handle_pragma(string pragma, string args, uint line_no);
+	#pragma endregion
 
+	// directive handlers
+	#pragma region handlers
 	#define HANDLER(name) void handle_directive_##name(string line)
 		HANDLER(apply);
 		HANDLER(info);
@@ -83,17 +115,22 @@ private:
 		HANDLER(line);
 
 		HANDLER(macro);
+		HANDLER(undef);
 
 		HANDLER(flag);
-		HANDLER(unflag);
+		HANDLER(unset);
 
 		HANDLER(ifset);
 		HANDLER(ifnset);
+		HANDLER(ifdef);
+		HANDLER(ifndef);
 		HANDLER(else);
 		HANDLER(endif);
 	#undef HANDLER
+	#pragma endregion
 
 	// members
+	#pragma region members
 	const char* _source;
 	vector<string> _lines;
 	string _current_file;
@@ -109,6 +146,7 @@ private:
 
 	bool _had_error;
 	ErrorDispatcher _error_dispatcher;
+	#pragma endregion
 };
 
 #endif

@@ -64,7 +64,8 @@
         "mutex": "cpp",
         "thread": "cpp",
         "cinttypes": "cpp",
-        "evi-man": "plain-text"
+        "evi-man": "plain-text",
+        "*.inc": "cpp"
     },
     "makefile.launchConfigurations": [
         {

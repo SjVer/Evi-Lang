@@ -25,12 +25,14 @@ contexts:
   prototype:
     - include: comments
     - include: pre-directive
+    - include: macro-invoke
 
   main:
     # The main context is the initial starting point of our syntax.
     # Include other contexts from here (or specify them directly).
     - include: comments
     - include: pre-directive
+    - include: macro-invoke
     - include: declaration
     - include: statement
 
@@ -136,6 +138,8 @@ contexts:
   expression:
     - include: comments, pre-directive
 
+    - include: macro-invoke
+
     - include: size_of
     - include: call
     - include: operator
@@ -147,6 +151,10 @@ contexts:
     - include: subscript
 
     - include: punctuation
+
+  macro-invoke:
+    - match: '\b{{ident}}#'
+      scope: entity.name.constant.preprocessor.evi
 
   variable:
     - match: '(\$)({{ident}})'
@@ -171,6 +179,8 @@ contexts:
 
   statement:
     - include: comments
+
+    - include: macro-invoke
 
     - include: assignment
     - include: return
@@ -230,8 +240,12 @@ contexts:
             - include: comments, pre-directive
             - include: expression
             - include: terminator
+            - match: $\n?
+              pop: true
           
         - include: invalids
+        - match: $\n?
+          pop: true
 
     # functions
     - match: '(\@)\s*({{ident}})'
@@ -258,6 +272,8 @@ contexts:
             - include: comments
             - include: invalids
           pop: true
+        - match: \S*
+          pop: true
 
   expression-stmt:
     - include: expression
@@ -271,7 +287,7 @@ contexts:
 
   invalids:
     - match: \S
-      scope: invalid.misplaced.evi
+      scope: meta.invalid.misplaced.evi
 
   comments:
     - match: '\\:'
@@ -327,7 +343,7 @@ contexts:
           pop: true
         - include: invalids
 
-    - match: ^\s*#\s*(flag|unflag)\b
+    - match: ^\s*#\s*(flag|unset|undef)\b
       scope: keyword.preprocessor.flag.evi
       push:
         - include: pre-directive-end
@@ -366,12 +382,13 @@ contexts:
           push:
             - meta_scope: meta.preprocessor.macro.evi
             - include: pre-directive-end
+            - include: type
             - include: statement
             - include: expression
 
         - include: invalids
 
-    - match: ^\s*#\s*(ifset|ifnset)\b
+    - match: ^\s*#\s*(ifset|ifnset|ifdef|ifndef)\b
       scope: keyword.preprocessor.conditional.evi
       push:
         - include: pre-directive-end
