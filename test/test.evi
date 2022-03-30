@@ -2,10 +2,13 @@
 
 @main i32 ()
 {
-    %myconst !i32 123;
-
-    %ptr i32* &$myconst;
-    \ printf("%d\n", $myconst);
-    ~ 0;
+    printf("__LINE__: %d\n", __LINE__#);
+    printf("__FILE__: %s\n", __FILE__#);
+    printf("__TIME__: %s\n", __TIME__#);
+    printf("__DATE__: %s\n", __DATE__#);
+    printf("__COUNTER__: %d\n", __COUNTER__#);
+    printf("__COUNTER__: %d\n", __COUNTER__#);
+    printf("__COUNTER__: %d\n", __COUNTER__#);
+    printf("__COUNTER__: %d\n", __COUNTER__#);
 }
 

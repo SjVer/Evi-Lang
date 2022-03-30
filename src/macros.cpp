@@ -1,4 +1,9 @@
 #include "preprocessor.hpp"
+#include <iomanip>
+
+// =====================================================
+
+static uint counter_value = 0;
 
 // =====================================================
 
@@ -6,8 +11,64 @@
 
 MACRO_GETTER(line)
 {
-	// just the current line number
 	return to_string(_this->_current_line_no);
+}
+
+MACRO_GETTER(file)
+{
+	return '"' + _this->_current_file + '"';
+}
+
+MACRO_GETTER(time_)
+{
+	time_t t = time(nullptr);
+	struct tm* tm = localtime(&t);
+
+	// make sure that when 32 bytes isn't enough we try again and again
+	size_t max_size = 32;
+	size_t size = max_size;
+	while(size == max_size)
+	{
+		size = strftime(nullptr, max_size, "%H:%M:%S", tm) + 1;
+		max_size += 8;
+	}
+
+	// get the actual string
+	char* date = (char*)malloc(size);
+	strftime(date, size, "%H:%M:%S", tm);
+
+	return '"' + string(date) + '"';
+}
+
+MACRO_GETTER(date)
+{
+	time_t t = time(nullptr);
+	struct tm* tm = localtime(&t);
+
+	// make sure that when 32 bytes isn't enough we try again and again
+	size_t max_size = 32;
+	size_t size = max_size;
+	while(size == max_size)
+	{
+		size = strftime(nullptr, max_size, "%b %d %Y", tm) + 1;
+		max_size += 8;
+	}
+
+	// get the actual string
+	char* date = (char*)malloc(size);
+	strftime(date, size, "%b %d %Y", tm);
+
+	return '"' + string(date) + '"';
+}
+
+MACRO_GETTER(counter)
+{
+	return to_string(counter_value++);
+}
+
+MACRO_GETTER(apply_depth)
+{
+	return to_string(_this->_apply_depth);
 }
 
 // =====================================================
@@ -29,4 +90,9 @@ void Preprocessor::initialize_builtin_macros()
 
 	// basic macros
 	ADD_DYNAMIC_MACRO("__LINE__", line);
+	ADD_DYNAMIC_MACRO("__FILE__", file);
+	ADD_DYNAMIC_MACRO("__TIME__", time_);
+	ADD_DYNAMIC_MACRO("__DATE__", date);
+	ADD_DYNAMIC_MACRO("__COUNTER__", counter);
+	ADD_DYNAMIC_MACRO("__APPLY_DEPTH__", apply_depth);
 }
