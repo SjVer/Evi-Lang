@@ -31,6 +31,7 @@ ParsedType* ParsedType::new_invalid()
 ParsedType* ParsedType::copy()
 {
 	ParsedType* ret = new ParsedType(_lexical_type, _evi_type, _is_reference, nullptr);
+	ret->_is_constant = _is_constant;
 	if(_subtype) ret->_subtype = _subtype->copy();
 	return ret;
 }
@@ -62,11 +63,13 @@ void ParsedType::set_lex_type(LexicalType type)
 }
 
 
-string ParsedType::to_string()
+string ParsedType::to_string(bool __first)
 {
-	if(_invalid) return string("???");
-	else if(_subtype) return _subtype->to_string() + '*';
-	else return _evi_type->_name;
+	if(_invalid) return "???";
+
+	string str = _subtype ? _subtype->to_string(false) + '*' : _evi_type->_name;
+	if(_is_constant && __first) return '!' + str;
+	else return str;
 }
 
 const char* ParsedType::to_c_string()
@@ -119,6 +122,11 @@ bool ParsedType::is_signed()
 {
 	if(_subtype) return false;
 	return _evi_type->_is_signed;
+}
+
+bool ParsedType::is_constant()
+{
+	return _is_constant;
 }
 
 

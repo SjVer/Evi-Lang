@@ -2,12 +2,10 @@
 
 @main i32 ()
 {
-	printf("__COMPILER_NAME__: %s\n", __COMPILER_NAME__#);
-	printf("__COMPILER_VERSION__: %s\n", __COMPILER_VERSION__#);
-	printf("__COMPILER_BUILD_TARGET_: %s\n", __COMPILER_BUILD_TARGET__#);
-	printf("__COMPILER_BUILD_DATE__: %s\n", __COMPILER_BUILD_DATE__#);
-	printf("__COMPILER_BUILD_TIME__: %s\n", __COMPILER_BUILD_TIME__#);
-	printf("__OPERATING_SYSTEM__: %s\n", __OPERATING_SYSTEM__#);
-	printf("__LINE__: %d\n", __LINE__#);
+    %myconst !i32 123;
+
+    %ptr i32* &$myconst;
+    \ printf("%d\n", $myconst);
+    ~ 0;
 }
 

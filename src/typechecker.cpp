@@ -50,7 +50,7 @@ void TypeChecker::error_at(Token *token, string message)
 	}
 }
 
-void TypeChecker::warning_at(Token *token, string message)
+void TypeChecker::warning_at(Token *token, string message, bool print_token)
 {
 	if(_panic_mode) return;
 	else if(lint_args.type == LINT_GET_DIAGNOSTICS)
@@ -61,7 +61,14 @@ void TypeChecker::warning_at(Token *token, string message)
 		lint_output_diagnostic_object_end();
 	}
 	else if(lint_args.type == LINT_NONE)
+	{
 		_error_dispatcher.warning_at_token(token, "Type Inference Warning", message.c_str());
+		if(print_token)
+		{
+			cerr << endl;
+			_error_dispatcher.print_token_marked(token, COLOR_PURPLE);
+		}
+	}
 }
 
 void TypeChecker::push(ParsedType* type)
@@ -598,6 +605,12 @@ VISIT(UnaryNode)
 			{
 				error_at(&node->_token, "Cannot get address of non-reference value.");
 				break;
+			}
+			if(type->is_constant())
+			{
+				// taking the address of a constant is bad practice
+				warning_at(&node->_token, tools::fstr(
+					"Unary '&' operator discards constant-modifier from target type '%s'.", type->to_c_string()), true);
 			}
 
 			node->_expr->_cast_to = type->copy_pointer_to();

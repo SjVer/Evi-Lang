@@ -116,6 +116,9 @@ bool Parser::consume(TokenType type, string message)
 
 ParsedType* Parser::consume_type(string msg)
 {
+	// can be constant
+	bool constant = match(TOKEN_BANG);
+
 	// get base type
 	CONSUME_OR_RET_NULL(TOKEN_TYPE, msg);
 	string typestr = PREV_TOKEN_STR;
@@ -128,6 +131,7 @@ ParsedType* Parser::consume_type(string msg)
 	ParsedType* type = PTYPE(
 		GET_EVI_TYPE(typestr)->_default_type,
 		GET_EVI_TYPE(typestr));
+	type->_is_constant = constant;
 
 	// can be pointer
 	while(match(TOKEN_STAR)) type = type->copy_pointer_to();
@@ -578,6 +582,13 @@ StmtNode* Parser::assign_statement()
 	string ident = PREV_TOKEN_STR;
 	if(!check_variable(ident)) error("Variable doesn't exist in current scope.");
 
+	VarProperties props = get_variable_props(ident);
+	if(props.type->is_constant())
+	{
+		error(tools::fstr("Cannot assign to variable with constant-modified type '%s'.", props.type->to_c_string()));
+		// return nullptr;
+	}
+
 	// allow subscript
 	vector<ExprNode*> subs = vector<ExprNode*>();
 	while(match(TOKEN_LEFT_B_BRACE))
@@ -589,7 +600,7 @@ StmtNode* Parser::assign_statement()
 	ExprNode* expr = expression();
 	CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after expression.");
 
-	return new AssignNode(tok, ident, subs, expr, get_variable_props(ident).type);
+	return new AssignNode(tok, ident, subs, expr, props.type);
 }
 
 StmtNode* Parser::if_statement()

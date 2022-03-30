@@ -13,7 +13,7 @@ STDLIB_DIR = /usr/share/evi/stdlib
 # STDLIB_DIR = $(PWD)/stdlib/headers/
 TARGET = x86_64-linux-gnu
 
-MUTE = varargs write-strings sign-compare unused-function comment dangling-gsl
+MUTE = varargs write-strings sign-compare unused-function comment dangling-gsl unknown-warning-option
 LLVMFLAGS = llvm-config-$(LLVMVERSION) --cxxflags
 DEFS = COMPILER=\"$(CC)\" LD_PATH=\"$(LD_PATH)\" STATICLIB_DIR=\"$(STATICLIB_DIR)\" STDLIB_DIR=\"$(STDLIB_DIR)\" LIBC_VERSION=\"$(shell gcc -dumpversion)\" TARGET=\"$(TARGET)\"
 CXXFLAGS = -Wall $(addprefix -Wno-,$(MUTE)) $(addprefix -D,$(DEFS)) `$(LLVMFLAGS)`

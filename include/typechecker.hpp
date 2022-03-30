@@ -39,7 +39,7 @@ class TypeChecker: public Visitor
 	ErrorDispatcher _error_dispatcher;
 
 	void error_at(Token *token, string message);
-	void warning_at(Token *token, string message);
+	void warning_at(Token *token, string message, bool print_token = false);
 
 	// bc the visitor methods return void we instead
 	// just use a stack for the stuff

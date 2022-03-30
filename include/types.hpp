@@ -74,7 +74,7 @@ public:
 	ParsedType* copy_element_of();
 	void set_lex_type(LexicalType type);
 
-	string to_string();
+	string to_string(bool __first = true);
 	const char* to_c_string();
 	llvm::Type* get_llvm_type();
 
@@ -83,8 +83,10 @@ public:
 	uint get_depth();
 	bool is_pointer();
 	bool is_signed();
+	bool is_constant();
 
 	LexicalType _lexical_type;
+	bool _is_constant = false;
 	bool _is_reference = false;
 	bool _keep_as_reference = false;
 
