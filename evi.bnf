@@ -4,8 +4,8 @@ program			: (func_decl | var_decl)*
 declaration		: var_decl
 				| statement
 
-func_decl		: "@" IDENT TYPE "(" TYPE* "..."? ")" (statement | ";")
-var_decl		: "%" IDENT ("," IDENT)* TYPE (expression ("," expression)*)? ";"
+func_decl		: "@" IDENT type "(" type* "..."? ")" (statement | ";")
+var_decl		: "%" IDENT ("," IDENT)* type (expression ("," expression)*)? ";"
 
 
 statement		: assignment
@@ -37,13 +37,15 @@ comparison		: bitwise_shift ((">" | ">=" | "<" | "<=") bitwise_shift)*
 bitwise_shift	: term (("<<" | ">>") term)*
 term			: factor (("-" | "+") factor)*
 factor			: cast (("/" | "*") cast)*
-cast			: unary ("->" TYPE)*
+cast			: unary ("->" type)*
 unary			: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
 subscript		: primary ("[" expression "]")*
 primary			: NUMBER | CHAR | STRING | "(" expression ")"
 				| array | size_of | reference | call
 
 array			: "{" (expression ("," expression)*)? "}"
-size_of			: "?" ( "(" TYPE ")" | TYPE )
+size_of			: "?" ( "(" type ")" | type )
 reference		: "$" (IDENT | INTEGER)
 call			: IDENT "(" (expression ("," expression)*)? ")"
+
+type			: ("!")? BASIC_TYPE ("*")*
