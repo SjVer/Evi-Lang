@@ -187,7 +187,7 @@ VISIT(LogicalNode)
 		case TOKEN_PIPE_PIPE: thisnode = ADD_NODE("||"); break;
 		case TOKEN_AND_AND:   thisnode = ADD_NODE("&&"); break;
 		case TOKEN_QUESTION:  thisnode = ADD_NODE("?:"); break;
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
 	}
 
 	CONNECT_NODES(thisnode, _nodecount);
@@ -225,7 +225,7 @@ VISIT(BinaryNode)
 		case TOKEN_MINUS: 			thisnode = ADD_NODE("-"); break;
 		case TOKEN_STAR:  			thisnode = ADD_NODE("*"); break;
 		case TOKEN_SLASH:			thisnode = ADD_NODE("/"); break;
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
 	}
 
 	CONNECT_NODES(thisnode, _nodecount);
@@ -256,7 +256,7 @@ VISIT(UnaryNode)
 		case TOKEN_MINUS:  	  	thisnode = ADD_NODE("-"); break;
 		case TOKEN_PLUS_PLUS: 	thisnode = ADD_NODE("++"); break;
 		case TOKEN_MINUS_MINUS: thisnode = ADD_NODE("--"); break;
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
 	}
 
 	CONNECT_NODES(thisnode, _nodecount);
@@ -309,7 +309,7 @@ VISIT(LiteralNode)
 			_nodecount++;
 			break;
 		}
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
 	}
 }
 
@@ -337,7 +337,7 @@ VISIT(ReferenceNode)
 		ADD_NODE(tools::fstr("$%s", node->_variable.c_str()).c_str());
 	else if(node->_token.type == TOKEN_PARAMETER_REF)
 		ADD_NODE(tools::fstr("$%d", node->_parameter).c_str());
-	else assert(false);
+	else ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
 }
 
 VISIT(CallNode)

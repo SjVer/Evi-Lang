@@ -14,7 +14,7 @@ ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
 		case TYPE_FLOAT: 	 _evi_type = GET_EVI_TYPE("dbl"); break;
 		case TYPE_VOID: 	 _evi_type = GET_EVI_TYPE("nll"); break;
 		case TYPE_NONE:		 break;
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "in type construction");
 	}
 
 	_is_reference = is_reference;
@@ -52,7 +52,7 @@ ParsedType* ParsedType::copy_pointer_to()
 
 ParsedType* ParsedType::copy_element_of()
 {
-	assert(_subtype && "cannot copy element of non-pointer type!");
+	ASSERT_OR_THROW_INTERNAL_ERROR(_subtype && "cannot copy element of non-pointer type!", "in type clone");
 	return _subtype->copy();
 }
 
@@ -133,7 +133,7 @@ bool ParsedType::is_constant()
 
 bool EviType::eq(EviType* rhs)
 {
-	assert(rhs);
+	ASSERT_OR_THROW_INTERNAL_ERROR(rhs, "in type comparison");
 	// name is enough
 	return _name == rhs->_name;
 }

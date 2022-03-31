@@ -378,7 +378,7 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 		CASE(DIR_ELSE, else);
 		CASE(DIR_ENDIF, endif);
 
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during preprocessing");
 	}
 	#undef CASE
 }

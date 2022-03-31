@@ -132,7 +132,7 @@ test-debug: debug $(APP)
 	@valgrind $(APP) test/test.evi -o bin/test.ll $(args)
 
 .PHONY: routine
-routine: $(APP) run clean
+routine: $(APP) run clean	
 
 ############################################################################
 

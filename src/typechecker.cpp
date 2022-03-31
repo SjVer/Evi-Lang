@@ -79,7 +79,7 @@ void TypeChecker::push(ParsedType* type)
 
 ParsedType* TypeChecker::pop()
 {
-	assert(!_type_stack.empty());
+	ASSERT_OR_THROW_INTERNAL_ERROR(!_type_stack.empty(), "during type checking");
 	ParsedType* type = _type_stack.top();
 	_type_stack.pop();
 	return type;
@@ -159,7 +159,7 @@ ParsedType* TypeChecker::resolve_types(ParsedType* original, ParsedType* adapted
 			default: return nullptr;
 		}
 
-		assert(false);
+		ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
 	}
 	else if(adapted->is_pointer())
 	{
@@ -177,7 +177,7 @@ ParsedType* TypeChecker::resolve_types(ParsedType* original, ParsedType* adapted
 		}
 	}
 
-	assert(false);
+	ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
 }
 
 bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
@@ -265,7 +265,7 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 		}
 	}
 
-	assert(false);
+	ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
 }
 
 // =========================================
@@ -588,7 +588,7 @@ VISIT(UnaryNode)
 			break;
 		}
 
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
 	}
 	else switch(node->_optype) // not a pointer
 	{
@@ -634,7 +634,7 @@ VISIT(UnaryNode)
 			break;
 		}
 
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
 	}
 }
 
@@ -678,7 +678,7 @@ VISIT(LiteralNode)
 		case TOKEN_STRING: 		
 			node->_cast_to = PTYPE(TYPE_CHARACTER)->copy_pointer_to(); 
 			push(node->_cast_to); break;
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
 	}
 }
 

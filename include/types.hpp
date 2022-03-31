@@ -100,7 +100,13 @@ public:
 
 #define ADD_EVI_TYPE(name, type) __evi_types.insert(pair<string, EviType*>(name, type))
 #define IS_EVI_TYPE(name) (__evi_types.find(name) != __evi_types.end())
-#define GET_EVI_TYPE(name) (assert(IS_EVI_TYPE(name)), __evi_types.at(name))
+#define GET_EVI_TYPE(name) (_get_evi_type(name))
+
+static EviType* _get_evi_type(string name)
+{
+	ASSERT_OR_THROW_INTERNAL_ERROR(IS_EVI_TYPE(name), "in type retrieval");
+	return __evi_types.at(name);	
+}
 
 static void init_builtin_evi_types()
 {

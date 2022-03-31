@@ -203,7 +203,7 @@ void CodeGenerator::push(llvm::Value* value)
 
 llvm::Value* CodeGenerator::pop()
 {
-	assert(!_value_stack->empty());
+	ASSERT_OR_THROW_INTERNAL_ERROR(!_value_stack->empty(), "during code generation");
 	llvm::Value* value = _value_stack->top();
 	_value_stack->pop();
 	return value;
@@ -235,7 +235,7 @@ llvm::Value* CodeGenerator::to_bool(llvm::Value* value)
 	else if(type->isPointerTy())
 		return _builder->CreateICmpNE(value, llvm::Constant::getNullValue(type), "ptobtmp");
 
-	assert(false);
+	ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 }
 
 llvm::Value* CodeGenerator::create_cast(llvm::Value* srcval, bool srcsigned, llvm::Type* desttype, bool destsigned)
@@ -253,7 +253,7 @@ ParsedType* CodeGenerator::from_token_type(TokenType type)
 		case TOKEN_FLOAT: 	  return PTYPE(TYPE_FLOAT);
 		case TOKEN_CHARACTER: return PTYPE(TYPE_CHARACTER);
 		case TOKEN_STRING: 	  return PTYPE(TYPE_CHARACTER)->copy_pointer_to();
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 	}
 }
 
@@ -619,7 +619,7 @@ VISIT(LogicalNode)
 		push(phi);
 	}
 	
-	else assert(false);
+	else ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 }
 
 VISIT(BinaryNode)
@@ -639,7 +639,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateOr(left, right, "ibotmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateOr(left, right,"fbotmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateOr(left, right, "cbotmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 		case TOKEN_CARET: switch(AS_LEX(resulttype))
@@ -647,7 +647,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateXor(left, right, "ibxtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateXor(left, right,"fbxtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateXor(left, right, "cbxtmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 		case TOKEN_AND: switch(AS_LEX(resulttype))
@@ -655,7 +655,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateAnd(left, right, "ibatmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateAnd(left, right,"fbatmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateAnd(left, right, "cbatmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 
@@ -664,7 +664,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpEQ(left, right, "ieqtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOEQ(left, right,"feqtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpEQ(left, right, "ceqtmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 		case TOKEN_SLASH_EQUAL: switch(AS_LEX(resulttype))
@@ -672,7 +672,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpNE(left, right, "inetmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpONE(left, right,"fnetmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpNE(left, right, "cnetmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 
@@ -681,7 +681,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpSGE(left, right, "igetmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOGE(left, right,"fgetmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpUGE(left, right, "cgetmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 		case TOKEN_LESS_EQUAL: switch(AS_LEX(resulttype))
@@ -689,7 +689,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLE(left, right, "iletmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOLE(left, right,"fletmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpULE(left, right, "cletmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 		case TOKEN_GREATER: switch(AS_LEX(resulttype))
@@ -697,7 +697,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpSGT(left, right, "igttmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOGT(left, right,"fgttmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpUGT(left, right, "cgttmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 		case TOKEN_LESS: switch(AS_LEX(resulttype))
@@ -705,7 +705,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLT(left, right, "ilttmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOLT(left, right,"flttmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpULT(left, right, "clttmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 
@@ -714,7 +714,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateLShr(left, right, "isrtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateLShr(left, right,"fsrtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateLShr(left, right, "csrtmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 		case TOKEN_LESS_LESS: switch(AS_LEX(resulttype))
@@ -722,7 +722,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateShl(left, right, "isltmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateShl(left, right,"fsltmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateShl(left, right, "csltmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			}
 			break;
 
@@ -731,7 +731,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateAdd(left, right, "iaddtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFAdd(left, right,"faddtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateAdd(left, right, "caddtmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			} 
 			break;
 		case TOKEN_MINUS: switch(AS_LEX(resulttype))
@@ -739,7 +739,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateSub(left, right, "isubmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFSub(left, right,"fsubmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateSub(left, right, "csubmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			} 
 			break;
 		case TOKEN_STAR: switch(AS_LEX(resulttype))
@@ -747,7 +747,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateMul(left, right, "imultmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFMul(left, right,"fmultmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateMul(left, right, "cmultmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			} 
 			break;
 		case TOKEN_SLASH: switch(AS_LEX(resulttype))
@@ -755,11 +755,11 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateSDiv(left, right, "idivtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFDiv(left, right,"fdivtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateUDiv(left, right, "cdivtmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			} 
 			break;
 		
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 	}
 }
 
@@ -774,11 +774,9 @@ VISIT(UnaryNode)
 {
 	node->_expr->accept(this);
 	ParsedType* parsedtype = node->_expr->_cast_to;
+	DEBUG_PRINT_F_MSG("UnaryNode got: %s", parsedtype->to_c_string());
 	llvm::Type* casttype = parsedtype->get_llvm_type();
 	llvm::Value* value = pop();
-
-	// if(node->_optype != TOKEN_STAR && node->_optype != TOKEN_AND)
-	// 	value = create_cast(value, false, casttype, parsedtype->is_signed());
 
 	switch(node->_optype)
 	{
@@ -791,7 +789,8 @@ VISIT(UnaryNode)
 		}
 		case TOKEN_AND:
 		{
-			push(_builder->CreatePtrToInt(value, casttype, "addrtmp"));
+			DEBUG_PRINT_F_MSG("referencing type %s", parsedtype->copy_pointer_to()->to_c_string());
+			// push(_builder->CreatePtrToInt(value, casttype, "addrtmp"));
 			break;
 		}
 		case TOKEN_BANG:
@@ -803,7 +802,7 @@ VISIT(UnaryNode)
 		case TOKEN_MINUS: switch(AS_LEX(node->_expr->_cast_to))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateNeg(value, "inegtmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			} 
 			break;
 		case TOKEN_PLUS_PLUS: switch(AS_LEX(node->_expr->_cast_to))
@@ -811,7 +810,7 @@ VISIT(UnaryNode)
 				case TYPE_CHARACTER: push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "cinctmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "iinctmp")); break;
 				case TYPE_FLOAT: 	 push(_builder->CreateFAdd(value, llvm::ConstantFP::get(casttype, 1), "finctmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			} 
 			break;
 		case TOKEN_MINUS_MINUS: switch(AS_LEX(node->_expr->_cast_to))
@@ -819,11 +818,11 @@ VISIT(UnaryNode)
 				case TYPE_CHARACTER: push(_builder->CreateSub(value, llvm::ConstantInt::get(casttype, 1), "cdectmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateSub(value, llvm::ConstantInt::get(casttype, 1), "idectmp")); break;
 				case TYPE_FLOAT: 	 push(_builder->CreateFSub(value, llvm::ConstantFP::get(casttype, 1), "fdectmp")); break;
-				default: assert(false);
+				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 			} 
 			break;
 		
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 	}
 }
 
@@ -898,7 +897,7 @@ VISIT(LiteralNode)
 			constant = global;
 			break;
 		}
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
 	}
 
 	// ParsedType* casttype = node->_cast_to;
@@ -975,7 +974,7 @@ VISIT(ReferenceNode)
 VISIT(CallNode)
 {
 	llvm::Function* callee = _top_module->getFunction(node->_ident);
-	assert(callee);
+	ASSERT_OR_THROW_INTERNAL_ERROR(callee, "during code generation");
 
 	vector<llvm::Value*> args;
 	for(int i = 0; i < node->_arguments.size(); i++)

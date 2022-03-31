@@ -268,7 +268,7 @@ void Parser::generate_lint()
 			#undef INVALID
 			break;
 		}
-		default: assert(false && "invalid lint type?");
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(!"invalid lint type?", "during parsing");
 	}
 
 	cout << lint_output;
@@ -542,7 +542,7 @@ StmtNode* Parser::variable_declaration()
 		CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after variable defenition.");
 	}
 
-	assert(nametokens.size() == decls.size());
+	ASSERT_OR_THROW_INTERNAL_ERROR(nametokens.size() == decls.size(), "during parsing");
 	if(nametokens.size() == 1) return decls[0];
 	else
 	{
@@ -1004,7 +1004,7 @@ LiteralNode* Parser::literal()
 			//
 			return new LiteralNode(_previous, string(_previous.start + 1, _previous.length - 2));
 		}
-		default: assert(false);
+		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during parsing");
 	}
 }
 
@@ -1062,7 +1062,7 @@ ReferenceNode* Parser::reference()
 		ParsedType* type = _current_scope.func_props.params[intval];
 		return new ReferenceNode(_previous, "", intval, type);
 	}
-	assert(false);
+	ASSERT_OR_THROW_INTERNAL_ERROR(false, "during parsing");
 }
 
 CallNode* Parser::call()

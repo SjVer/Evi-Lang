@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstring>
+#include <cctype>
 #include <assert.h>
 #include "tools.hpp"
 
@@ -91,6 +92,17 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #endif
 
 #define ABORT(status) { cerr << tools::fstr("[evi] Aborted with code %d.\n", status); exit(status); }
+#define INTERNAL_ERROR(where) { \
+		const char* bn = basename(__FILE__); \
+		const char ext = strrchr(bn, '.')[1]; \
+		cerr << tools::fstr("[evi:!!!] Internal error %c%c%d%c occured " where ".", \
+							toupper(bn[0]), toupper(bn[1]), __LINE__, toupper(ext)) << endl; \
+		cerr << "[evi:!!!] If this error occurs repeatedly please report it on github" << endl; \
+		cerr << "[evi:!!!] at https://github.com/SjVer/Evi-Lang/issues/new." << endl; \
+		ABORT(STATUS_INTERNAL_ERROR); \
+	}
+#define ASSERT_OR_THROW_INTERNAL_ERROR(condition, where) { if(!(condition)) INTERNAL_ERROR(where) }
+
 #pragma endregion
 
 // llvm stuff
@@ -130,7 +142,9 @@ typedef enum
 	STATUS_PARSE_ERROR = 66,
 	STATUS_TYPE_ERROR = 67,
 	STATUS_CODEGEN_ERROR = 68,
-	STATUS_OUTPUT_ERROR = 69
+	STATUS_OUTPUT_ERROR = 69,
+
+	STATUS_INTERNAL_ERROR = -1
 } Status;
 
 #endif

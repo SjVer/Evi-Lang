@@ -42,20 +42,15 @@
 
 \ ==================================== Macros ======================================
 
-\ #macro NULL 0
-%NULL nll* 0;
+#macro NULL 0
 
-\ #macro EOF (-1)
-%EOF i32 -1;
+#macro EOF (-1)
 
-\ #macro SEEK_CUR 1
-%SEEK_CUR i32 1;
+#macro SEEK_CUR 1
 
-\ #macro SEEK_END 2
-%SEEK_END i32 2;
+#macro SEEK_END 2
 
-\ #macro SEEK_SET 0
-%SEEK_SET i32 0;
+#macro SEEK_SET 0
 
 \ =================================== Functions ====================================
 
