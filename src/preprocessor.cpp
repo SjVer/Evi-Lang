@@ -24,6 +24,7 @@ Status Preprocessor::preprocess(string infile, const char** source)
 	_error_dispatcher = ErrorDispatcher();
 	_had_error = false;
 
+	initialize_state_singleton(this);
 	initialize_builtin_macros();
 
 	vector<string> lines = tools::split_string(string(*source), "\n");
@@ -83,6 +84,7 @@ string Preprocessor::handle_plain_line(string line)
 			_error_dispatcher.error_at_token(&tok, "Preprocessing Error", msg);
 			cerr << endl;
 			_error_dispatcher.print_token_marked(&tok, COLOR_RED);
+			cerr << endl;
 
 			_had_error = true;
 			return line;
@@ -90,7 +92,7 @@ string Preprocessor::handle_plain_line(string line)
 
 		// get macro properties
 		MacroProperties props = _macros->at(macro);
-		string format = props.has_getter ? (props.getter)(this) : props.format;
+		string format = props.has_getter ? (props.getter)() : props.format;
 
 		// replace 
 		line = regex_replace(line, regexp, format);
@@ -182,6 +184,7 @@ void Preprocessor::error_at_token(Token* token, const char* message)
 	_error_dispatcher.error_at_token(token, "Preprocessing Error", message);
 	cerr << endl;
 	_error_dispatcher.print_token_marked(token, COLOR_RED);
+	cerr << endl;
 
 	_had_error = true;
 }
@@ -218,6 +221,7 @@ void Preprocessor::warning_at_token(Token* token, const char* message)
 	_error_dispatcher.warning_at_token(token, "Preprocessing Warning", message);
 	cerr << endl;
 	_error_dispatcher.print_token_marked(token, COLOR_PURPLE);
+	cerr << endl;
 }
 
 // will assume that the first appearance of token is the correct one
@@ -378,9 +382,10 @@ Preprocessor::DirectiveHandler Preprocessor::get_directive_handler(DirectiveType
 		CASE(DIR_ELSE, else);
 		CASE(DIR_ENDIF, endif);
 
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during preprocessing");
+		default: THROW_INTERNAL_ERROR("during preprocessing");
 	}
 	#undef CASE
+	return nullptr;
 }
 
 void Preprocessor::handle_directive(string line, uint line_no)

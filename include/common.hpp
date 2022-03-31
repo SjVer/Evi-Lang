@@ -5,7 +5,8 @@
 
 #include <cstring>
 #include <cctype>
-#include <assert.h>
+#include <cassert>
+#include <csignal>
 #include "tools.hpp"
 
 using namespace std;
@@ -92,16 +93,16 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 #endif
 
 #define ABORT(status) { cerr << tools::fstr("[evi] Aborted with code %d.\n", status); exit(status); }
-#define INTERNAL_ERROR(where) { \
+#define THROW_INTERNAL_ERROR(where) { \
 		const char* bn = basename(__FILE__); \
 		const char ext = strrchr(bn, '.')[1]; \
-		cerr << tools::fstr("[evi:!!!] Internal error %c%c%d%c occured " where ".", \
+		cerr << tools::fstr("[evi:!!!] Internal error %c%c%d%c occurred " where ".", \
 							toupper(bn[0]), toupper(bn[1]), __LINE__, toupper(ext)) << endl; \
 		cerr << "[evi:!!!] If this error occurs repeatedly please report it on github" << endl; \
 		cerr << "[evi:!!!] at https://github.com/SjVer/Evi-Lang/issues/new." << endl; \
-		ABORT(STATUS_INTERNAL_ERROR); \
+		raise(SIGINT); \
 	}
-#define ASSERT_OR_THROW_INTERNAL_ERROR(condition, where) { if(!(condition)) INTERNAL_ERROR(where) }
+#define ASSERT_OR_THROW_INTERNAL_ERROR(condition, where) { if(!(condition)) THROW_INTERNAL_ERROR(where) }
 
 #pragma endregion
 

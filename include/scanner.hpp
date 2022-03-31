@@ -73,7 +73,7 @@ typedef enum
 	TOKEN_EOF
 } TokenType;
 
-char *getTokenStr(TokenType type);
+char *get_tokentype_str(TokenType type);
 
 typedef struct
 {
@@ -119,7 +119,7 @@ private:
 	void skipWhitespaces();
 };
 
-void printTokensFromSrc(const char *src);
+void print_tokens_from_src(const char *src);
 
 static uint get_token_col(Token* token, int tab_width = -1)
 {

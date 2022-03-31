@@ -348,7 +348,7 @@ Token Scanner::scanToken()
 
 // =========================
 
-char *getTokenStr(TokenType type)
+char *get_tokentype_str(TokenType type)
 {
 	switch(type)
 	{
@@ -417,7 +417,7 @@ char *getTokenStr(TokenType type)
 	}
 }
 
-void printTokensFromSrc(const char *src)
+void print_tokens_from_src(const char *src)
 {
 	Scanner scanner(src);
 	
@@ -425,7 +425,7 @@ void printTokensFromSrc(const char *src)
 	do {
 		token = scanner.scanToken();
 		printf("%d: \"%.*s\" \t\t-> %s\n\n",
-			token.line, token.length, token.start, getTokenStr(token.type));
+			token.line, token.length, token.start, get_tokentype_str(token.type));
 
 	} while (token.type != TOKEN_EOF);
 }

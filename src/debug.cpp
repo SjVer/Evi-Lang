@@ -159,7 +159,7 @@ VISIT(ReturnNode)
 
 VISIT(BlockNode)
 {
-	int thisnode;
+	int thisnode = 0;
 	if(node->_secret)
 	{
 		_stream << tools::fstr("\tnode%d [label=\"\", shape=\"none\", width=0, height=0]\n", _nodecount);
@@ -181,13 +181,13 @@ VISIT(BlockNode)
 
 VISIT(LogicalNode)
 {
-	int thisnode;
+	int thisnode = 0;
 	switch(node->_token.type)
 	{
 		case TOKEN_PIPE_PIPE: thisnode = ADD_NODE("||"); break;
 		case TOKEN_AND_AND:   thisnode = ADD_NODE("&&"); break;
 		case TOKEN_QUESTION:  thisnode = ADD_NODE("?:"); break;
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
+		default: THROW_INTERNAL_ERROR("during AST visualization");
 	}
 
 	CONNECT_NODES(thisnode, _nodecount);
@@ -203,7 +203,7 @@ VISIT(LogicalNode)
 
 VISIT(BinaryNode)
 {
-	int thisnode;
+	int thisnode = 0;
 	switch(node->_optype)
 	{
 		case TOKEN_PIPE: 	  		thisnode = ADD_NODE("|"); break;
@@ -225,7 +225,7 @@ VISIT(BinaryNode)
 		case TOKEN_MINUS: 			thisnode = ADD_NODE("-"); break;
 		case TOKEN_STAR:  			thisnode = ADD_NODE("*"); break;
 		case TOKEN_SLASH:			thisnode = ADD_NODE("/"); break;
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
+		default: THROW_INTERNAL_ERROR("during AST visualization");
 	}
 
 	CONNECT_NODES(thisnode, _nodecount);
@@ -247,7 +247,7 @@ VISIT(CastNode)
 
 VISIT(UnaryNode)
 {
-	int thisnode;
+	int thisnode = 0;
 	switch(node->_optype)
 	{
 		case TOKEN_STAR:  	  	thisnode = ADD_NODE("*"); break;
@@ -256,7 +256,7 @@ VISIT(UnaryNode)
 		case TOKEN_MINUS:  	  	thisnode = ADD_NODE("-"); break;
 		case TOKEN_PLUS_PLUS: 	thisnode = ADD_NODE("++"); break;
 		case TOKEN_MINUS_MINUS: thisnode = ADD_NODE("--"); break;
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
+		default: THROW_INTERNAL_ERROR("during AST visualization");
 	}
 
 	CONNECT_NODES(thisnode, _nodecount);
@@ -309,7 +309,7 @@ VISIT(LiteralNode)
 			_nodecount++;
 			break;
 		}
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
+		default: THROW_INTERNAL_ERROR("during AST visualization");
 	}
 }
 
@@ -337,7 +337,7 @@ VISIT(ReferenceNode)
 		ADD_NODE(tools::fstr("$%s", node->_variable.c_str()).c_str());
 	else if(node->_token.type == TOKEN_PARAMETER_REF)
 		ADD_NODE(tools::fstr("$%d", node->_parameter).c_str());
-	else ASSERT_OR_THROW_INTERNAL_ERROR(false, "during AST visualization");
+	else THROW_INTERNAL_ERROR("during AST visualization");
 }
 
 VISIT(CallNode)

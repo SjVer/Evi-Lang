@@ -20,7 +20,10 @@ public:
 		_error_dispatcher() {}
 	Status preprocess(string infile, const char** source);
 
-// private:
+private:
+
+	friend class State;
+
 	// types
 	#pragma region types
 
@@ -49,7 +52,7 @@ public:
 	} DirectiveType;
 	typedef void (Preprocessor::*DirectiveHandler)(string);
 
-	typedef string (*BuiltinMacroGetter)(Preprocessor*);
+	typedef string (*BuiltinMacroGetter)();
 	typedef struct
 	{
 		bool has_getter = false;
@@ -148,5 +151,9 @@ public:
 	ErrorDispatcher _error_dispatcher;
 	#pragma endregion
 };
+
+// ==== ============= ====
+
+extern void initialize_state_singleton(Preprocessor* p);
 
 #endif

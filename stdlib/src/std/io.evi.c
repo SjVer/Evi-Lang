@@ -39,23 +39,23 @@
 
 // extern evi_i32_t fgetpos(FILE *stream, fpos_t* pos);
 
-// extern FILE *fopen(/*const*/ evi_chr_t* filename, /*const*/ evi_chr_t* mode);
+// extern FILE *fopen(const evi_chr_t* filename, const evi_chr_t* mode);
 
 // extern size_t fread(evi_nll_t* ptr, size_t size, size_t nmemb, FILE *stream);
 
-// extern FILE *freopen(/*const*/ evi_chr_t* filename, /*const*/ evi_chr_t* mode, FILE *stream);
+// extern FILE *freopen(const evi_chr_t* filename, const evi_chr_t* mode, FILE *stream);
 
 // extern evi_i32_t fseek(FILE *stream, long evi_i32_t offset, evi_i32_t whence);
 
-// extern evi_i32_t fsetpos(FILE *stream, /*const*/ fpos_t* pos);
+// extern evi_i32_t fsetpos(FILE *stream, const fpos_t* pos);
 
 // extern long evi_i32_t ftell(FILE *stream);
 
-// extern size_t fwrite(/*const*/ evi_nll_t* ptr, size_t size, size_t nmemb, FILE *stream);
+// extern size_t fwrite(const evi_nll_t* ptr, size_t size, size_t nmemb, FILE *stream);
 
-extern evi_i32_t remove(/*const*/ evi_chr_t* filename);
+extern evi_i32_t remove(const evi_chr_t* filename);
 
-extern evi_i32_t rename(/*const*/ evi_chr_t* old_filename, /*const*/ evi_chr_t* new_filename);
+extern evi_i32_t rename(const evi_chr_t* old_filename, const evi_chr_t* new_filename);
 
 // extern evi_nll_t rewind(FILE *stream);
 
@@ -67,23 +67,23 @@ extern evi_i32_t rename(/*const*/ evi_chr_t* old_filename, /*const*/ evi_chr_t* 
 
 extern evi_chr_t* tmpnam(evi_chr_t* str);
 
-// extern evi_i32_t fprevi_i32_tf(FILE *stream, /*const*/ evi_chr_t* format, ...);
+// extern evi_i32_t fprevi_i32_tf(FILE *stream, const evi_chr_t* format, ...);
 
-extern evi_i32_t printf(/*const*/ evi_chr_t* format, ...);
+extern evi_i32_t printf(const evi_chr_t* format, ...);
 
-extern evi_i32_t sprintf(evi_chr_t* str, /*const*/ evi_chr_t* format, ...);
+extern evi_i32_t sprintf(evi_chr_t* str, const evi_chr_t* format, ...);
 
-// extern evi_i32_t vfprevi_i32_tf(FILE *stream, /*const*/ evi_chr_t* format, va_list arg);
+// extern evi_i32_t vfprevi_i32_tf(FILE *stream, const evi_chr_t* format, va_list arg);
 
-// extern evi_i32_t vprevi_i32_tf(/*const*/ evi_chr_t* format, va_list arg);
+// extern evi_i32_t vprevi_i32_tf(const evi_chr_t* format, va_list arg);
 
-// extern evi_i32_t vsprevi_i32_tf(evi_chr_t* str, /*const*/ evi_chr_t* format, va_list arg);
+// extern evi_i32_t vsprevi_i32_tf(evi_chr_t* str, const evi_chr_t* format, va_list arg);
 
-// extern evi_i32_t fscanf(FILE *stream, /*const*/ evi_chr_t* format, ...);
+// extern evi_i32_t fscanf(FILE *stream, const evi_chr_t* format, ...);
 
-extern evi_i32_t scanf(/*const*/ evi_chr_t* format, ...);
+extern evi_i32_t scanf(const evi_chr_t* format, ...);
 
-extern evi_i32_t sscanf(/*const*/ evi_chr_t* str, /*const*/ evi_chr_t* format, ...);
+extern evi_i32_t sscanf(const evi_chr_t* str, const evi_chr_t* format, ...);
 
 // extern evi_i32_t fgetc(FILE *stream);
 
@@ -91,7 +91,7 @@ extern evi_i32_t sscanf(/*const*/ evi_chr_t* str, /*const*/ evi_chr_t* format, .
 
 // extern evi_i32_t fputc(evi_i32_t evi_chr_t, FILE *stream);
 
-// extern evi_i32_t fputs(/*const*/ evi_chr_t* str, FILE *stream);
+// extern evi_i32_t fputs(const evi_chr_t* str, FILE *stream);
 
 // extern evi_i32_t getc(FILE *stream);
 
@@ -103,8 +103,8 @@ extern evi_chr_t* gets(evi_chr_t* str);
 
 extern evi_i32_t putchar(evi_i32_t evi_chr_t);
 
-extern evi_i32_t puts(/*const*/ evi_chr_t* str);
+extern evi_i32_t puts(const evi_chr_t* str);
 
 // extern evi_i32_t ungetc(evi_i32_t evi_chr_t, FILE *stream);
 
-extern evi_nll_t perror(/*const*/ evi_chr_t* str);
+extern evi_nll_t perror(const evi_chr_t* str);

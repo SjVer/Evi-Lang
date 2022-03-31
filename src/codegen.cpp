@@ -235,7 +235,8 @@ llvm::Value* CodeGenerator::to_bool(llvm::Value* value)
 	else if(type->isPointerTy())
 		return _builder->CreateICmpNE(value, llvm::Constant::getNullValue(type), "ptobtmp");
 
-	ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+	THROW_INTERNAL_ERROR("during code generation");
+	return nullptr;
 }
 
 llvm::Value* CodeGenerator::create_cast(llvm::Value* srcval, bool srcsigned, llvm::Type* desttype, bool destsigned)
@@ -253,8 +254,9 @@ ParsedType* CodeGenerator::from_token_type(TokenType type)
 		case TOKEN_FLOAT: 	  return PTYPE(TYPE_FLOAT);
 		case TOKEN_CHARACTER: return PTYPE(TYPE_CHARACTER);
 		case TOKEN_STRING: 	  return PTYPE(TYPE_CHARACTER)->copy_pointer_to();
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+		default: THROW_INTERNAL_ERROR("during code generation");
 	}
+	return nullptr;
 }
 
 // =========================================
@@ -300,8 +302,8 @@ VISIT(FuncDeclNode)
 			_builder->CreateStore(arg, alloca);
 
 			// Add arguments to variable symbol table.
-			_named_values[tools::fstr("%d", i)].first = alloca;
-			_named_values[tools::fstr("%d", i)].second = node->_params[i];
+			_named_values[to_string(i)].first = alloca;
+			_named_values[to_string(i)].second = node->_params[i];
 		}
 
 		// eval the body
@@ -619,7 +621,7 @@ VISIT(LogicalNode)
 		push(phi);
 	}
 	
-	else ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+	else THROW_INTERNAL_ERROR("during code generation");
 }
 
 VISIT(BinaryNode)
@@ -639,7 +641,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateOr(left, right, "ibotmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateOr(left, right,"fbotmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateOr(left, right, "cbotmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 		case TOKEN_CARET: switch(AS_LEX(resulttype))
@@ -647,7 +649,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateXor(left, right, "ibxtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateXor(left, right,"fbxtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateXor(left, right, "cbxtmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 		case TOKEN_AND: switch(AS_LEX(resulttype))
@@ -655,7 +657,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateAnd(left, right, "ibatmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateAnd(left, right,"fbatmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateAnd(left, right, "cbatmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 
@@ -664,7 +666,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpEQ(left, right, "ieqtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOEQ(left, right,"feqtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpEQ(left, right, "ceqtmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 		case TOKEN_SLASH_EQUAL: switch(AS_LEX(resulttype))
@@ -672,7 +674,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpNE(left, right, "inetmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpONE(left, right,"fnetmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpNE(left, right, "cnetmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 
@@ -681,7 +683,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpSGE(left, right, "igetmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOGE(left, right,"fgetmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpUGE(left, right, "cgetmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 		case TOKEN_LESS_EQUAL: switch(AS_LEX(resulttype))
@@ -689,7 +691,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLE(left, right, "iletmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOLE(left, right,"fletmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpULE(left, right, "cletmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 		case TOKEN_GREATER: switch(AS_LEX(resulttype))
@@ -697,7 +699,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpSGT(left, right, "igttmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOGT(left, right,"fgttmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpUGT(left, right, "cgttmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 		case TOKEN_LESS: switch(AS_LEX(resulttype))
@@ -705,7 +707,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLT(left, right, "ilttmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOLT(left, right,"flttmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpULT(left, right, "clttmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 
@@ -714,7 +716,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateLShr(left, right, "isrtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateLShr(left, right,"fsrtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateLShr(left, right, "csrtmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 		case TOKEN_LESS_LESS: switch(AS_LEX(resulttype))
@@ -722,7 +724,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateShl(left, right, "isltmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateShl(left, right,"fsltmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateShl(left, right, "csltmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			}
 			break;
 
@@ -731,7 +733,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateAdd(left, right, "iaddtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFAdd(left, right,"faddtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateAdd(left, right, "caddtmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			} 
 			break;
 		case TOKEN_MINUS: switch(AS_LEX(resulttype))
@@ -739,7 +741,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateSub(left, right, "isubmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFSub(left, right,"fsubmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateSub(left, right, "csubmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			} 
 			break;
 		case TOKEN_STAR: switch(AS_LEX(resulttype))
@@ -747,7 +749,7 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateMul(left, right, "imultmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFMul(left, right,"fmultmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateMul(left, right, "cmultmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			} 
 			break;
 		case TOKEN_SLASH: switch(AS_LEX(resulttype))
@@ -755,11 +757,11 @@ VISIT(BinaryNode)
 				case TYPE_INTEGER:   push(_builder->CreateSDiv(left, right, "idivtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFDiv(left, right,"fdivtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateUDiv(left, right, "cdivtmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			} 
 			break;
 		
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+		default: THROW_INTERNAL_ERROR("during code generation");
 	}
 }
 
@@ -774,7 +776,6 @@ VISIT(UnaryNode)
 {
 	node->_expr->accept(this);
 	ParsedType* parsedtype = node->_expr->_cast_to;
-	DEBUG_PRINT_F_MSG("UnaryNode got: %s", parsedtype->to_c_string());
 	llvm::Type* casttype = parsedtype->get_llvm_type();
 	llvm::Value* value = pop();
 
@@ -783,13 +784,13 @@ VISIT(UnaryNode)
 		case TOKEN_STAR:
 		{
 			// if(casttype->isPointerTy())
-				value = _builder->CreateLoad(casttype->getPointerTo(), value, "predtmp");
+				// value = _builder->CreateLoad(casttype->getPointerTo(), value, "predtmp");
 			push(_builder->CreateLoad(casttype, value, "dereftmp"));
 			break;
 		}
 		case TOKEN_AND:
 		{
-			DEBUG_PRINT_F_MSG("referencing type %s", parsedtype->copy_pointer_to()->to_c_string());
+			push(value);
 			// push(_builder->CreatePtrToInt(value, casttype, "addrtmp"));
 			break;
 		}
@@ -802,7 +803,7 @@ VISIT(UnaryNode)
 		case TOKEN_MINUS: switch(AS_LEX(node->_expr->_cast_to))
 			{
 				case TYPE_INTEGER:   push(_builder->CreateNeg(value, "inegtmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			} 
 			break;
 		case TOKEN_PLUS_PLUS: switch(AS_LEX(node->_expr->_cast_to))
@@ -810,7 +811,7 @@ VISIT(UnaryNode)
 				case TYPE_CHARACTER: push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "cinctmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateAdd(value, llvm::ConstantInt::get(casttype, 1), "iinctmp")); break;
 				case TYPE_FLOAT: 	 push(_builder->CreateFAdd(value, llvm::ConstantFP::get(casttype, 1), "finctmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			} 
 			break;
 		case TOKEN_MINUS_MINUS: switch(AS_LEX(node->_expr->_cast_to))
@@ -818,11 +819,11 @@ VISIT(UnaryNode)
 				case TYPE_CHARACTER: push(_builder->CreateSub(value, llvm::ConstantInt::get(casttype, 1), "cdectmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateSub(value, llvm::ConstantInt::get(casttype, 1), "idectmp")); break;
 				case TYPE_FLOAT: 	 push(_builder->CreateFSub(value, llvm::ConstantFP::get(casttype, 1), "fdectmp")); break;
-				default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+				default: THROW_INTERNAL_ERROR("during code generation");
 			} 
 			break;
 		
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+		default: THROW_INTERNAL_ERROR("during code generation");
 	}
 }
 
@@ -854,7 +855,7 @@ VISIT(LiteralNode)
 {
 	ParsedType* type = from_token_type(node->_token.type);
 	// llvm::Value* constant;
-	llvm::Constant* constant;
+	llvm::Constant* constant = nullptr;
 
 	switch(node->_token.type)
 	{
@@ -897,7 +898,7 @@ VISIT(LiteralNode)
 			constant = global;
 			break;
 		}
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during code generation");
+		default: THROW_INTERNAL_ERROR("during code generation");
 	}
 
 	// ParsedType* casttype = node->_cast_to;
@@ -951,22 +952,21 @@ VISIT(ReferenceNode)
 	}
 	else if(node->_token.type == TOKEN_PARAMETER_REF)
 	{
-		var = _named_values[tools::fstr("%d", node->_parameter)].first;
-		type = _named_values[tools::fstr("%d", node->_parameter)].second;
+		var = _named_values[to_string(node->_parameter)].first;
+		type = _named_values[to_string(node->_parameter)].second;
 	}
+	ASSERT_OR_THROW_INTERNAL_ERROR(var, "during reference retrieval");
+	ASSERT_OR_THROW_INTERNAL_ERROR(type, "during reference retrieval");
 
-	// cerr << string(node->_token.start, node->_token.length) + tools::fstr(" %d ", node->_token.line) + (node->_cast_to ? " yup" : " nop") << endl;
-
-	if(type->_keep_as_reference)
+	if(node->_cast_to->_keep_as_reference)
 	{
-		// DEBUG_PRINT_F_MSG("kept '%s' as ref", node->_variable.c_str());
+		// push the raw pointer
+		DEBUG_PRINT_F_MSG("Kept %.*s as reference.", node->_token.length, node->_token.start);
 		push(var);
 	}
 	else
 	{
 		llvm::LoadInst* load = _builder->CreateLoad(type->get_llvm_type(), var, "loadtmp");
-		// ParsedType* casttype = node->_cast_to;
-		// push(create_cast(load, type->is_signed(), casttype->get_llvm_type(), casttype->is_signed()));
 		push(load);
 	}
 }

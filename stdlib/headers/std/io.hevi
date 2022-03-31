@@ -73,36 +73,36 @@
 \ @fgetpos i32 (FILE* fpos_t*);
 
 \ \? Opens the filename pointed to by filename using the given mode.
-\ @fopen FILE* (\:const:\ chr* \:const:\ chr*);
+\ @fopen FILE* (!chr* !chr*);
 
 \ \? Reads data from the given stream into the array pointed to by ptr.
 \ @fread sze (nll* sze sze FILE*);
 
 \ \? Associates a new filename with the given open stream and same time closing the old file in stream.
-\ @freopen FILE* (\:const:\ chr* \:const:\ chr* FILE*);
+\ @freopen FILE* (!chr* !chr* FILE*);
 
 \ \? Sets the file position of the stream to the given offset. The argument offset signifies the number of bytes to seek from the given whence position.
 \ @fseek i32 (FILE* long i32 i32);
 
 \ \? Sets the file position of the given stream to the given position. The argument pos is a position given by the function fgetpos.
-\ @fsetpos i32 (FILE* \:const:\ fpos_t*);
+\ @fsetpos i32 (FILE* !fpos_t*);
 
 \ \? Returns the current file position of the given stream.
 \ @ftell long i32 (FILE*);
 
 \ \? Writes data from the array pointed to by ptr to the given stream.
-\ @fwrite sze (\:const:\ nll* sze sze FILE*);
+\ @fwrite sze (!nll* sze sze FILE*);
 
 \? Deletes the given filename so that it is no longer accessible.
 \? @param 0 the name of the file to be deleted
 \? @return zero on success and -1 on error (errno is set appropriately)
-@remove i32 (\:const:\ chr*);
+@remove i32 (!chr*);
 
 \? Causes the filename referred to by old_filename to be changed to new_filename.
 \? @param 0 the name of the file to be renamed and/or moved
 \? @param 1 the new name for the file
 \? @return zero on success and -1 on error (errno is set appropriately)
-@rename i32 (\:const:\ chr* \:const:\ chr*);
+@rename i32 (!chr* !chr*);
 
 \ \? Sets the file position to the beginning of the file of the given stream.
 \ @rewind nll (FILE*);
@@ -127,45 +127,45 @@
 @tmpnam chr* (chr*);
 
 \ \? Sends formatted output to a stream.
-\ @fprintf i32 (FILE* \:const:\ chr* ...);
+\ @fprintf i32 (FILE* !chr* ...);
 
 \? Sends formatted output to stdout.
 \? @param 0 the format/string to print
 \? @param 1 optional replacement values for the format tags
 \? @return the amount of printed characteres on success, otherwise a negative number
-@printf i32 (\:const:\ chr* ...);
+@printf i32 (!chr* ...);
 
 \? Sends formatted output to a string.
 \? @param 0 the pointer where the resulting string will be stored
 \? @param 1 the format/string to write to the buffer
 \? @param 2 optional replacement values for the format tags
 \? @return the amount of written characteres on success, otherwise a negative number
-@sprintf i32 (chr* \:const:\ chr* ...);
+@sprintf i32 (chr* !chr* ...);
 
 \ \? Sends formatted output to a stream using an argument list.
-\ @vfprintf i32 (FILE* \:const:\ chr* va_list);
+\ @vfprintf i32 (FILE* !chr* va_list);
 
 \ \? Sends formatted output to stdout using an argument list.
-\ @vprintf i32 (\:const:\ chr* va_list);
+\ @vprintf i32 (!chr* va_list);
 
 \ \? Sends formatted output to a string using an argument list.
-\ @vsprintf i32 (chr* \:const:\ chr* va_list);
+\ @vsprintf i32 (chr* !chr* va_list);
 
 \ \? Reads formatted input from a stream.
-\ @fscanf i32 (FILE* \:const:\ chr* ...);
+\ @fscanf i32 (FILE* !chr* ...);
 
 \? Reads formatted input from stdin.
 \? @param 0 the format for the input
 \? @param 1 the destinations for each inputted value
 \? @return the amount of scanned values on success, otherwise EOF
-@scanf i32 (\:const:\ chr* ...);
+@scanf i32 (!chr* ...);
 
 \? Reads formatted input from a string.
 \? @param 0 the string that will be used as input
 \? @param 1 the format for the input
 \? @param 2 the destinations for each inputted value
 \? @return the amount of scanned values on success, otherwise EOF
-@sscanf i32 (\:const:\ chr* \:const:\ chr* ...);
+@sscanf i32 (!chr* !chr* ...);
 
 \ \? Gets the next character from a stream and advances the position indicator for the stream.
 \ @fgetc i32 (FILE*);
@@ -177,7 +177,7 @@
 \ @fputc i32 (i32 chr FILE*);
 
 \ \? Writes a string to a stream up to but not including the null character.
-\ @fputs i32 (\:const:\ chr* FILE*);
+\ @fputs i32 (!chr* FILE*);
 
 \ \? Gets the next character from a stream and advances the position indicator for the stream.
 \ @getc i32 (FILE*);
@@ -202,11 +202,11 @@
 \? Writes a string to stdout up to but not including the null character. A newline character is appended to the output.
 \? @param 0 the string to be written
 \? @return a positive number on success, or EOF on error
-@puts i32 (\:const:\ chr*);
+@puts i32 (!chr*);
 
 \ \? Pushes the character chr onto a stream so that the next character is read.
 \ @ungetc i32 (i32 chr FILE*);
 
 \? Prints a descriptive error message to stderr. First the string is printed followed by a colon and then a space.
 \? @param 0 the message to print before the error itself
-@perror nll (\:const:\ chr*);
+@perror nll (!chr*);

@@ -59,6 +59,8 @@ private:
 	EviType* _evi_type;
 	ParsedType* _subtype = nullptr;
 
+	bool _invalid = false;
+
 public:
 
 	ParsedType() {};
@@ -85,12 +87,12 @@ public:
 	bool is_signed();
 	bool is_constant();
 
+	bool is_invalid();
+
 	LexicalType _lexical_type;
 	bool _is_constant = false;
 	bool _is_reference = false;
 	bool _keep_as_reference = false;
-
-	bool _invalid = false;
 };
 
 #define PTYPE(...) (new ParsedType(__VA_ARGS__))

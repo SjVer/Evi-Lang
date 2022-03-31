@@ -12,7 +12,7 @@
 		{ "include": "#declarations" },
 		
 		{ "include": "#operators" },
-		{ "include": "#separators" },
+		{ "include": "#punctuation" },
 
 		{ "include": "#illegals" }
 	],
@@ -111,7 +111,7 @@
 						{ "include": "#funcdeclaratoins" },
 						{ "include": "#declarations" },
 						{ "include": "#operators" },
-						{ "include": "#separators" }
+						{ "include": "#punctuation" }
 					]
 				},
 				{
@@ -222,7 +222,7 @@
 
 				{ "include": "#vardeclarations" },
 				{ "include": "#statements" },
-				{ "include": "#separators" },
+				{ "include": "#punctuation" },
 
 				{ "include": "#illegals" }
 			]
@@ -297,7 +297,7 @@
 
 				{ "include": "#macros" },
 
-				{ "include": "#separators" },
+				{ "include": "#punctuation" },
 				
 				{ "include": "#assignment" },
 
@@ -350,7 +350,7 @@
 			"begin": "\\{",
 			"patterns": [
 				{ "include": "#declarations" },
-				{ "include": "#separators" }],
+				{ "include": "#punctuation" }],
 			"end": "\\}"
 		},
 
@@ -370,17 +370,13 @@
 				{ "include": "#arrays" },
 				{ "include": "#strings" },
 				
-				{ "include": "#separators" },
+				{ "include": "#punctuation" },
 				{ "include": "#illegals" }
 			]
 		},
 		"operators": 
 		{
 			"patterns": [
-				{
-					"name": "punctuation.accessor.evi",
-					"match": "@"
-				},
 				{
 					"name": "keyword.operator.bitwise.shift.evi",
 					"match": "<<|>>|>>"
@@ -589,6 +585,10 @@
 		{
 			"patterns": [
 				{
+					"name": "storage.modifier.constant.evi",
+					"match": "!"
+				},
+				{
 					"name": "storage.modifier.pointer.evi",
 					"match": "\\*"
 				},
@@ -620,9 +620,13 @@
 		},
 
 
-		"separators": 
+		"punctuation": 
 		{
 			"patterns": [
+				{
+					"name": "punctuation.vararg-ellipses.evi",
+					"match": "(?<!\\.)\\.\\.\\.(?!\\.)"
+				},
 				{
 					"name": "punctuation.bracket.evi",
 					"match": "\\{|\\}"

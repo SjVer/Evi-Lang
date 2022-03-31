@@ -20,6 +20,7 @@ void Parser::error_at(Token *token, string message)
 		{
 			cerr << endl;
 			_error_dispatcher.print_token_marked(token, COLOR_RED);
+			cerr << endl;
 		}
 	}
 }
@@ -64,6 +65,7 @@ void Parser::note_declaration(string type, string name, Token* token)
 		_error_dispatcher.note_at_token(token, msg);
 		cerr << endl;
 		_error_dispatcher.print_token_marked(token, COLOR_GREEN);
+		cerr << endl;
 	}	
 }
 
@@ -160,7 +162,7 @@ bool Parser::is_at_end()
 void Parser::generate_lint()
 {
 	// cout << tools::fstr("lint at: %s:%d:%d (%s)", _current.file->c_str(), _current.line, 
-	// 	get_token_col(&_current, lint_args.tab_width), getTokenStr(_current.type)) << endl;
+	// 	get_token_col(&_current, lint_args.tab_width), get_tokentype_str(_current.type)) << endl;
 
 	switch(lint_args.type)
 	{
@@ -515,7 +517,7 @@ StmtNode* Parser::variable_declaration()
 
 	// get type
 	ParsedType* type = consume_type(nametokens.size() > 1 ? "Expected type after identifiers." : "Expected type after identifier.");
-	if(!type || type->_invalid) return nullptr;
+	if(!type || type->is_invalid()) return nullptr;
 	type->_is_reference = true;
 
 	// add to locals for parser to use
@@ -888,14 +890,14 @@ ExprNode* Parser::cast()
 ExprNode* Parser::unary()
 {
 	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
-
-	if(match(TOKEN_STAR)  || match(TOKEN_AND) 		|| match(TOKEN_BANG)
+ 
+ 	if(match(TOKEN_STAR)  || match(TOKEN_AND) 		|| match(TOKEN_BANG)
 	|| match(TOKEN_MINUS) || match(TOKEN_PLUS_PLUS) || match(TOKEN_MINUS_MINUS))
 	{
-		if(_previous.type == TOKEN_AND) _error_dispatcher.warning_at_token(&_previous, "Syntax Warning", 
-			"Use of unary '&' operator not officially supported, behaviour may be undefined.");
-		if(_previous.type == TOKEN_STAR) _error_dispatcher.warning_at_token(&_previous, "Syntax Warning", 
-			"Use of unary '*' operator not officially supported, behaviour may be undefined.");
+		// if(_previous.type == TOKEN_AND) _error_dispatcher.warning_at_token(&_previous, "Syntax Warning", 
+		// 	"Use of unary '&' operator not officially supported, behaviour may be undefined.");
+		// if(_previous.type == TOKEN_STAR) _error_dispatcher.warning_at_token(&_previous, "Syntax Warning", 
+		// 	"Use of unary '*' operator not officially supported, behaviour may be undefined.");
 
 		Token tok = _previous;
 		ExprNode* expr = unary();
@@ -1004,8 +1006,9 @@ LiteralNode* Parser::literal()
 			//
 			return new LiteralNode(_previous, string(_previous.start + 1, _previous.length - 2));
 		}
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during parsing");
+		default: THROW_INTERNAL_ERROR("during parsing");
 	}
+	return nullptr;
 }
 
 ArrayNode* Parser::array()
@@ -1062,7 +1065,8 @@ ReferenceNode* Parser::reference()
 		ParsedType* type = _current_scope.func_props.params[intval];
 		return new ReferenceNode(_previous, "", intval, type);
 	}
-	ASSERT_OR_THROW_INTERNAL_ERROR(false, "during parsing");
+	THROW_INTERNAL_ERROR("during parsing");
+	return nullptr;
 }
 
 CallNode* Parser::call()
@@ -1082,7 +1086,7 @@ CallNode* Parser::call()
 	if(!check(TOKEN_RIGHT_PAREN)) do
 	{
 		args.push_back(expression());
-		if(!funcprops.variadic && args.size() > paramscount) break;
+		// if(!funcprops.variadic && args.size() > paramscount) break;
 	
 	} while(match(TOKEN_COMMA));
 
@@ -1098,8 +1102,6 @@ CallNode* Parser::call()
 
 	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
 
-	// _current_call_token = { TOKEN_ERROR, nullptr, nullptr, 0, 0, nullptr };
-
 	vector<ParsedType*> lexparams; for(ParsedType*& p : funcprops.params) lexparams.push_back(p);
 	return funcprops.invalid ? nullptr : new CallNode(tok, name, args, funcprops.ret_type, lexparams, paramscount);
 }
@@ -1108,7 +1110,7 @@ CallNode* Parser::call()
 
 Status Parser::parse(string infile, const char* source, AST* astree)
 {
-	// printTokensFromSrc(tools::readf(infile).c_str());
+	// print_tokens_from_src(source);
 	_astree = astree;
 
 	// set members

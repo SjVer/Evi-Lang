@@ -67,6 +67,7 @@ void TypeChecker::warning_at(Token *token, string message, bool print_token)
 		{
 			cerr << endl;
 			_error_dispatcher.print_token_marked(token, COLOR_PURPLE);
+			cerr << endl;
 		}
 	}
 }
@@ -159,7 +160,7 @@ ParsedType* TypeChecker::resolve_types(ParsedType* original, ParsedType* adapted
 			default: return nullptr;
 		}
 
-		ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
+	 	THROW_INTERNAL_ERROR("during type checking");
 	}
 	else if(adapted->is_pointer())
 	{
@@ -177,7 +178,8 @@ ParsedType* TypeChecker::resolve_types(ParsedType* original, ParsedType* adapted
 		}
 	}
 
-	ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
+ 	THROW_INTERNAL_ERROR("during type checking");
+	return nullptr;
 }
 
 bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
@@ -185,7 +187,7 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 	// DEBUG_PRINT_F_MSG("can_cast_types(%s, %s) (%s)", from->to_c_string(), to->to_c_string(),
 	// 												 from->eq(to) ? "same" : "different");
 
-	if(!from || from->_invalid || !to || to->_invalid) return false;
+	if(!from || from->is_invalid() || !to || to->is_invalid()) return false;
 	else if(from->eq(to)) return true;
 
 	else if(from->get_depth() == to->get_depth())
@@ -265,7 +267,8 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 		}
 	}
 
-	ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
+ 	THROW_INTERNAL_ERROR("during type checking");
+	return false;
 }
 
 // =========================================
@@ -588,7 +591,7 @@ VISIT(UnaryNode)
 			break;
 		}
 
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
+		default: THROW_INTERNAL_ERROR("during type checking");
 	}
 	else switch(node->_optype) // not a pointer
 	{
@@ -634,7 +637,7 @@ VISIT(UnaryNode)
 			break;
 		}
 
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
+		default: THROW_INTERNAL_ERROR("during type checking");
 	}
 }
 
@@ -678,7 +681,7 @@ VISIT(LiteralNode)
 		case TOKEN_STRING: 		
 			node->_cast_to = PTYPE(TYPE_CHARACTER)->copy_pointer_to(); 
 			push(node->_cast_to); break;
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "during type checking");
+		default: THROW_INTERNAL_ERROR("during type checking");
 	}
 }
 
@@ -718,7 +721,7 @@ VISIT(SizeOfNode)
 		GET_EVI_TYPE("sze")
 	);
 
-	push(node->_cast_to->copy());
+	push(node->_cast_to);
 }
 
 VISIT(ReferenceNode)
@@ -745,6 +748,13 @@ VISIT(CallNode)
 			exprtype->to_c_string(), argtype->to_c_string());
 
 		_panic_mode = false;
+	}
+	
+	// handle left over parameters as well
+	for(int i = node->_func_params_count - 1; i < node->_arguments.size(); i++)
+	{
+		node->_arguments[i]->accept(this);
+		pop();
 	}
 
 	push(node->_ret_type);

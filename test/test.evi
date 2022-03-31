@@ -4,9 +4,5 @@
 {
     %var i32 123;
     %ptr i32* &$var;
-    \ =ptr &($var + 1);
-
-    \ printf("%p vs %p\n", $ptr, &$ptr);
-    printf("%p\n", &$var);
 }
 

@@ -14,7 +14,7 @@ ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
 		case TYPE_FLOAT: 	 _evi_type = GET_EVI_TYPE("dbl"); break;
 		case TYPE_VOID: 	 _evi_type = GET_EVI_TYPE("nll"); break;
 		case TYPE_NONE:		 break;
-		default: ASSERT_OR_THROW_INTERNAL_ERROR(false, "in type construction");
+		default: THROW_INTERNAL_ERROR("in type construction");
 	}
 
 	_is_reference = is_reference;
@@ -30,7 +30,9 @@ ParsedType* ParsedType::new_invalid()
 
 ParsedType* ParsedType::copy()
 {
-	ParsedType* ret = new ParsedType(_lexical_type, _evi_type, _is_reference, nullptr);
+	ASSERT_OR_THROW_INTERNAL_ERROR(!is_invalid(), "during llvm type generation");
+
+	ParsedType* ret = new ParsedType(_lexical_type, _evi_type, false, nullptr);
 	ret->_is_constant = _is_constant;
 	if(_subtype) ret->_subtype = _subtype->copy();
 	return ret;
@@ -65,7 +67,7 @@ void ParsedType::set_lex_type(LexicalType type)
 
 string ParsedType::to_string(bool __first)
 {
-	if(_invalid) return "???";
+	if(is_invalid()) return "???";
 
 	string str = _subtype ? _subtype->to_string(false) + '*' : _evi_type->_name;
 	if(_is_constant && __first) return '!' + str;
@@ -80,8 +82,9 @@ const char* ParsedType::to_c_string()
 
 llvm::Type* ParsedType::get_llvm_type()
 {
-	if(_invalid) return nullptr;
-	else if(_subtype) 
+	ASSERT_OR_THROW_INTERNAL_ERROR(!is_invalid(), "during llvm type generation");
+
+	if(_subtype) 
 	{
 		// for llvm void* is invalid
 		if(!_subtype->is_pointer() && _subtype->_lexical_type == TYPE_VOID)
@@ -129,6 +132,15 @@ bool ParsedType::is_constant()
 	return _is_constant;
 }
 
+
+bool ParsedType::is_invalid()
+{
+	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Wundefined-bool-conversion"
+	#pragma clang diagnostic ignored "-Wtautological-undefined-compare"
+	return !this || _invalid;
+	#pragma clang diagnostic pop
+}
 
 
 bool EviType::eq(EviType* rhs)

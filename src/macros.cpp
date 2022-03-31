@@ -1,4 +1,4 @@
-#include "preprocessor.hpp"
+#include "macros.hpp"
 #include <iomanip>
 
 // =====================================================
@@ -7,16 +7,16 @@ static uint counter_value = 0;
 
 // =====================================================
 
-#define MACRO_GETTER(name) string macro_getter_##name(Preprocessor* _this)
+#define MACRO_GETTER(name) string macro_getter_##name()
 
 MACRO_GETTER(line)
 {
-	return to_string(_this->_current_line_no);
+	return to_string(State::get_current_line_no());
 }
 
 MACRO_GETTER(file)
 {
-	return '"' + _this->_current_file + '"';
+	return '"' + State::get_current_file() + '"';
 }
 
 MACRO_GETTER(time_)
@@ -68,10 +68,16 @@ MACRO_GETTER(counter)
 
 MACRO_GETTER(apply_depth)
 {
-	return to_string(_this->_apply_depth);
+	return to_string(State::get_apply_depth());
 }
 
 // =====================================================
+
+void initialize_state_singleton(Preprocessor* p)
+{
+	State::_p = p;
+	State::_initialized = true;
+}
 
 void Preprocessor::initialize_builtin_macros()
 {
