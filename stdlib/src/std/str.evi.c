@@ -29,46 +29,46 @@
 
 // defined in c's libc:
 
-extern evi_nll_t* memchr(const evi_nll_t* str, evi_i32_t c, evi_sze_t n);
+extern evi_nll_t* memchr(const evi_nll_t*, evi_i32_t, evi_sze_t);
 
-extern evi_i32_t memcmp(const evi_nll_t* str1, const evi_nll_t* str2, evi_sze_t n);
+extern evi_i32_t memcmp(const evi_nll_t*, const evi_nll_t*, evi_sze_t);
 
-extern evi_nll_t* memcpy(evi_nll_t* dest, const evi_nll_t* src, evi_sze_t n);
+extern evi_nll_t* memcpy(evi_nll_t*, const evi_nll_t*, evi_sze_t);
 
-extern evi_nll_t* memmove(evi_nll_t* dest, const evi_nll_t* src, evi_sze_t n);
+extern evi_nll_t* memmove(evi_nll_t*, const evi_nll_t*, evi_sze_t);
 
-extern evi_nll_t* memset(evi_nll_t* str, evi_i32_t c, evi_sze_t n);
+extern evi_nll_t* memset(evi_nll_t*, evi_i32_t, evi_sze_t);
 
-extern evi_chr_t* strcat(evi_chr_t* dest, const evi_chr_t* src);
+extern evi_chr_t* strcat(evi_chr_t*, const evi_chr_t*);
 
-extern evi_chr_t* strncat(evi_chr_t* dest, const evi_chr_t* src, evi_sze_t n);
+extern evi_chr_t* strncat(evi_chr_t*, const evi_chr_t*, evi_sze_t);
 
-extern evi_chr_t* strchr(const evi_chr_t* str, evi_i32_t c);
+extern evi_chr_t* strchr(const evi_chr_t*, evi_i32_t);
 
-extern evi_i32_t strcmp(const evi_chr_t* str1, const evi_chr_t* str2);
+extern evi_i32_t strcmp(const evi_chr_t*, const evi_chr_t*);
 
-extern evi_i32_t strncmp(const evi_chr_t* str1, const evi_chr_t* str2, evi_sze_t n);
+extern evi_i32_t strncmp(const evi_chr_t*, const evi_chr_t*, evi_sze_t);
 
-extern evi_i32_t strcoll(const evi_chr_t* str1, const evi_chr_t* str2);
+extern evi_i32_t strcoll(const evi_chr_t*, const evi_chr_t*);
 
-extern evi_chr_t* strcpy(evi_chr_t* dest, const evi_chr_t* src);
+extern evi_chr_t* strcpy(evi_chr_t*, const evi_chr_t*);
 
-extern evi_chr_t* strncpy(evi_chr_t* dest, const evi_chr_t* src, evi_sze_t n);
+extern evi_chr_t* strncpy(evi_chr_t*, const evi_chr_t*, evi_sze_t);
 
-extern evi_sze_t strcspn(const evi_chr_t* str1, const evi_chr_t* str2);
+extern evi_sze_t strcspn(const evi_chr_t*, const evi_chr_t*);
 
-extern evi_chr_t* strerror(evi_i32_t errnum);
+extern evi_chr_t* strerror(evi_i32_t);
 
-extern evi_sze_t strlen(const evi_chr_t* str);
+extern evi_sze_t strlen(const evi_chr_t*);
 
-extern evi_chr_t* strpbrk(const evi_chr_t* str1, const evi_chr_t* str2);
+extern evi_chr_t* strpbrk(const evi_chr_t*, const evi_chr_t*);
 
-extern evi_chr_t* strrchr(const evi_chr_t* str, evi_i32_t c);
+extern evi_chr_t* strrchr(const evi_chr_t*, evi_i32_t);
 
-extern evi_sze_t strspn(const evi_chr_t* str1, const evi_chr_t* str2);
+extern evi_sze_t strspn(const evi_chr_t*, const evi_chr_t*);
 
-extern evi_chr_t* strstr(const evi_chr_t* haystack, const evi_chr_t* needle);
+extern evi_chr_t* strstr(const evi_chr_t*, const evi_chr_t*);
 
-extern evi_chr_t* strtok(evi_chr_t* str, const evi_chr_t* delim);
+extern evi_chr_t* strtok(evi_chr_t*, const evi_chr_t*);
 
-extern evi_sze_t strxfrm(evi_chr_t* dest, const evi_chr_t* src, evi_sze_t n);
+extern evi_sze_t strxfrm(evi_chr_t*, const evi_chr_t*, evi_sze_t);

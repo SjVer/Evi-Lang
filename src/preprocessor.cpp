@@ -10,6 +10,7 @@ char* include_paths[MAX_INCLUDE_PATHS] = {};
 #define IN_FALSE_BRANCH (_branches->size() && !_branches->top())
 #define LINE_MARKER(line) SUBMIT_LINE_F("# %d \"%s\"", line, _current_file.c_str())
 #define CHECK_MACRO(macro) (_macros->find(macro) != _macros->end())
+#define FMT_PATH(path) (regex_replace(_current_file, regex(STDLIB_DIR), "<stdlib>"))
 
 Status Preprocessor::preprocess(string infile, const char** source)
 {
@@ -168,7 +169,7 @@ void Preprocessor::error_at_line(uint line, const char* message, string whole_li
 	}
 	else if(lint_args.type == LINT_NONE)
 	{
-		_error_dispatcher.error_at_line(line, _current_file.c_str(), "Preprocessing Error", message);
+		_error_dispatcher.error_at_line(line, FMT_PATH(_current_file).c_str(), "Preprocessing Error", message);
 		if(whole_line.length())
 		{
 			cerr << endl;
@@ -205,7 +206,7 @@ void Preprocessor::warning_at_line(uint line, const char* message, string whole_
 	}
 	else if(lint_args.type == LINT_NONE)
 	{
-		_error_dispatcher.warning_at_line(line, _current_file.c_str(), "Preprocessing Warning", message);
+		_error_dispatcher.warning_at_line(line, FMT_PATH(_current_file).c_str(), "Preprocessing Warning", message);
 		if(whole_line.length())
 		{
 			cerr << endl;
@@ -233,7 +234,7 @@ Token Preprocessor::generate_token(string line, string token)
 		src + offset,
 		(int)token.length(),
 		(int)_current_line_no,
-		&_current_file
+		new string(FMT_PATH(_current_file))
 	};
 }
 
@@ -285,7 +286,7 @@ bool Preprocessor::consume_string(string* str, string* dest, uint line)
 
 	// find index of second "
 	int i;
-	for(i = 1; i < str->length() && (*str)[i] != '"'; i++) {
+	for(i = 1; i < str->length() && ((*str)[i] != '"' || (*str)[i - 1] == '\\'); i++) {
 		// cout << tools::fstr("in string: '%c'. (%d < %d)\n", (*str)[i], i, str->length());
 	}
 
@@ -450,9 +451,9 @@ Preprocessor::PragmaStatus Preprocessor::handle_pragma(string pragma, string arg
 	{
 		string msg;
 		if(!consume_string(&args, &msg, line_no)) return PRAGMA_ERROR_HANDLED;
-		return END_OF_LINE ? PRAGMA_SUCCESS : PRAGMA_NO_NEWLINE;
+		if(!END_OF_LINE) return PRAGMA_NO_NEWLINE;
 
-		ERROR(line_no, "", msg.c_str());
+		ERROR(line_no, "", tools::escstr(msg).c_str());
 		return PRAGMA_SUCCESS;
 	}
 	else if(pragma == "warning")
@@ -461,7 +462,16 @@ Preprocessor::PragmaStatus Preprocessor::handle_pragma(string pragma, string arg
 		if(!consume_string(&args, &msg, line_no)) return PRAGMA_ERROR_HANDLED;
 		if(!END_OF_LINE) return PRAGMA_NO_NEWLINE;
 
-		WARNING(line_no, "", msg.c_str());
+		WARNING(line_no, "", tools::escstr(msg).c_str());
+		return PRAGMA_SUCCESS;
+	}
+	else if(pragma == "note")
+	{
+		string msg;
+		if(!consume_string(&args, &msg, line_no)) return PRAGMA_ERROR_HANDLED;
+		if(!END_OF_LINE) return PRAGMA_NO_NEWLINE;
+
+		_error_dispatcher.note_at_line(line_no, FMT_PATH(_current_file).c_str(), tools::escstr(msg).c_str());
 		return PRAGMA_SUCCESS;
 	}
 	else if(pragma == "region")
@@ -755,13 +765,3 @@ HANDLER(endif)
 
 	ASSERT_END_OF_LINE();
 }
-
-#undef SUBMIT_LINE
-#undef SUBMIT_LINE_F
-#undef LINE_MARKER
-#undef IN_FALSE_BRANCH
-#undef HANDLER
-#undef TRY_TO
-#undef CHECK_FLAG
-#undef CHECK_MACRO
-#undef ASSERT_END_OF_LINE

@@ -1,7 +1,8 @@
-#apply "std/io"
-#apply "std/str"
+#apply "std/all"
 
 @main i32 ()
 {
-	printf("%s\n", strerror(0));
+	%str chr* malloc(?(chr) * 10) -> chr*;
+	strcpy($str, "Success!");
+	puts($str);
 }
