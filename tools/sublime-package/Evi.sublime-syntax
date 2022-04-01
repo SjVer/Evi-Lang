@@ -58,8 +58,8 @@ contexts:
         1: keyword.operator.size_of.evi
         2: punctuation.separator.evi
         3: storage.type.evi
-        4: punctuation.separator.evi
-        5: storage.type.evi
+        5: punctuation.separator.evi
+        6: storage.type.evi
         # 1: one
         # 2: two
         # 3: three

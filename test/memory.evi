@@ -2,7 +2,7 @@
 
 @main i32 (i32 chr**)
 {
-	%x i32* malloc(4);
+	%x i32* malloc(?i32);
 
 	=x[0] 123
 
