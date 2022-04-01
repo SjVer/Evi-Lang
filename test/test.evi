@@ -1,12 +1,7 @@
 #apply "std/io"
 
-@main i32 ()
-{
-    puts("start");
+@f i32 () ~ 6;
 
-    ??(1) puts("true");
-    ??(0) puts("false");
+%x i32 6 * f();
 
-    puts("end");
-}
-
+@main i32 () printf("%d\n", $x);

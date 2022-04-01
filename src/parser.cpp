@@ -471,7 +471,7 @@ StmtNode* Parser::function_declaration()
 			ParsedType* type = consume_type("Expected type as parameter.");
 			params.push_back(type);
 		}
-	} while (check(TOKEN_TYPE) || check(TOKEN_ELIPSES));
+	} while(!check(TOKEN_RIGHT_PAREN));
 
 	CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, is_variadic ? "Expect ')' after '...'." : "Expect ')' after parameters.");
 
@@ -522,24 +522,25 @@ StmtNode* Parser::variable_declaration()
 
 	// add to locals for parser to use
 	for(Token& tok : nametokens) add_variable(&tok, type);
-
+	bool is_global = !_current_scope.depth;
 	vector<VarDeclNode*> decls;
+
 	// get initializers(s)?
 	if(match(TOKEN_SEMICOLON))
 	{
 		// declarations
 		for(Token& name : nametokens) decls.push_back(
-			new VarDeclNode(tok, string(name.start, name.length), type, nullptr, _current_scope.depth == 0));
+			new VarDeclNode(tok, string(name.start, name.length), type, nullptr, is_global));
 	}
 	else
 	{
 		// definitions
 		for(int i = 0; i < nametokens.size(); i++)
 		{
-			ExprNode* expr = expression();
+			ExprNode* expr = expression(is_global);
 			if(i + 1 < nametokens.size()) CONSUME_OR_RET_NULL(TOKEN_COMMA, "Expected ',' after expression.");
 			string name = string(nametokens[i].start, nametokens[i].length);
-			decls.push_back(new VarDeclNode(tok, name, type, expr, _current_scope.depth == 0));
+			decls.push_back(new VarDeclNode(tok, name, type, expr, is_global));
 		}
 		CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after variable defenition.");
 	}
@@ -677,25 +678,25 @@ StmtNode* Parser::expression_statement()
 
 // ===================== expressions ===================
 
-ExprNode* Parser::expression()
+ExprNode* Parser::expression(bool is_constexpr)
 {
 	// expression 	: ternary
-	return ternary();
+	return ternary(is_constexpr);
 }
 
-ExprNode* Parser::ternary()
+ExprNode* Parser::ternary(bool is_constexpr)
 {
 	// ternary		: logical_or ("?" expression ":" ternary)?
 
-	ExprNode* expr = logical_or();
+	ExprNode* expr = logical_or(is_constexpr);
 
 	while(match(TOKEN_QUESTION))
 	{
 		Token tok = _previous;
-		ExprNode* middle = expression();
+		ExprNode* middle = expression(is_constexpr);
 	
 		CONSUME_OR_RET_NULL(TOKEN_COLON, "Expect ':' after if-expression.");
-		ExprNode* right = ternary();
+		ExprNode* right = ternary(is_constexpr);
 	
 		expr = new LogicalNode(tok, expr, right, middle);
 	}
@@ -703,179 +704,179 @@ ExprNode* Parser::ternary()
 	return expr;
 }
 
-ExprNode* Parser::logical_or()
+ExprNode* Parser::logical_or(bool is_constexpr)
 {
 	// logical_or		: logical_xor ("||" logical_xor)*
-	ExprNode* expr = logical_xor();
+	ExprNode* expr = logical_xor(is_constexpr);
 
 	while(match(TOKEN_PIPE_PIPE))
 	{
 		Token tok = _previous;
-		ExprNode* right = logical_xor();
+		ExprNode* right = logical_xor(is_constexpr);
 		expr = new LogicalNode(tok, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::logical_xor()
+ExprNode* Parser::logical_xor(bool is_constexpr)
 {
 	// logical_or		: logical_and ("^^" logical_and)*
-	ExprNode* expr = logical_and();
+	ExprNode* expr = logical_and(is_constexpr);
 
 	while(match(TOKEN_CARET_CARET))
 	{
 		Token tok = _previous;
-		ExprNode* right = logical_and();
+		ExprNode* right = logical_and(is_constexpr);
 		expr = new LogicalNode(tok, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::logical_and()
+ExprNode* Parser::logical_and(bool is_constexpr)
 {
 	// logical_and	: bitwise_or ("&&" bitwise_or)*
-	ExprNode* expr = bitwise_or();
+	ExprNode* expr = bitwise_or(is_constexpr);
 
 	while(match(TOKEN_AND_AND))
 	{
 		Token tok = _previous;
-		ExprNode* right = bitwise_or();
+		ExprNode* right = bitwise_or(is_constexpr);
 		expr = new LogicalNode(tok, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::bitwise_or()
+ExprNode* Parser::bitwise_or(bool is_constexpr)
 {
 	// bitwise_or	: bitwise_xor ("|" bitwise_xor)*
-	ExprNode* expr = bitwise_xor();
+	ExprNode* expr = bitwise_xor(is_constexpr);
 
 	while(match(TOKEN_PIPE))
 	{
 		Token tok = _previous;
-		ExprNode* right = bitwise_xor();
+		ExprNode* right = bitwise_xor(is_constexpr);
 		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::bitwise_xor()
+ExprNode* Parser::bitwise_xor(bool is_constexpr)
 {
 	// bitwise_xor	: bitwise_and ("^" bitwise_and)*
-	ExprNode* expr = bitwise_and();
+	ExprNode* expr = bitwise_and(is_constexpr);
 
 	while(match(TOKEN_CARET))
 	{
 		Token tok = _previous;
-		ExprNode* right = bitwise_and();
+		ExprNode* right = bitwise_and(is_constexpr);
 		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::bitwise_and()
+ExprNode* Parser::bitwise_and(bool is_constexpr)
 {
 	// bitwise_and	: equality ("&" equality)*
-	ExprNode* expr = equality();
+	ExprNode* expr = equality(is_constexpr);
 
 	while(match(TOKEN_AND))
 	{
 		Token tok = _previous;
-		ExprNode* right = equality();
+		ExprNode* right = equality(is_constexpr);
 		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::equality()
+ExprNode* Parser::equality(bool is_constexpr)
 {
 	// equality		: comparison (("/=" | "==") comparison)*
-	ExprNode* expr = comparison();
+	ExprNode* expr = comparison(is_constexpr);
 
 	while(match(TOKEN_SLASH_EQUAL) || match(TOKEN_EQUAL_EQUAL))
 	{
 		Token tok = _previous;
-		ExprNode* right = comparison();
+		ExprNode* right = comparison(is_constexpr);
 		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::comparison()
+ExprNode* Parser::comparison(bool is_constexpr)
 {
 	// comparison	: bitwise_shift ((">" | ">=" | "<" | "<=") bitwise_shift)*
-	ExprNode* expr = bitwise_shift();
+	ExprNode* expr = bitwise_shift(is_constexpr);
 
 	while(match(TOKEN_GREATER) || match(TOKEN_GREATER_EQUAL)
 	   || match(TOKEN_LESS)    || match(TOKEN_LESS_EQUAL))
 	{
 		Token tok = _previous;
-		ExprNode* right = bitwise_shift();
+		ExprNode* right = bitwise_shift(is_constexpr);
 		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::bitwise_shift()
+ExprNode* Parser::bitwise_shift(bool is_constexpr)
 {
 	// bitwise_shift	: term (("<<" | ">>") term)*
-	ExprNode* expr = term();
+	ExprNode* expr = term(is_constexpr);
 
 	while(match(TOKEN_LESS_LESS) || match(TOKEN_GREATER_GREATER))
 	{
 		Token tok = _previous;
-		ExprNode* right = term();
+		ExprNode* right = term(is_constexpr);
 		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::term()
+ExprNode* Parser::term(bool is_constexpr)
 {
 	// term		: factor (("-" | "+") factor)*
 
-	ExprNode* expr = factor();
+	ExprNode* expr = factor(is_constexpr);
 	
 	while(match(TOKEN_PLUS) || match(TOKEN_MINUS))
 	{
 		Token tok = _previous;
-		ExprNode* right = factor();
+		ExprNode* right = factor(is_constexpr);
 		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::factor()
+ExprNode* Parser::factor(bool is_constexpr)
 {
 	// factor		: cast (("/" | "*") cast)*
 
-	ExprNode* expr = cast();
+	ExprNode* expr = cast(is_constexpr);
 	
 	while(match(TOKEN_STAR) || match(TOKEN_SLASH))
 	{
 		Token tok = _previous;
-		ExprNode* right = cast();
+		ExprNode* right = cast(is_constexpr);
 		expr = new BinaryNode(tok, tok.type, expr, right);
 	}
 
 	return expr;
 }
 
-ExprNode* Parser::cast()
+ExprNode* Parser::cast(bool is_constexpr)
 {
 	// cast		: unary ("->" TYPE)*
 
-	ExprNode* expr = unary();
+	ExprNode* expr = unary(is_constexpr);
 
 	while(match(TOKEN_ARROW))
 	{
@@ -887,7 +888,7 @@ ExprNode* Parser::cast()
 	return expr;
 }
 
-ExprNode* Parser::unary()
+ExprNode* Parser::unary(bool is_constexpr)
 {
 	// unary		: ("*" | "&" | "!" | "-" | "++" | "--") unary | subscript
  
@@ -900,23 +901,23 @@ ExprNode* Parser::unary()
 		// 	"Use of unary '*' operator not officially supported, behaviour may be undefined.");
 
 		Token tok = _previous;
-		ExprNode* expr = unary();
+		ExprNode* expr = unary(is_constexpr);
 		return new UnaryNode(tok, tok.type, expr);
 	}
 
-	return subscript();
+	return subscript(is_constexpr);
 }
 
-ExprNode* Parser::subscript()
+ExprNode* Parser::subscript(bool is_constexpr)
 {
 	// subscript	: primary ("[" expression "]")*
 
-	ExprNode* expr = primary();
+	ExprNode* expr = primary(is_constexpr);
 
 	while(match(TOKEN_LEFT_B_BRACE))
 	{
 		Token tok = _previous;
-		ExprNode* index = expression();
+		ExprNode* index = expression(is_constexpr);
 		consume(TOKEN_RIGHT_B_BRACE, "Expected ']' after subscript index.");
 		expr = new SubscriptNode(tok, expr, index);
 	}
@@ -924,7 +925,7 @@ ExprNode* Parser::subscript()
 	return expr;
 }
 
-ExprNode* Parser::primary()
+ExprNode* Parser::primary(bool is_constexpr)
 {
 	// primary		: NUMBER | CHAR | STRING | "(" expression ")"
 	// 				| array | size_of | reference | call
@@ -934,7 +935,6 @@ ExprNode* Parser::primary()
 	// reference	: "$" (IDENT | INTEGER)
 	// call			: IDENT "(" (expression ("," expression)*)? ")"
 	
-
 	// literals
 	if(match(TOKEN_INTEGER) || match(TOKEN_FLOAT)
 	|| match(TOKEN_CHARACTER) || match(TOKEN_STRING))
@@ -944,23 +944,36 @@ ExprNode* Parser::primary()
 	else if(match(TOKEN_LEFT_PAREN))
 	{
 		Token tok = _previous;
-		ExprNode* expr = expression();
+		ExprNode* expr = expression(is_constexpr);
 		CONSUME_OR_RET_NULL(TOKEN_RIGHT_PAREN, "Expected ')' after parenthesized expression.");
 		return new GroupingNode(tok, expr);
 	}
 
-
 	// arrays
-	else if(match(TOKEN_LEFT_BRACE)) return array();
+	else if(match(TOKEN_LEFT_BRACE)) return array(is_constexpr);
 
 	// size of
 	else if(match(TOKEN_QUESTION)) return size_of();
 
 	// references
-	else if(match(TOKEN_VARIABLE_REF) || match(TOKEN_PARAMETER_REF)) return reference();
+	else if(match(TOKEN_VARIABLE_REF) || match(TOKEN_PARAMETER_REF))
+	{
+		if(!is_constexpr) return reference();
+
+		// cannot reference variable in constant expression
+		error("Initializer element is not a constant.");
+		return nullptr;
+	}
 
 	// calls
-	else if (match(TOKEN_IDENTIFIER)) return call();
+	else if (match(TOKEN_IDENTIFIER))
+	{
+		if(!is_constexpr) return call();
+
+		// cannot reference variable in constant expression
+		error("Initializer element is not a constant.");
+		return nullptr;
+	}
 
 	error_at_current("Expected expression.");
 	return nullptr;
@@ -1011,7 +1024,7 @@ LiteralNode* Parser::literal()
 	return nullptr;
 }
 
-ArrayNode* Parser::array()
+ArrayNode* Parser::array(bool is_constexpr)
 {
 	Token tok = _previous;
 
@@ -1019,7 +1032,7 @@ ArrayNode* Parser::array()
 	if(!check(TOKEN_RIGHT_BRACE)) do
 	{
 		// simple expression
-		elements.push_back(expression());
+		elements.push_back(expression(is_constexpr));
 	} while(match(TOKEN_COMMA));
 
 	CONSUME_OR_RET_NULL(TOKEN_RIGHT_BRACE, "Expected '}' after array elements.");

@@ -383,34 +383,24 @@ VISIT(VarDeclNode)
 {
 	if(node->_is_global)
 	{
-		// DEBUG_PRINT_F_MSG("decl var '%s' %d", node->_identifier.c_str(), 
-		// 									  node->_type->_pointer_depth);
-
+		// add global and set some properties
 		_top_module->getOrInsertGlobal(node->_identifier, node->_type->get_llvm_type());
 		llvm::GlobalVariable* global_var = _top_module->getNamedGlobal(node->_identifier);
-		global_var->setLinkage(llvm::GlobalValue::CommonLinkage);
+		// global_var->setLinkage(llvm::GlobalValue::CommonLinkage);
+		global_var->setLinkage(llvm::GlobalValue::InternalLinkage);
 		global_var->setAlignment(llvm::MaybeAlign(node->_type->get_alignment()));
 
-		llvm::Constant* init = llvm::Constant::getNullValue(node->_type->get_llvm_type());
-		global_var->setInitializer(init);
-	
 		// set initializer?
-		if (node->_expr)
+		if(node->_expr)
 		{
-			if(!_global_init_func_block)
-			{
-				// create global initializer function
-				llvm::Function *global_init_func = llvm::getOrCreateInitFunction(*_top_module, "_global_var_init");
-				_global_init_func_block = llvm::BasicBlock::Create(__context, "entry", global_init_func);
-			}
-
-			_builder->SetInsertPoint(_global_init_func_block);
-
 			node->_expr->accept(this);
-
 			llvm::Value* val = create_cast(pop(), false, node->_type->get_llvm_type(), node->_type->is_signed());
-			_builder->CreateStore(val, global_var);
-			// _builder->CreateAlignedStore(val, global_var, llvm::MaybeAlign(node->_type->_alignment));
+			global_var->setInitializer((llvm::Constant*)val);
+		}
+		else
+		{
+			llvm::Constant* init = llvm::Constant::getNullValue(node->_type->get_llvm_type());
+			global_var->setInitializer(init);
 		}
 		
 		_named_values[node->_identifier].first = global_var;
