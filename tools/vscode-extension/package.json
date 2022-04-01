@@ -61,6 +61,11 @@
                         "default": false,
                         "description": "Log debugging information to the console (requires reload)"
                     },
+                    "evi.enableLanguageFeatures": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable the language features of the Evi-Lang extension"
+                    },
                     "evi.includeSearchPaths": {
                         "type": "array",
                         "default": [ ],

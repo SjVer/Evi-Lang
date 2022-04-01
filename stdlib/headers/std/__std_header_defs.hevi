@@ -33,6 +33,8 @@
 \ mark compiler type
 #flag __OFFICIAL_EVI_COMPILER__
 
+\ ==================================== Macros ======================================
+
 \ compiler information (should be built-in)
 #info region
 
@@ -74,5 +76,15 @@
 #info warning "macro __OPERATING_SYSTEM__ in stdlib header not defined by compiler!"
 #macro __OPERATING_SYSTEM__ "unkown"
 #endif
+
+\ standard macros
+#info region
+
+#macro NULL 0
+
+#macro EXIT_SUCCESS 0
+#macro EXIT_FAILURE 0
+
+#info endregion
 
 #endif \ __STDLIB_HEADER__

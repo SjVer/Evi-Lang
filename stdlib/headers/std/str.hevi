@@ -1,0 +1,103 @@
+\:
+	Evi standard library header "std/str"
+	Written by Sjoerd Vermeulen (2022)
+
+	MIT License
+
+	Copyright (c) 2022 Sjoerd Vermeulen
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
+:\
+
+#info apply_once
+#flag __STD_STR__
+
+#apply "std/__std_header_defs"
+
+\ ==================================== Macros ======================================
+
+
+
+\ =================================== Functions ====================================
+
+\? Searches for the first occurrence of the character c in the first n bytes of the string pointed to, by the argument str.
+@memchr nll* (!nll* i32 sze);
+
+\? Compares the first n bytes of str1 and str2.
+@memcmp i32 (!nll* !nll* sze);
+
+\? Copies n characters from src to dest.
+@memcpy nll* (nll* !nll* sze);
+
+\? Another function to copy n characters from str2 to str1.
+@memmove nll* (nll* !nll* sze);
+
+\? Copies the character c to the first n characters of the string pointed to, by the argument str.
+@memset nll* (nll* i32 sze);
+
+\? Appends the string pointed to, by src to the end of the string pointed to by dest.
+@strcat chr* (chr* !chr*);
+
+\? Appends the string pointed to, by src to the end of the string pointed to, by dest up to n characters long.
+@strncat chr* (chr* !chr* sze);
+
+\? Searches for the first occurrence of the character c (an unsigned char) in the string pointed to, by the argument str.
+@strchr chr* (!chr* i32);
+
+\? Compares the string pointed to, by str1 to the string pointed to by str2.
+@strcmp i32 (!chr* !chr*);
+
+\? Compares at most the first n bytes of str1 and str2.
+@strncmp i32 (!chr* !chr* sze);
+
+\? Compares string str1 to str2. The result is dependent on the LC_COLLATE setting of the location.
+@strcoll i32 (!chr* !chr*);
+
+\? Copies the string pointed to, by src to dest.
+@strcpy chr* (chr* !chr*);
+
+\? Copies up to n characters from the string pointed to, by src to dest.
+@strncpy chr* (chr* !chr* sze);
+
+\? Calculates the length of the initial segment of str1 which consists entirely of characters not in str2.
+@strcspn sze (!chr* !chr*);
+
+\? Searches an internal array for the error number errnum and returns a pointer to an error message string.
+@strerror chr* (i32);
+
+\? Computes the length of the string str up to but not including the terminating null character.
+@strlen sze (!chr*);
+
+\? Finds the first character in the string str1 that matches any character specified in str2.
+@strpbrk chr* (!chr* !chr*);
+
+\? Searches for the last occurrence of the character c (an unsigned char) in the string pointed to by the argument str.
+@strrchr chr* (!chr* i32);
+
+\? Calculates the length of the initial segment of str1 which consists entirely of characters in str2.
+@strspn sze (!chr* !chr*);
+
+\? Finds the first occurrence of the entire string needle (not including the terminating null character) which appears in the string haystack.
+@strstr chr* (!chr* !chr*);
+
+\? Breaks string str into a series of tokens separated by delim.
+@strtok chr* (chr* !chr*);
+
+\ Transforms the first n characters of the string src into current locale and places them in the string dest.
+@strxfrm sze (chr* !chr* sze);

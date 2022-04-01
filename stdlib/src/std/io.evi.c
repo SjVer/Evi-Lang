@@ -1,11 +1,13 @@
 /*
 	Implementation of Evi standard library header "std/io"
-	Written by Sjoerd Vermeulen (extern );
+	Written by Sjoerd Vermeulen (2022)
+
 	MIT License
 
-	Copyright (c); extern  Sjoerd Vermeulen
-	Permission is hereby granted, free of evi_chr_tge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software");, to deal
+	Copyright (c) 2022 Sjoerd Vermeulen
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
 	in the Software without restriction, including without limitation the rights
 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 	copies of the Software, and to permit persons to whom the Software is

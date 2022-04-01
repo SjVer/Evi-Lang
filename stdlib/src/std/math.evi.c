@@ -29,44 +29,52 @@
 
 // defined in c's libm:
 
-extern evi_dbl_t acos(evi_dbl_t x);
+extern evi_i32_t abs(evi_i32_t);
 
-extern evi_dbl_t asin(evi_dbl_t x);
+extern evi_dbl_t acos(evi_dbl_t);
 
-extern evi_dbl_t atan(evi_dbl_t x);
+extern evi_dbl_t asin(evi_dbl_t);
 
-extern evi_dbl_t atan2(evi_dbl_t x, evi_dbl_t y);
+extern evi_dbl_t atan(evi_dbl_t);
 
-extern evi_dbl_t cos(evi_dbl_t x);
+extern evi_dbl_t atan2(evi_dbl_t, evi_dbl_t);
 
-extern evi_dbl_t cosh(evi_dbl_t x);
+extern evi_dbl_t cos(evi_dbl_t);
 
-extern evi_dbl_t sin(evi_dbl_t x);
+extern evi_dbl_t cosh(evi_dbl_t);
 
-extern evi_dbl_t sinh(evi_dbl_t x);
+// extern div_t div(int numer, int denom);
 
-extern evi_dbl_t tanh(evi_dbl_t x);
+extern evi_dbl_t sin(evi_dbl_t);
 
-extern evi_dbl_t exp(evi_dbl_t x);
+extern evi_dbl_t sinh(evi_dbl_t);
 
-extern evi_dbl_t frexp(evi_dbl_t x, evi_i32_t* exponent);
+extern evi_dbl_t tanh(evi_dbl_t);
 
-extern evi_dbl_t ldexp(evi_dbl_t x, evi_i32_t exponent);
+extern evi_dbl_t exp(evi_dbl_t);
 
-extern evi_dbl_t log(evi_dbl_t x);
+extern evi_dbl_t frexp(evi_dbl_t, evi_i32_t*);
 
-extern evi_dbl_t log10(evi_dbl_t x);
+extern evi_dbl_t ldexp(evi_dbl_t, evi_i32_t);
 
-extern evi_dbl_t modf(evi_dbl_t x, evi_dbl_t* integer);
+extern evi_dbl_t log(evi_dbl_t);
 
-extern evi_dbl_t pow(evi_dbl_t x, evi_dbl_t y);
+extern evi_dbl_t log10(evi_dbl_t);
 
-extern evi_dbl_t sqrt(evi_dbl_t x);
+extern evi_dbl_t modf(evi_dbl_t, evi_dbl_t*);
 
-extern evi_dbl_t ceil(evi_dbl_t x);
+extern evi_dbl_t pow(evi_dbl_t, evi_dbl_t);
 
-extern evi_dbl_t fabs(evi_dbl_t x);
+extern evi_i32_t rand();
 
-extern evi_dbl_t floor(evi_dbl_t x);
+extern evi_nll_t srand(evi_ui32_t);
 
-extern evi_dbl_t fmod(evi_dbl_t x, evi_dbl_t y);
+extern evi_dbl_t sqrt(evi_dbl_t);
+
+extern evi_dbl_t ceil(evi_dbl_t);
+
+extern evi_dbl_t fabs(evi_dbl_t);
+
+extern evi_dbl_t floor(evi_dbl_t);
+
+extern evi_dbl_t fmod(evi_dbl_t, evi_dbl_t);

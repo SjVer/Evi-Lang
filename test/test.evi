@@ -1,1 +1,7 @@
-\ #apply "std/io"
+#apply "std/io"
+#apply "std/str"
+
+@main i32 ()
+{
+	printf("%s\n", strerror(0));
+}

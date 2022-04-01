@@ -10,6 +10,8 @@ import * as diagnostics from './features/diagnosticsUpdater';
 // import { EviTaskProvider } from './features/taskProvider';
 
 export function activate(context: vscode.ExtensionContext): any {
+	if(!vscode.workspace.getConfiguration('evi').get<boolean>('enableLanguageFeatures')) return;
+
 	// // get workspace root
 	// const workspaceRoot = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
 	// 					   ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
