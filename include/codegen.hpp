@@ -72,7 +72,6 @@ class CodeGenerator: public Visitor
 	string _target_triple;
 	
 	unique_ptr<llvm::Module> _top_module;
-	llvm::BasicBlock* _global_init_func_block;
 
 	stack<llvm::Value*>* _value_stack;
 	map<string, llvm::Function*> _functions;

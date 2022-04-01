@@ -43,7 +43,6 @@ void TypeChecker::error_at(Token *token, string message)
 		// print token
 		cerr << endl;
 		_error_dispatcher.print_token_marked(token, COLOR_RED);
-		cerr << endl;
 		
 		ABORT(STATUS_TYPE_ERROR);
 		// synchronize?
@@ -67,7 +66,6 @@ void TypeChecker::warning_at(Token *token, string message, bool print_token)
 		{
 			cerr << endl;
 			_error_dispatcher.print_token_marked(token, COLOR_PURPLE);
-			cerr << endl;
 		}
 	}
 }

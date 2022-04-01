@@ -1,7 +1,15 @@
 #apply "std/io"
 
-@f i32 () ~ 6;
+@!f nll ()
+{
+	%!x i32 2;
+	=x ++$x;
+	printf("%d\n", $x);
+}
 
-%x i32 6 * f();
-
-@main i32 () printf("%d\n", $x);
+@main i32 ()
+{
+	f(); \ prints '1'
+	f(); \ prints '2'
+	f(); \ prints '3'
+}

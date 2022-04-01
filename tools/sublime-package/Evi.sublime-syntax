@@ -226,11 +226,12 @@ contexts:
 
   declaration:
     # variable
-    - match: '(\%)\s*({{ident}})(?:\s*,\s*({{ident}}))*'
+    - match: '(\%)(\s*!)?\s*({{ident}})(?:\s*,\s*({{ident}}))*'
       captures:
         1: keyword.declaration.variable.evi,
-        2: entity.name.variable.evi
+        2: storage.modifier.static.evi,
         3: entity.name.variable.evi
+        4: entity.name.variable.evi
       set:
         - include: comments, pre-directive
         - match: '{{type}}'
@@ -248,10 +249,11 @@ contexts:
           pop: true
 
     # functions
-    - match: '(\@)\s*({{ident}})'
+    - match: '(\@)(\s*!)?\s*({{ident}})'
       captures:
         1: keyword.declaration.function.evi
-        2: entity.name.function.evi
+        2: storage.modifier.static.evi
+        3: entity.name.function.evi
       push:
         - include: comments
         - match: \s*({{type}})?\s*\(

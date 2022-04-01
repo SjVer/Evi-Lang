@@ -4,8 +4,8 @@ program			: (func_decl | var_decl)*
 declaration		: var_decl
 				| statement
 
-func_decl		: "@" IDENT type "(" type* "..."? ")" (statement | ";")
-var_decl		: "%" IDENT ("," IDENT)* type (expression ("," expression)*)? ";"
+func_decl		: "@" "!"? IDENT type "(" type* "..."? ")" (statement | ";")
+var_decl		: "%" "!"? IDENT ("," IDENT)* type (expression ("," expression)*)? ";"
 
 
 statement		: assignment

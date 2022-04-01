@@ -20,7 +20,6 @@ void Parser::error_at(Token *token, string message)
 		{
 			cerr << endl;
 			_error_dispatcher.print_token_marked(token, COLOR_RED);
-			cerr << endl;
 		}
 	}
 }
@@ -65,7 +64,6 @@ void Parser::note_declaration(string type, string name, Token* token)
 		_error_dispatcher.note_at_token(token, msg);
 		cerr << endl;
 		_error_dispatcher.print_token_marked(token, COLOR_GREEN);
-		cerr << endl;
 	}	
 }
 
@@ -118,6 +116,8 @@ bool Parser::consume(TokenType type, string message)
 
 ParsedType* Parser::consume_type(string msg)
 {
+	// type		: ("!")? BASIC_TYPE ("*")*
+
 	// can be constant
 	bool constant = match(TOKEN_BANG);
 
@@ -441,9 +441,12 @@ StmtNode* Parser::declaration()
 
 StmtNode* Parser::function_declaration()
 {
-	// func_decl	: "@" IDENT TYPE "(" TYPE* ")" (statement | ";")
+	// func_decl	: "@" "!"? IDENT TYPE "(" TYPE* ")" (statement | ";")
 
 	Token tok = _previous;
+
+	// allow staticness
+	bool is_static = match(TOKEN_BANG);
 
 	// get name
 	CONSUME_OR_RET_NULL(TOKEN_IDENTIFIER, "Expected identifier after '@'.");
@@ -480,7 +483,7 @@ StmtNode* Parser::function_declaration()
 	{
 		// declaration
 		add_function(&nametok, {ret_type, params, is_variadic, false, false, tok});
-		return new FuncDeclNode(tok, name, ret_type, params, is_variadic, nullptr);
+		return new FuncDeclNode(tok, name, ret_type, is_static, params, is_variadic, nullptr);
 	}
 	else
 	{
@@ -494,15 +497,18 @@ StmtNode* Parser::function_declaration()
 		StmtNode* body = statement();
 
 		scope_down();
-		return new FuncDeclNode(tok, name, ret_type, params, is_variadic, body);
+		return new FuncDeclNode(tok, name, ret_type, is_static, params, is_variadic, body);
 	}
 }
 
 StmtNode* Parser::variable_declaration()
 {
-	// var_decl		: "%" IDENT ("," IDENT)* TYPE (expression ("," expression)*)? ";"
+	// var_decl		: "%" "!"? IDENT ("," IDENT)* TYPE (expression ("," expression)*)? ";"
 
 	Token tok = _previous;
+
+	// allow staticness
+	bool is_static = match(TOKEN_BANG);
 
 	// get name(s)
 	vector<Token> nametokens;
@@ -530,17 +536,17 @@ StmtNode* Parser::variable_declaration()
 	{
 		// declarations
 		for(Token& name : nametokens) decls.push_back(
-			new VarDeclNode(tok, string(name.start, name.length), type, nullptr, is_global));
+			new VarDeclNode(tok, string(name.start, name.length), type, is_static, nullptr, is_global));
 	}
 	else
 	{
 		// definitions
 		for(int i = 0; i < nametokens.size(); i++)
 		{
-			ExprNode* expr = expression(is_global);
+			ExprNode* expr = expression(is_global || is_static);
 			if(i + 1 < nametokens.size()) CONSUME_OR_RET_NULL(TOKEN_COMMA, "Expected ',' after expression.");
 			string name = string(nametokens[i].start, nametokens[i].length);
-			decls.push_back(new VarDeclNode(tok, name, type, expr, is_global));
+			decls.push_back(new VarDeclNode(tok, name, type, is_static, expr, is_global));
 		}
 		CONSUME_OR_RET_NULL(TOKEN_SEMICOLON, "Expected ';' after variable defenition.");
 	}
@@ -961,7 +967,7 @@ ExprNode* Parser::primary(bool is_constexpr)
 		if(!is_constexpr) return reference();
 
 		// cannot reference variable in constant expression
-		error("Initializer element is not a constant.");
+		error("Initializer element is not a compile-time constant.");
 		return nullptr;
 	}
 
@@ -971,7 +977,7 @@ ExprNode* Parser::primary(bool is_constexpr)
 		if(!is_constexpr) return call();
 
 		// cannot reference variable in constant expression
-		error("Initializer element is not a constant.");
+		error("Initializer element is not a compile-time constant.");
 		return nullptr;
 	}
 

@@ -122,7 +122,6 @@ Status CodeGenerator::generate(const char* infile, const char* outfile, const ch
 
 void CodeGenerator::prepare()
 {
-	_global_init_func_block = nullptr;
 	#ifdef DEBUG_NO_FOLD
 	_builder = make_unique<llvm::IRBuilder<llvm::NoFolder>>(__context);
 	#else
@@ -185,21 +184,6 @@ void CodeGenerator::optimize(OptimizationType optlevel)
 void CodeGenerator::finish()
 {
 	bool invalid = false;
-
-	if(_global_init_func_block)
-	{
-		_builder->SetInsertPoint(_global_init_func_block);
-		_builder->CreateRetVoid();
-
-		if(llvm::verifyFunction(*_global_init_func_block->getParent(), nullptr))
-		{
-			_error_dispatcher.error("Code Generation Error", 
-				"LLVM verification of globals initialization function failed: ");
-			llvm::verifyFunction(*_global_init_func_block->getParent(), _errstream);
-			cerr << endl << endl;
-			invalid = true;
-		}
-	}
 	
 	// verify module
 	if(llvm::verifyModule(*_top_module, nullptr))
@@ -216,8 +200,6 @@ void CodeGenerator::finish()
 	_top_module->print(file_stream, nullptr);
 	file_stream.flush();
 	#endif
-
-	// if(invalid) ABORT(STATUS_CODEGEN_ERROR);
 }
 
 // =========================================
@@ -229,7 +211,6 @@ void CodeGenerator::error_at(Token *token, string message)
 	// print token
 	cerr << endl;
 	_error_dispatcher.print_token_marked(token, COLOR_RED);
-	cerr << endl;
 	
 	ABORT(STATUS_CODEGEN_ERROR);
 }
@@ -325,7 +306,8 @@ VISIT(FuncDeclNode)
 		for(ParsedType*& type : node->_params) params.push_back(type->get_llvm_type());
 		
 		llvm::FunctionType* functype = llvm::FunctionType::get(node->_ret_type->get_llvm_type(), params, node->_variadic);
-		func = llvm::Function::Create(functype, llvm::Function::ExternalLinkage, node->_identifier, *_top_module);
+		func = llvm::Function::Create(functype, node->_static ? llvm::Function::InternalLinkage : llvm::Function::ExternalLinkage,
+									  node->_identifier, *_top_module);
 		
 		_functions[node->_identifier] = func;
 	}
@@ -381,13 +363,22 @@ VISIT(FuncDeclNode)
 
 VISIT(VarDeclNode)
 {
+	string ir_name = node->_identifier;
+
+	// if the variable is local, but declared static it needs to be treated as a global
+	// its llvm name will be <current function name>.<variable name> (e.g. "func.x")
+	if(!node->_is_global && node->_static)
+	{
+		ir_name = _builder->GetInsertBlock()->getParent()->getName().str() + '.' + ir_name;
+		node->_is_global = true;
+	}
+
 	if(node->_is_global)
 	{
 		// add global and set some properties
-		_top_module->getOrInsertGlobal(node->_identifier, node->_type->get_llvm_type());
-		llvm::GlobalVariable* global_var = _top_module->getNamedGlobal(node->_identifier);
-		// global_var->setLinkage(llvm::GlobalValue::CommonLinkage);
-		global_var->setLinkage(llvm::GlobalValue::InternalLinkage);
+		_top_module->getOrInsertGlobal(ir_name, node->_type->get_llvm_type());
+		llvm::GlobalVariable* global_var = _top_module->getNamedGlobal(ir_name);
+		global_var->setLinkage(node->_static ? llvm::GlobalValue::InternalLinkage : llvm::GlobalValue::ExternalLinkage);
 		global_var->setAlignment(llvm::MaybeAlign(node->_type->get_alignment()));
 
 		// set initializer?
@@ -408,7 +399,7 @@ VISIT(VarDeclNode)
 	}
 	else // local
 	{
-		// get initializer?
+		// set initializer?
 		llvm::Value* init;
 		if(node->_expr)
 		{
@@ -419,7 +410,7 @@ VISIT(VarDeclNode)
 	
 		init = create_cast(init, true, node->_type->get_llvm_type(), node->_type->is_signed());
 		
-		llvm::AllocaInst* alloca = create_entry_block_alloca(node->_type->get_llvm_type(), node->_identifier);
+		llvm::AllocaInst* alloca = create_entry_block_alloca(node->_type->get_llvm_type(), ir_name);
 		_builder->CreateStore(init, alloca);
 	
 		_named_values[node->_identifier].first = alloca;

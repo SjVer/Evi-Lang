@@ -84,7 +84,6 @@ string Preprocessor::handle_plain_line(string line)
 			_error_dispatcher.error_at_token(&tok, "Preprocessing Error", msg);
 			cerr << endl;
 			_error_dispatcher.print_token_marked(&tok, COLOR_RED);
-			cerr << endl;
 
 			_had_error = true;
 			return line;
@@ -184,7 +183,6 @@ void Preprocessor::error_at_token(Token* token, const char* message)
 	_error_dispatcher.error_at_token(token, "Preprocessing Error", message);
 	cerr << endl;
 	_error_dispatcher.print_token_marked(token, COLOR_RED);
-	cerr << endl;
 
 	_had_error = true;
 }
@@ -221,7 +219,6 @@ void Preprocessor::warning_at_token(Token* token, const char* message)
 	_error_dispatcher.warning_at_token(token, "Preprocessing Warning", message);
 	cerr << endl;
 	_error_dispatcher.print_token_marked(token, COLOR_PURPLE);
-	cerr << endl;
 }
 
 // will assume that the first appearance of token is the correct one

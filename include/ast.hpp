@@ -86,16 +86,16 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 		public:
 
 		// body = nullptr if only declaration
-		FuncDeclNode(Token token, string identifier, ParsedType* ret_type,
+		FuncDeclNode(Token token, string identifier, ParsedType* ret_type, bool static_,
 					 vector<ParsedType*> params, bool variadic, StmtNode* body):
-
 			StmtNode(token), _identifier(identifier), 
-			_ret_type(ret_type), _params(params), 
+			_ret_type(ret_type), _static(static_), _params(params), 
 			_variadic(variadic), _body(body) {}
 		ACCEPT
 
 		string _identifier;
 		ParsedType* _ret_type;
+		bool _static;
 		vector<ParsedType*> _params;
 		bool _variadic;
 		StmtNode* _body; // nullptr if only declared
@@ -106,15 +106,15 @@ VIRTUAL_NODE_DECLARATION(StmtNode, ASTNode);
 		public:
 
 		// expr = nullptr if only declaration
-		VarDeclNode(Token token, string identifier,
-					ParsedType* type, ExprNode* expr, bool is_global):
-			StmtNode(token), _identifier(identifier),
-			_type(type), _expr(expr), _is_global(is_global)
-			{ type = type->copy(); }
+		VarDeclNode(Token token, string identifier, ParsedType* type,
+					bool static_, ExprNode* expr, bool is_global):
+			StmtNode(token), _identifier(identifier), _type(type),
+			_static(static_), _expr(expr), _is_global(is_global) {}
 		ACCEPT
 
 		string _identifier;
 		ParsedType* _type;
+		bool _static;
 		ExprNode* _expr;
 		bool _is_global;
 	};

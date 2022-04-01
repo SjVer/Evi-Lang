@@ -231,11 +231,12 @@
 		"vardeclarations":
 		{
 			"name": "meta.declaration.variable.evi",
-			"match": "(%)\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)(?:\\s*,\\s*([a-zA-Z_][a-zA-Z0-9_]*))*)?",
+			"match": "(%)(\\s*!)?\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)(?:\\s*,\\s*([a-zA-Z_][a-zA-Z0-9_]*))*)?",
 			"captures": { 
 				"1": { "name": "keyword.declaration.variable.evi" },
-				"2": { "name": "entity.name.variable.evi" },
-				"3": { "name": "entity.name.variable.evi" }
+				"2": { "name": "storage.modifier.static.evi" },
+				"3": { "name": "entity.name.variable.evi" },
+				"4": { "name": "entity.name.variable.evi" }
 			}
 		},
 		"variable-initializer":
@@ -260,10 +261,11 @@
 		{
 			"name": "meta.declaration.function.evi",
 
-			"begin": "(@)\\s*([a-zA-Z_][a-zA-Z0-9_]*)?",
+			"begin": "(@)(\\s*!)?\\s*([a-zA-Z_][a-zA-Z0-9_]*)?",
 			"beginCaptures": {
 				"1": { "name": "keyword.declaration.function.evi" },
-				"2": { "name": "entity.name.function.declaration.evi" } },
+				"2": { "name": "storage.modifier.static.evi" },
+				"3": { "name": "entity.name.function.declaration.evi" } },
 			
 			"patterns": [
 				{ "include": "#function-type" },
