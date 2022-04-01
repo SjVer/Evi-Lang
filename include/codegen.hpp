@@ -8,12 +8,23 @@
 
 #include <stack>
 
+typedef enum
+{
+	OPTIMIZE_O0 = '0',
+	OPTIMIZE_O1 = '1',
+	OPTIMIZE_O2 = '2',
+	OPTIMIZE_O3 = '3',
+	OPTIMIZE_On = 'n',
+	OPTIMIZE_Os = 's',
+	OPTIMIZE_Oz = 'z',
+} OptimizationType;
+
 class CodeGenerator: public Visitor
 {
 	public:
 	CodeGenerator();
 	Status generate(const char* infile, const char* outfile, 
-					const char* source, AST* astree);
+					const char* source, AST* astree, OptimizationType opt);
 
 	Status emit_llvm(const char* filename);
 	Status emit_object(const char* filename);
@@ -43,6 +54,7 @@ class CodeGenerator: public Visitor
 	private:
 
 	void prepare();
+	void optimize(OptimizationType optlevel);
 	void finish();
 
 	char* _infile;

@@ -2,7 +2,11 @@
 
 @main i32 ()
 {
-    %var i32 123;
-    %ptr i32* &$var;
+    puts("start");
+
+    ??(1) puts("true");
+    ??(0) puts("false");
+
+    puts("end");
 }
 

@@ -37,15 +37,16 @@ struct arguments
 	char *outfile;
 	int linkedc = 0;
 	char *linked[MAX_LINKED];
-	int verbose = 0;		/* The -v flag */
+	int verbose = 0;
 	bool preprocess_only = false;
 	bool emit_llvm = false;
 	bool generate_ast = false;
 	bool compile_only = false;
 	bool output_given = false;
+	OptimizationType optimization = OPTIMIZE_O3;
 };
 
-bool lint_pos_given = false;
+// bool lint_pos_given = false;
 
 static struct argp_option options[] =
 {
@@ -55,6 +56,7 @@ static struct argp_option options[] =
 
 	{"verbose", 			'v', 			 0, 		  0, "Produce verbose output."},
 	{"output",  			'o', 			 "OUTFILE",   0, "Output to OUTFILE instead of to standard output."},
+	{0,  					'O', 			 "LEVEL",     0, "Set the optimization level."},
 	{"preprocess-only", 	'p', 			 0, 		  0, "Preprocess only but do not compile or link."},
 	{"link", 				'l', 			 "FILE", 	  0, "Link with FILE."},
 	{"include", 			'i', 			 "DIRECTORY", 0, "Add DIRECTORY to include search path."},
@@ -101,6 +103,36 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arguments->outfile = arg;
 		arguments->output_given = true;
 		break;
+	case 'O':
+	{
+		bool correct = false;
+
+		if(strlen(arg) == 1) switch(arg[0])
+		{
+			case OPTIMIZE_O0:
+			case OPTIMIZE_O1:
+			case OPTIMIZE_O2:
+			case OPTIMIZE_O3:
+			case OPTIMIZE_On:
+			case OPTIMIZE_Os:
+			case OPTIMIZE_Oz:
+				correct = true;
+				break;
+			default:
+				correct = false;
+				break;
+		}			
+
+		if(!correct)
+		{
+			cerr << "[evi] CLI Error: Invalid optimization level: " << arg << endl;
+			cerr << "[evi] Note: Valid levels: '0', '1', '2', '3', 'n', 's', 'z'" << endl;
+			ABORT(STATUS_CLI_ERROR);
+		}
+
+		arguments->optimization = (OptimizationType)(arg[0]);
+		break;
+	}
 
 	case 'p':
 		arguments->preprocess_only = true;
@@ -192,7 +224,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 		lint_args.pos[0] = stoi(match[1].str(), 0, 10);
 		lint_args.pos[1] = stoi(match[2].str(), 0, 10);
-		lint_pos_given = true;
+		// lint_pos_given = true;
 
 		break;
 	}
@@ -269,12 +301,12 @@ int main(int argc, char **argv)
 	/* Where the magic happens */
 	if(argp_parse(&argp, argc, argv, 0, 0, &arguments)) return STATUS_CLI_ERROR;
 
-	// check lint args
-	if(lint_args.type != LINT_NONE && !lint_pos_given)
-	{
-		cerr << "[evi] CLI Error: Lint requires position." << endl;
-		ABORT(STATUS_CLI_ERROR);
-	}
+	// // check lint args
+	// if(lint_args.type != LINT_NONE && !lint_pos_given)
+	// {
+	// 	cerr << "[evi] CLI Error: Lint requires position." << endl;
+	// 	ABORT(STATUS_CLI_ERROR);
+	// }
 
 	// figure out output file name
 	if(!arguments.output_given)
@@ -355,7 +387,7 @@ int main(int argc, char **argv)
 
 	// codegen
 	CodeGenerator* codegen = new CodeGenerator();
-	status = codegen->generate(arguments.args[0], arguments.outfile, source, &astree);
+	status = codegen->generate(arguments.args[0], arguments.outfile, source, &astree, arguments.optimization);
 	ABORT_IF_UNSUCCESSFULL();
 
 

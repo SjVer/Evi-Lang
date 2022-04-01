@@ -7,7 +7,6 @@
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Function.h>
 #include <llvm/Transforms/Utils/ModuleUtils.h>
-// #include <llvm/LineEditor/LineEditor.h>
 #include <llvm/Support/raw_os_ostream.h>
 
 #include <llvm/IR/Verifier.h>
@@ -21,6 +20,7 @@
 #include <llvm/Target/TargetOptions.h>
 
 #include <llvm/IR/LegacyPassManager.h>
+#include "llvm/Passes/PassBuilder.h"
 
 #include <string>
 #include <cassert>

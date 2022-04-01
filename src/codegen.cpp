@@ -95,7 +95,7 @@ Status CodeGenerator::emit_binary(const char* outfile, const char** linked, int 
 	return STATUS_SUCCESS;
 }
 
-Status CodeGenerator::generate(const char* infile, const char* outfile, const char* source, AST* astree)
+Status CodeGenerator::generate(const char* infile, const char* outfile, const char* source, AST* astree, OptimizationType opt)
 {
 	_outfile = strdup(outfile);
 	_infile = strdup(infile);
@@ -108,6 +108,8 @@ Status CodeGenerator::generate(const char* infile, const char* outfile, const ch
 	{
 		node->accept(this);
 	}
+
+	optimize(opt);
 
 	finish();
 
@@ -133,6 +135,51 @@ void CodeGenerator::prepare()
 
 	_value_stack = new stack<llvm::Value*>();
 	_string_literal_count = 0;
+}
+
+void CodeGenerator::optimize(OptimizationType optlevel)
+{
+	if(optlevel == OPTIMIZE_On) return;
+
+	llvm::PassBuilder pass_builder;
+
+	// create analysis managers
+	#ifdef DEBUG
+	llvm::LoopAnalysisManager loop_analysis_manager(true);
+	llvm::FunctionAnalysisManager function_analysis_manager(true);
+	llvm::CGSCCAnalysisManager c_gscc_analysis_manager(true);
+	llvm::ModuleAnalysisManager module_analysis_manager(true);
+	#else
+	llvm::LoopAnalysisManager loop_analysis_manager(false);
+	llvm::FunctionAnalysisManager function_analysis_manager(false);
+	llvm::CGSCCAnalysisManager c_gscc_analysis_manager(false);
+	llvm::ModuleAnalysisManager module_analysis_manager(false);
+	#endif
+
+	// register them
+	pass_builder.registerModuleAnalyses(module_analysis_manager);
+	pass_builder.registerCGSCCAnalyses(c_gscc_analysis_manager);
+	pass_builder.registerFunctionAnalyses(function_analysis_manager);
+	pass_builder.registerLoopAnalyses(loop_analysis_manager);
+	
+	pass_builder.crossRegisterProxies(loop_analysis_manager, function_analysis_manager, c_gscc_analysis_manager, module_analysis_manager);
+
+	// get optimization level
+	llvm::PassBuilder::OptimizationLevel level;
+	switch(optlevel)
+	{
+		case OPTIMIZE_O0: level = llvm::PassBuilder::OptimizationLevel::O0; break;
+		case OPTIMIZE_O1: level = llvm::PassBuilder::OptimizationLevel::O1; break;
+		case OPTIMIZE_O2: level = llvm::PassBuilder::OptimizationLevel::O2; break;
+		case OPTIMIZE_O3: level = llvm::PassBuilder::OptimizationLevel::O3; break;
+		case OPTIMIZE_Os: level = llvm::PassBuilder::OptimizationLevel::Os; break;
+		case OPTIMIZE_Oz: level = llvm::PassBuilder::OptimizationLevel::Oz; break;
+		default: THROW_INTERNAL_ERROR("during code optimization");
+	}
+
+	// run the optimization
+	llvm::ModulePassManager module_pass_manager = pass_builder.buildPerModuleDefaultPipeline(level);
+	module_pass_manager.run(*_top_module, module_analysis_manager);
 }
 
 void CodeGenerator::finish()
