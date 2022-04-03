@@ -2,9 +2,9 @@
 
 @main i32 (i32 chr**)
 {
-	%x i32* malloc(?i32);
-
-	=x[0] 123
+	%x i32* malloc(?i32) -> i32*;
+	
+	=x[0] 123;
 
 	free($x);
 }

@@ -1,6 +1,6 @@
 #apply "std/io"
 
-@fib i32 () {
+@fib nll () {
 	\ initialize first and second terms
 	%t1, t2 i32 0, 1;
 
@@ -8,23 +8,20 @@
 	%tn i32 $t1 + $t2;
 
 	\ get no. of terms from user
-	prints("Enter the number of terms: ");
-	%n i32 scani();
+	printf("Enter the number of terms: ");
+	scanf("%d", &$n);
 
 	\ print the first two terms t1 and t2
-	\ printf("Fibonacci Series: %d, %d, ", $t1, $t2);
-	prints("Fibbonaci Series: ");
-	printi($t1);
-	printi($t2);
+	printf("Fibonacci Series: %d, %d, ", $t1, $t2);
 
 	\ print 3rd to nth terms
   	!!(%i i32 3; $i <= $n; =i ++$i;) {
-	    printi($tn);
-	    \ printf("%d, ", $tn);
+	    printf("%d%s", $tn, ++$i <= $n ? ", " : "");
 	    =t1 $t2;
 	    =t2 $tn;
 	    =tn $t1 + $t2;
 	}
+	printf("\n");
 }
 
 @main i32 () fib();

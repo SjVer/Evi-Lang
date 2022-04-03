@@ -271,6 +271,7 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 
 // =========================================
 #define VISIT(_node) void TypeChecker::visit(_node* node)
+#define ACCEPT_AND_POP(node) { if(node) { node->accept(this); pop(); } }
 
 #define ERROR_AT(token, format, ...) error_at(token, tools::fstr(format, __VA_ARGS__))
 #define CANNOT_CONVERT_ERROR_AT(token, from, to) \
@@ -280,19 +281,15 @@ bool TypeChecker::can_cast_types(ParsedType* from, ParsedType* to)
 #define CONVERSION_WARNING_AT(token, original, result) \
 	warning_at(token, tools::fstr("Implicit conversion from type " COLOR_BOLD "'%s'" \
 	COLOR_NONE " to type " COLOR_BOLD "'%s'" COLOR_NONE ".", \
-	original->to_c_string(), result->to_c_string()))
+	original->to_c_string(), result->to_c_string()), true)
 
 // === Statements ===
 // all nodes should have a stack effect of 1
 
 VISIT(FuncDeclNode)
 {
-	if(node->_body)
-	{
-		node->_body->accept(this);
-		pop();
-		_panic_mode = false;
-	}
+	ACCEPT_AND_POP(node->_body)
+	_panic_mode = false;
 	
 	push(nullptr);
 }
@@ -351,46 +348,30 @@ VISIT(AssignNode)
 
 VISIT(IfNode)
 {
-	node->_cond->accept(this);
-	pop();
+	ACCEPT_AND_POP(node->_cond);
 	_panic_mode = false;
 
-	node->_then->accept(this);
-	pop();
+	ACCEPT_AND_POP(node->_then);
 	_panic_mode = false;
 
-	if(node->_else)
-	{
-		node->_else->accept(this);
-		pop();
-		_panic_mode = false;
-	}
+	ACCEPT_AND_POP(node->_else);
+	_panic_mode = false;
 
 	push(nullptr);
 }
 
 VISIT(LoopNode)
 {
-	if(node->_init)
-	{
-		node->_init->accept(this);
-		pop();
-		_panic_mode = false;
-	}
-
-	node->_cond->accept(this);
-	pop();
+	ACCEPT_AND_POP(node->_init);
 	_panic_mode = false;
 
-	if(node->_incr)
-	{
-		node->_incr->accept(this);
-		pop();
-		_panic_mode = false;
-	}
+	ACCEPT_AND_POP(node->_cond);
+	_panic_mode = false;
 
-	node->_body->accept(this);
-	pop();
+	ACCEPT_AND_POP(node->_incr);
+	_panic_mode = false;
+
+	ACCEPT_AND_POP(node->_body);
 	_panic_mode = false;
 
 	push(nullptr);
@@ -421,11 +402,7 @@ VISIT(BlockNode)
 {
 	for(auto& subnode : node->_statements)
 	{
-		if(subnode)
-		{
-			subnode->accept(this);
-			pop();
-		}
+		ACCEPT_AND_POP(subnode);
 		_panic_mode = false;
 	}
 	push(nullptr);
@@ -454,8 +431,8 @@ VISIT(LogicalNode)
 		ParsedType* result = resolve_types(left, right);
 
 		if(result == nullptr) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
-		else if(left != result) CONVERSION_WARNING_AT(&node->_middle->_token, left, result);
-		else if(right != result) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
+		else if(!left->eq(result)) CONVERSION_WARNING_AT(&node->_middle->_token, left, result);
+		else if(!right->eq(result)) CONVERSION_WARNING_AT(&node->_right->_token, right, result);
 		
 		node->_middle->_cast_to = result;
 		node->_right->_cast_to = result;
@@ -474,8 +451,8 @@ VISIT(LogicalNode)
 		if(!can_cast_types(left, booltype)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, left, booltype);
 		if(!can_cast_types(right, booltype)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, right, booltype);
 
-		if(left != booltype) CONVERSION_WARNING_AT(&node->_left->_token, left, booltype);
-		if(right != booltype) CONVERSION_WARNING_AT(&node->_right->_token, right, booltype);
+		if(!left->eq(booltype)) CONVERSION_WARNING_AT(&node->_left->_token, left, booltype);
+		if(!right->eq(booltype)) CONVERSION_WARNING_AT(&node->_right->_token, right, booltype);
 		
 		node->_left->_cast_to = booltype;
 		node->_right->_cast_to = booltype;
@@ -524,7 +501,7 @@ VISIT(BinaryNode)
 
 		if(result == nullptr) 
 		{
-			if(right != left) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
+			if(!right->eq(left)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, left, right);
 			else ERROR_AT(&node->_token, "Cannot peform binary operation on expressions of type " \
 				COLOR_BOLD "'%s'" COLOR_NONE ".", right->to_c_string());
 		}
@@ -757,8 +734,3 @@ VISIT(CallNode)
 
 	push(node->_ret_type);
 }
-
-#undef VISIT
-#undef ERROR_AT
-#undef CANNOT_CONVERT_ERROR_AT
-#undef CONVERSION_WARNING_AT

@@ -1,8 +1,14 @@
-#apply "std/all"
+#apply "std/io"
+
+#macro SWITCH %__switch_var
+#macro CASE ??($__switch_var == 
+#macro DEFAULT ::  
 
 @main i32 ()
 {
-	%str chr* malloc(?(chr) * 10) -> chr*;
-	strcpy($str, "Success!");
-	puts($str);
+	SWITCH# i32 2;
+	CASE# 1) printf("1\n");
+	CASE# 2) printf("2\n");
+	CASE# 3) printf("3\n");
+	DEFAULT# printf("default\n");
 }

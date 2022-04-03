@@ -239,23 +239,6 @@
 				"4": { "name": "entity.name.variable.evi" }
 			}
 		},
-		"variable-initializer":
-		{
-			"name": "meta.declaration.variable.initializer.evi",
-			"begin": " ",
-			
-			"patterns": [
-				{ "include": "#types" },
-				{ "include": "#expressions" },
-				{ "match": ",", "name": "punctuation.delimeter.evi" },
-				{ "include": "#illegals" }
-			],
-			
-			"end": "(;)|$",
-			"endCaptures": {
-				"1": { "name": "punctuation.terminator.evi" }
-			}
-		},
 		
 		"funcdeclarations": 
 		{
@@ -451,18 +434,10 @@
 					"match": "(\\$)([0-9]+)"
 				},
 				{
-					"begin": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
-					"beginCaptures": {
+					"match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+					"captures": {
 						"1": { "name": "entity.name.function.evi"}
-					},
-					"contentName": "meta.call.arguments.evi",
-					
-					"patterns": [
-						{ "match": ",", "name": "punctuation.separator.evi" },
-						{ "include": "#expressions" }
-					],
-
-					"end": "\\)"
+					}
 				}
 			]
 		},

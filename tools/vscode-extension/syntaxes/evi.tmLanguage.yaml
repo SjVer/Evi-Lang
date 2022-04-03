@@ -1,0 +1,568 @@
+---
+name: Evi
+scopeName: source.evi
+fileTypes: [evi]
+
+variables:
+  ident: '[A-Za-z_][A-Za-z_0-9]*'
+
+  # numbers
+  decimal: '\b[0-9]+(?:\.[0-9]*)?\b'
+  binary: '\b0b[0-1]+\b'
+  octal: '\b0c[0-7]+\b'
+  hexadecimal: '\b0x[0-9a-fA-F]+\b'
+  number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
+
+  # types
+  inttype: (?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze
+  flttype: flt|dbl
+  type: '(?:!\s*)?(?:{{inttype}}|{{flttype}}|nll)(?:\s*\*)*'
+
+patterns:
+- include: '#base'
+- include: '#funcdeclarations'
+- include: '#declarations'
+- include: '#illegals'
+
+repository:
+
+  base:
+    patterns:
+    - include: '#pre-directives'
+    - include: '#comments'
+    - include: '#macro-invoke'
+
+
+
+  funcdeclarations:
+    name: meta.declaration.function.evi
+
+    begin: "(@)\
+            (\\s*!)?\
+            \\s*\
+            (?:({{ident}})|(\\S+))\
+            \\s*\
+            (?:({{type}})|(\\S*))\
+            \\s*\
+            (?:(\\()|(\\S*))"
+    beginCaptures:
+      '1': { name: keyword.declaration.function.evi }
+      '2': { name: storage.modifier.static.evi }
+      '3': { name: entity.name.function.declaration.evi }
+      '4': { name: invalid.illegal.evi }
+      '5': { name: storage.type.return.evi }
+      '6': { name: invalid.illegal6.evi }
+      '7': { name: punctuation.parentheses.arguments.start.evi }
+      '8': { name: invalid.illegal8.evi }
+
+    patterns:
+    - include: '#base'
+    - name: variable.parameter.evi
+      match: '\b{{type}}|\*\b'
+    - name: keyword.operator.variadic.evi
+      match: '\.\.\.'
+    - include: '#illegals'
+
+    end: '\)'
+    endCaptures:
+      '0': { name: punctuation.parentheses.arguments.end.evi }
+
+  declarations:
+    name: meta.declaration.evi
+    patterns:
+    - include: '#base'
+    - include: '#vardeclarations'
+    - include: '#statements'
+    - include: '#illegals'
+
+  vardeclarations:
+    name: meta.declaration.variable.evi
+    begin: "(%)\
+            (\\s*!)?\
+            \\s*\
+            (?:\
+              ({{ident}})|(\\S*)\
+            )\
+            \\s*\
+            (?:\
+              (?:\
+                (,)\\s*\
+                ({{ident}})\\s*\
+              )*|(\\S*)\
+            )\
+            (?:\
+              ({{type}})|(\\S*)\
+            )"
+    beginCaptures:
+      '1': { name: keyword.declaration.variable.evi }
+      '2': { name: storage.modifier.static.evi }
+      '3': { name: entity.name.variable.evi }
+      '4': { name: invalid.illegal.4.evi }
+      '5': { name: punctuation.comma.separator.evi }
+      '6': { name: entity.name.variable.evi }
+      '7': { name: invalid.illegal.7.evi }
+      '8': { name: storage.type.variable.evi }
+      '9': { name: invalid.illegal.9.evi }
+  
+    # contentName: meta.variable.initializer.evi
+    patterns:
+      - include: '#base'
+      - include: '#punct-comma'
+      - include: '#expressions'
+      - include: '#illegals'
+
+    end: ';'
+    endCaptures: 
+      '0': { name: punctuation.terminator.declaration.evi }
+
+
+
+
+  statements:
+    name: meta.statement.evi
+    patterns:
+    - include: '#base'
+    - include: '#assignment-stmts'
+    - include: '#if-stmts'
+    - include: '#loop-stmts'
+    - include: '#block-stmts'
+    - include: '#return-stmts'
+    - include: '#expression-stmts'
+
+  assignment-stmts:
+    begin: '(=(?!=))\s*(?:({{ident}})|(\S+))'
+    beginCaptures:
+      '1': { name: keyword.operator.assignment.evi }
+      '2': { name: variable.name.evi }
+      '3': { name: invalid.illegal.evi }
+
+    patterns:
+    - include: '#expressions'
+    - include: '#illegals'
+
+    end: '(;)'
+    endCaptures:
+      '1': { name: punctuation.terminator.evi }
+
+  if-stmts:
+    patterns:
+    - name: meta.if-statement.evi
+      begin: '(\?\?)\s*(?:(\()|(\S*))'
+      beginCaptures:
+        '1': { name: keyword.control.flow.if.evi }
+        '2': { name: punctuation.parentheses.condition.start.evi }
+        '3': { name: invalid.illegal.if-statement.evi }
+
+      patterns:
+      - include: '#expressions'
+      - include: '#illegals'
+
+      end: \)
+      endCaptures:
+        '0': { name: punctuation.parentheses.condition.end.evi }
+    - name: keyword.control.flow.else.evi
+      match: '::'
+
+  loop-stmts:
+    name: meta.loop-statement.evi
+
+    begin: '(\!\!)\s*(?:(\()|(\S*))'
+    beginCaptures:
+      '1': { name: keyword.control.flow.loop.evi }
+      '2': { name: punctuation.parentheses.loop.start.evi }
+      '3': { name: invalid.illegal.loop-statement.evi }
+
+    patterns:
+    - include: '#declarations'
+    - include: '#illegals'
+
+    end: \)
+    endCaptures:
+      '0': { name: punctuation.parentheses.loop.end.evi }
+
+  block-stmts:
+    name: meta.statement.block.evi
+
+    begin: '\{'
+    beginCaptures:
+      '0': { name: punctuation.brace.block.start.evi }
+      
+    patterns:
+    - include: '#declarations'
+
+    end: '\}'
+    endCaptures:
+      '0': { name: punctuation.brace.block.end.evi }
+
+  return-stmts:
+    begin: \~
+    beginCaptures:
+      '0': { name: keyword.control.flow.return.evi }
+      
+    patterns:
+    - include: '#expressions'
+    - include: '#illegals'
+
+    end: ';'
+    endCaptures:
+      '0': { name: punctuation.terminator.return.evi }
+
+  expression-stmts:
+    # can be empty
+    patterns:
+      - include: '#expressions'
+      - include: '#punct-terminator'
+
+
+
+  expressions:
+    name: meta.expression.evi
+    patterns:
+    - include: '#base'
+    - include: '#operators'
+    - include: '#variables'
+    - include: '#funccalls'
+    - include: '#numbers'
+    - include: '#arrays'
+    - include: '#strings'
+    - include: '#arrays'
+
+  operators:
+    patterns:
+    - name: meta.cast.evi
+      match: '(->)\s*(?:({{type}})|(\()\s*({{type}})\s*(\))|(\S+))'
+      captures:
+        '1': { name: keyword.operator.cast.evi }
+        '2': { name: storage.type.cast.evi }
+        '3': { name: punctuation.parentheses.cast.start.evi }
+        '4': { name: storage.type.cast.evi }
+        '5': { name: punctuation.parentheses.cast.end.evi }
+        '6': { name: invalid.illegal.cast.evi }
+    - name: meta.size-of.evi
+      match: (\?)\s*(?:(?:(\()\s*({{type}})\s*(\)))|({{type}}))
+      captures:
+        '1': { name: keyword.operator.size_of.evi }
+        '2': { name: punctuation.separator.evi }
+        '3': { name: storage.type.evi }
+        '4': { name: punctuation.separator.evi }
+        '5': { name: storage.type.evi }
+    - name: meta.ternary-expression.evi
+      begin: '\?'
+      beginCaptures:
+        '0': { name: keyword.operator.ternary.evi }
+      patterns:
+      - include: '#expressions'
+      end: ':'
+      endCaptures:
+        '0': { name: keyword.operator.ternary.evi }
+    - name: meta.expression-grouping.evi
+      begin: '\('
+      beginCaptures: 
+        '0': { name: punctuation.parentheses.grouping.start.evi }
+      patterns:
+      - include: '#expression'
+      end: '\)'
+      endCaptures: 
+        '0': { name: punctuation.parentheses.grouping.end.evi }
+    - name: meta.subscript.evi
+      begin: \[
+      beginCaptures:
+        '0': { name: punctuation.bracket.subscript.begin.evi }
+
+      contentName: meta.subscript.value.evi
+      patterns:
+      - include: '#expressions'
+      - include: '#illegals'
+
+      end: \]
+      endCaptures:
+        '0': { name: punctuation.bracket.subscript.end.evi }
+    - name: keyword.operator.bitwise.shift.evi
+      match: '<<|>>|>>'
+    - name: keyword.operator.comparison.evi
+      match: '==|/='
+    - name: keyword.operator.relational.evi
+      match: '<=|>=|<>|<|>'
+    - name: keyword.operator.logical.evi
+      match: '\!|&&|\|\||\^\^'
+    - name: keyword.operator.bitwise.evi
+      match: '&|\^|\|'
+    - name: keyword.operator.decrement.evi
+      match: '--'
+    - name: keyword.operator.increment.evi
+      match: '\+\+'
+    - name: keyword.operator.arithmetic.evi
+      match: '\*|/|-|\+'
+
+  
+  variables:
+    match: (\${{ident}})|(\$[0-9]+)
+    captures:
+      '1': { name: variable.name.evi }
+      '2': { name: variable.parameter.evi }
+
+  funccalls:
+    name: meta.function-call.evi
+
+    begin: ({{ident}})\s*(\()
+    beginCaptures:
+      '1': { name: entity.name.function.evi }
+      '2': { name: punctuation.parentheses.arguments.start.evi }
+
+    contentName: meta.funtion-call.arguments.evi
+    patterns:
+    - include: '#base'
+    - include: '#expressions'
+    - include: '#punct-comma'
+    - include: '#illegals'
+
+    end: '\)'
+    endCaptures:
+      '0': { name: punctuation.parentheses.arguments.start.evi }
+
+  numbers:
+    patterns:
+    - name: constant.numeric.binary.evi
+      match: '{{binary}}'
+    - name: constant.numeric.decimal.evi
+      match: '{{decimal}}'
+    - name: constant.numeric.hexadecimal.evi
+      match: '{{hexadecimal}}'
+    - name: constant.numeric.octal.evi
+      match: '{{octal}}'
+
+  strings:
+    patterns:
+    - name: string.quoted.double.evi
+
+      begin: '"'
+      beginCaptures:
+        '0': { name: punctuation.definition.string.begin.evi }
+
+      patterns:
+      - include: '#string_escaped_char'
+      - include: '#string_placeholder'
+
+      end: '"'
+      endCaptures:
+        '0': { name: punctuation.definition.string.end.evi }
+
+    - name: string.quoted.single.evi
+
+      begin: \'
+      beginCaptures:
+        '0': { name: punctuation.definition.string.begin.evi }
+
+      patterns:
+      - include: '#string_escaped_char'
+
+      end: \'
+      endCaptures:
+        '0': { name: punctuation.definition.string.end.evi }
+
+  string_escaped_char:
+    patterns:
+    - name: constant.character.escape.evi
+      match: \\(a|b|e|f|n|r|t|v|\\|'|"|0)
+    - name: invalid.illegal.unknown-escape.evi
+      match: \\.
+      
+  string_placeholder:
+    patterns:
+    - name: constant.other.placeholder.evi
+      match: |-
+          (?x)%
+            (\d+\$)?                                      # field (argument #)
+            [#0\- +']*                                    # flags
+            [,;:_]?                                       # separator character (AltiVec)
+            ((-?\d+)|\*(-?\d+\$)?)?                       # minimum field width
+            (\.((-?\d+)|\*(-?\d+\$)?)?)?                  # precision
+            (hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)?          # length modifier
+            (\[[^\]]+\]|[am]s|[diouxXDOUeEfFgGaACcSspn%]) # conversion type
+        
+    - name: invalid.illegal.placeholder.evi
+      match: (%)(?!"\s*(PRI|SCN))
+
+  arrays:
+    begin: \{
+    beginCaptures:
+     '0': { name: punctuation.brace.array.begin.evi }
+
+    contentName: meta.array.elements.evi
+    patterns:
+    - include: '#expressions'
+    - include: '#punct-comma'
+    - include: '#illegals'
+
+    end: \}
+    endCaptures:
+     '0': { name: punctuation.brace.array.end.evi }
+
+
+
+  punct-terminator:
+    name: punctuation.terminator.evi
+    match: ';'
+
+  punct-comma:
+    name: punctuation.comma.evi
+    match: ','
+
+
+
+  pre-directives:
+    patterns:
+    - name: meta.preprocessor.apply.evi
+
+      begin: '^\s*((#)\s*(apply))\b\s*'
+      beginCaptures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.evi }
+
+      patterns:
+      - include: '#strings'
+      - include: '#illegals'
+
+      end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
+
+    - name: meta.preprocessor.flag.evi
+
+      begin: '^\s*((#)\s*(flag|unset))\b\s*'
+      beginCaptures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.flag.evi }
+
+      patterns:
+      - name: entity.name.function.preprocessor.flag.evi
+        match: '{{ident}}'
+      - include: '#illegals'
+
+      end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
+
+    - name: meta.preprocessor.flag.evi
+
+      begin: '^\s*((#)\s*(undef))\b\s*'
+      beginCaptures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.undef.evi }
+
+      patterns:
+      - name: entity.name.function.preprocessor.macro.evi
+        match: '{{ident}}'
+      - include: '#illegals'
+
+      end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
+
+    - name: meta.preprocessor.line.evi
+
+      begin: '^\s*((#)\s*(line))\b\s*'
+      beginCaptures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.line.evi }
+
+      patterns:
+      - name: constant.numeric.decimal.evi
+        match: '[0-9]+'
+      - include: '#illegals'
+
+      end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
+
+    - name: meta.preprocessor.macro.evi
+
+      begin: '^\s*((#)\s*(macro))\b\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\s+|(\S*))'
+      beginCaptures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.macro.evi }
+        '4': { name: entity.name.function.preprocessor.macro.evi }
+        '5': { name: invalid.misplaced.evi }
+
+      patterns:
+      - name: punctuation.parentheses.macro-definition.evi
+        match: \(|\)
+      - match: \?
+        name: keyword.operator.question.macro-definition.evi
+      - include: '#expressions'
+
+      end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
+
+    - name: meta.preprocessor.file.evi
+
+      begin: '^\s*((#)\s*(file))\b\s*'
+      beginCaptures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.file.evi }
+
+      patterns:
+      - include: '#strings'
+      - include: '#illegals'
+
+      end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
+
+    - name: meta.preprocessor.conditional.evi
+
+      begin: '^\s*((#)\s*(ifset|ifnset|ifdef|ifndef))\b\s*'
+      beginCaptures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.conditional.evi }
+
+      patterns:
+      - match: '{{ident}}'
+        name: entity.name.function.preprocessor.evi
+      - include: '#illegals'
+
+      end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
+
+    - name: meta.preprocessor.conditional.evi
+
+      match: '^\s*((#)\s*(else|endif))\b\s*'
+      captures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.conditional.evi }
+
+    - name: meta.preprocessor.info.evi
+
+      begin: '^\s*((#)\s*(info))\b\s*'
+      beginCaptures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: punctuation.definition.directive.info.evi }
+      
+      patterns:
+      - match: '{{ident}}'
+        name: punctuation.definition.directive.info.evi
+      - include: '#expressions'
+      - include: '#illegals'
+
+      end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
+
+    - name: meta.preprocessor.linemarker.evi
+
+      match: ^\s*(#) ?([0-9]+)? ?('(?:\?.*)')?$
+
+      captures:
+        '1': { name: keyword.control.directive.evi }
+        '2': { name: constant.numeric.decimal.evi }
+        '3': { name: string.quoted.double.evi }
+  
+  macro-invoke:
+    name: entity.name.constant.macro.evi
+    match: '{{ident}}#'
+
+  comments:
+    patterns:
+    - name: comment.block.evi
+      begin: '\\:'
+      end: ':\\'
+
+    - name: comment.line.documentation.evi
+      match: '\\?(?: (@param [0-9]+|@return) ).*$'
+      captures:
+        '1': { name: entity.name.class.evi }
+
+    - name: comment.line.evi
+      match: '\\.*$'
+
+  illegals:
+    patterns:
+    - match: '\s+'
+    - name: invalid.illegal.evi
+      match: '\S'

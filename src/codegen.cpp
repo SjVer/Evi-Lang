@@ -104,9 +104,10 @@ Status CodeGenerator::generate(const char* infile, const char* outfile, const ch
 	prepare();
 
 	// walk the tree
-	for(auto& node : *astree)
+	for(auto& node : *astree) if(node)
 	{
 		node->accept(this);
+		pop();
 	}
 
 	optimize(opt);
@@ -290,6 +291,7 @@ ParsedType* CodeGenerator::from_token_type(TokenType type)
 // =========================================
 
 #define VISIT(_node) void CodeGenerator::visit(_node* node)
+#define ACCEPT_AND_POP(node) { if(node) { node->accept(this); pop(); } }
 #define ERROR_AT(token, format, ...) error_at(token, tools::fstr(format, __VA_ARGS__))
 #define SCOPE_UP() map<string, pair<llvm::Value*, ParsedType*>> oldbindings = _named_values
 #define SCOPE_DOWN() _named_values = oldbindings
@@ -359,6 +361,8 @@ VISIT(FuncDeclNode)
 		// 	// ABORT(STATUS_CODEGEN_ERROR);
 		// }
 	}
+
+	push(nullptr);
 }
 
 VISIT(VarDeclNode)
@@ -416,6 +420,8 @@ VISIT(VarDeclNode)
 		_named_values[node->_identifier].first = alloca;
 		_named_values[node->_identifier].second = node->_type;
 	}
+
+	push(nullptr);
 }
 
 VISIT(AssignNode)
@@ -441,6 +447,8 @@ VISIT(AssignNode)
 	llvm::Value* val = _builder->CreateCast(cop, rawval, type->get_llvm_type());
 	
 	_builder->CreateStore(val, target);
+
+	push(nullptr);
 }
 
 VISIT(IfNode)
@@ -459,19 +467,21 @@ VISIT(IfNode)
 
 	// Emit then block
 	_builder->SetInsertPoint(thenblock);
-	node->_then->accept(this);
+	ACCEPT_AND_POP(node->_then);
 	_builder->CreateBr(endblock);
 	thenblock = _builder->GetInsertBlock(); // update thenblock since it changes
 
 	// Emit else block
 	_builder->SetInsertPoint(elseblock);
-	if(node->_else) node->_else->accept(this);
+	ACCEPT_AND_POP(node->_else);
 	_builder->CreateBr(endblock);
 	elseblock = _builder->GetInsertBlock(); // update elseblock since it changes
 
 	// Emit end block.
 	func->getBasicBlockList().push_back(endblock);
 	_builder->SetInsertPoint(endblock);
+
+	push(nullptr);
 }
 
 VISIT(LoopNode)
@@ -484,7 +494,7 @@ VISIT(LoopNode)
 	SCOPE_UP();
 
 	// first do initializer
-	if(node->_init) node->_init->accept(this);
+	ACCEPT_AND_POP(node->_init);
 	_builder->CreateBr(condblock);
 
 	// then do condition
@@ -495,8 +505,8 @@ VISIT(LoopNode)
 
 	// finally do loop body and incrementor
 	_builder->SetInsertPoint(loopblock);
-	node->_body->accept(this);
-	if(node->_incr) node->_incr->accept(this);
+	ACCEPT_AND_POP(node->_body);
+	ACCEPT_AND_POP(node->_incr);
 	_builder->CreateBr(condblock);
 	loopblock = _builder->GetInsertBlock(); // update loopblock
 
@@ -504,6 +514,8 @@ VISIT(LoopNode)
 	_builder->SetInsertPoint(endblock);
 	endblock->moveAfter(loopblock);
 	SCOPE_DOWN();
+
+	push(nullptr);
 }
 
 VISIT(ReturnNode)
@@ -514,6 +526,8 @@ VISIT(ReturnNode)
 		_builder->CreateRet(create_cast(pop(), false, node->_expected_type->get_llvm_type(), false));
 	}
 	else _builder->CreateRetVoid();
+
+	push(nullptr);
 }
 
 VISIT(BlockNode)
@@ -521,10 +535,12 @@ VISIT(BlockNode)
 	if(!node->_secret)
 	{
 		SCOPE_UP();
-		for(StmtNode*& stmt : node->_statements) stmt->accept(this);
+		for(StmtNode*& stmt : node->_statements) ACCEPT_AND_POP(stmt);
 		SCOPE_DOWN();
 	}
-	else for(StmtNode*& stmt : node->_statements) stmt->accept(this);
+	else for(StmtNode*& stmt : node->_statements) ACCEPT_AND_POP(stmt);
+
+	push(nullptr);
 }
 
 // === Expressions ===

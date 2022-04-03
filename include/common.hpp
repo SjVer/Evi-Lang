@@ -99,7 +99,7 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 		cerr << tools::fstr("[evi:!!!] Internal error %c%c%d%c occurred " where ".", \
 							toupper(bn[0]), toupper(bn[1]), __LINE__, toupper(ext)) << endl; \
 		cerr << "[evi:!!!] If this error occurs repeatedly please report it on github" << endl; \
-		cerr << "[evi:!!!] at https://github.com/SjVer/Evi-Lang/issues/new." << endl; \
+		cerr << "[evi:!!!] at https://github.com/SjVer/Evi-Lang/issues/new."; \
 		raise(SIGINT); \
 	}
 #define ASSERT_OR_THROW_INTERNAL_ERROR(condition, where) { if(!(condition)) THROW_INTERNAL_ERROR(where) }

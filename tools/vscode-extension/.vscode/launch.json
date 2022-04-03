@@ -12,7 +12,8 @@
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}"
             ],
-            "preLaunchTask": "tsc build"
+            "preLaunchTask": "prepare",
+            
         }
     ]
 }

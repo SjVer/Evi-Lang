@@ -3,6 +3,9 @@
 .gitignore
 vsc-extension-quickstart.md
 
+build-grammar.js
+syntaxes/evi.old.tmLanguage.json
+
 **/*.ts
 **/*.map
 **/tsconfig.json

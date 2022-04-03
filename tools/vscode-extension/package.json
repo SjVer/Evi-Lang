@@ -38,7 +38,7 @@
             {
                 "language": "evi",
                 "scopeName": "source.evi",
-                "path": "./syntaxes/evi.tmLanguage.json"
+                "path": "./syntaxes/evi.generated.tmLanguage"
             }
         ],
         "snippets": [
@@ -68,7 +68,7 @@
                     },
                     "evi.includeSearchPaths": {
                         "type": "array",
-                        "default": [ ],
+                        "default": [],
                         "description": "A list of the paths used to search for included files."
                     }
                 }
@@ -80,7 +80,10 @@
                 "properties": {
                     "flags": {
                         "type": "array",
-                        "examples": [ "--include=include/", "--compile-only" ],
+                        "examples": [
+                            "--include=include/",
+                            "--compile-only"
+                        ],
                         "description": "The arguments passed to the compiler."
                     }
                 }
@@ -95,11 +98,15 @@
         "vscode:prepublish": "clear; npm run compile",
         "compile": "clear; tsc --build",
         "watch": "clear; tsc --build --watch ",
-        "clean": "clear; tsc --build --clean"
+        "clean": "clear; tsc --build --clean",
+        "grammar": "node build-grammar.js"
     },
     "devDependencies": {
         "@types/node": "16.x",
-        "@types/vscode": "^1.51.0"
+        "@types/vscode": "^1.51.0",
+        "@types/js-yaml": "latest",
+        "js-yaml": "latest",
+        "plist": "latest"
     },
     "repository": {
         "type": "git",

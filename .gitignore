@@ -8,3 +8,5 @@ bin/
 **/__pycache__/
 tools/vscode-extension/node_modules/
 tools/vscode-extension/out
+
+tools/vscode-extension/evi.generated.tmLanguage

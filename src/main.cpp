@@ -299,14 +299,7 @@ int main(int argc, char **argv)
 	include_paths_count = 0;
 
 	/* Where the magic happens */
-	if(argp_parse(&argp, argc, argv, 0, 0, &arguments)) return STATUS_CLI_ERROR;
-
-	// // check lint args
-	// if(lint_args.type != LINT_NONE && !lint_pos_given)
-	// {
-	// 	cerr << "[evi] CLI Error: Lint requires position." << endl;
-	// 	ABORT(STATUS_CLI_ERROR);
-	// }
+	if(argp_parse(&argp, argc, argv, 0, 0, &arguments)) ABORT(STATUS_CLI_ERROR);
 
 	// figure out output file name
 	if(!arguments.output_given)
