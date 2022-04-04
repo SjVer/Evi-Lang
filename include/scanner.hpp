@@ -123,6 +123,8 @@ void print_tokens_from_src(const char *src);
 
 static uint get_token_col(Token* token, int tab_width = -1)
 {
+	if(token->type == TOKEN_ERROR) return 0;
+	
 	// get offset of token (first char)
 	ptrdiff_t token_offset = token->start - token->source;
 
@@ -131,11 +133,11 @@ static uint get_token_col(Token* token, int tab_width = -1)
 	while(tok_ln_begin > 0 && token->source[tok_ln_begin] != '\n') tok_ln_begin--;
 	tok_ln_begin++; // skip newline itself
 
-	uint col = (uint)(token_offset - tok_ln_begin);
+	ptrdiff_t col = (token_offset - tok_ln_begin);
 
 	// if tab width set account for that
-		for(int i = -col; tab_width >= 0 && i < 0; i++)
-			if(token->start[i] == '\t') col += tab_width;
+	for(int i = -col; tab_width >= 0 && i < 0; i++)
+		if(token->start[i] == '\t') col += tab_width;
 	
 	return col >= 0 ? col : 0;
 }

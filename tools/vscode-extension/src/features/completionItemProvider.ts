@@ -7,7 +7,7 @@ const identifierRegex: RegExp = /^[a-zA-Z_][a-zA-Z0-9_]*$/g;
 
 export default class EviCompletionItemProvider implements CompletionItemProvider {
 
-	public provideCompletionItems(document: TextDocument, position: Position, _token: CancellationToken, context: CompletionContext): Promise<CompletionItem[]> {
+	public async provideCompletionItems(document: TextDocument, position: Position, _token: CancellationToken, context: CompletionContext): Promise<CompletionItem[]> {
 		let result: CompletionItem[] = [];
 		let added: any = {};
 
@@ -39,7 +39,7 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 
 		// search for variables
 		if (prefix[0] === '$' || prefix.length === 0) {
-			const vars: eviLintVariables = callEviLint(document, eviLintType.getVariables, position);
+			const vars: eviLintVariables = await callEviLint(document, eviLintType.getVariables, position);
 
 			for(var variable of vars.variables) {
 				let word = '$' + variable.identifier;
@@ -72,7 +72,7 @@ export default class EviCompletionItemProvider implements CompletionItemProvider
 
 		// search in functions
 		if (identifierRegex.test(prefix) || prefix.length === 0) {
-			const funcs: eviLintFunctions = callEviLint(document, eviLintType.getFunctions, position);
+			const funcs: eviLintFunctions = await callEviLint(document, eviLintType.getFunctions, position);
 
 			for(var func of funcs.functions) {
 				let word = func.identifier;

@@ -3,6 +3,8 @@ name: Evi
 scopeName: source.evi
 fileTypes: [evi]
 
+firstLineMatch: ^#!/.*\bevi\b
+
 variables:
   ident: '[A-Za-z_][A-Za-z_0-9]*'
 
@@ -16,7 +18,7 @@ variables:
   # types
   inttype: (?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze
   flttype: flt|dbl
-  type: '(?:!\s*)?(?:{{inttype}}|{{flttype}}|nll)(?:\s*\*)*'
+  type: '(?:\!\s*)?(?:{{inttype}}|{{flttype}}|nll)(?:\s*\*)*'
 
 patterns:
 - include: '#base'
@@ -58,7 +60,7 @@ repository:
     patterns:
     - include: '#base'
     - name: variable.parameter.evi
-      match: '\b{{type}}|\*\b'
+      match: '(\!)?\s*{{type}}\s*(\*)*'
     - name: keyword.operator.variadic.evi
       match: '\.\.\.'
     - include: '#illegals'
@@ -174,6 +176,7 @@ repository:
 
     patterns:
     - include: '#declarations'
+    - include: '#expressions'
     - include: '#illegals'
 
     end: \)
@@ -241,10 +244,10 @@ repository:
     - name: meta.size-of.evi
       match: (\?)\s*(?:(?:(\()\s*({{type}})\s*(\)))|({{type}}))
       captures:
-        '1': { name: keyword.operator.size_of.evi }
-        '2': { name: punctuation.separator.evi }
+        '1': { name: keyword.operator.sizeof.c.evi }
+        '2': { name: punctuation.parentheses.sizeof.start.evi }
         '3': { name: storage.type.evi }
-        '4': { name: punctuation.separator.evi }
+        '4': { name: punctuation.parentheses.sizeof.end.evi }
         '5': { name: storage.type.evi }
     - name: meta.ternary-expression.evi
       begin: '\?'
@@ -260,7 +263,7 @@ repository:
       beginCaptures: 
         '0': { name: punctuation.parentheses.grouping.start.evi }
       patterns:
-      - include: '#expression'
+      - include: '#expressions'
       end: '\)'
       endCaptures: 
         '0': { name: punctuation.parentheses.grouping.end.evi }
@@ -294,7 +297,6 @@ repository:
     - name: keyword.operator.arithmetic.evi
       match: '\*|/|-|\+'
 
-  
   variables:
     match: (\${{ident}})|(\$[0-9]+)
     captures:
@@ -349,14 +351,14 @@ repository:
 
     - name: string.quoted.single.evi
 
-      begin: \'
+      begin: "'"
       beginCaptures:
         '0': { name: punctuation.definition.string.begin.evi }
 
       patterns:
       - include: '#string_escaped_char'
 
-      end: \'
+      end: "'"
       endCaptures:
         '0': { name: punctuation.definition.string.end.evi }
 
@@ -476,12 +478,13 @@ repository:
         '4': { name: entity.name.function.preprocessor.macro.evi }
         '5': { name: invalid.misplaced.evi }
 
-      patterns:
-      - name: punctuation.parentheses.macro-definition.evi
-        match: \(|\)
-      - match: \?
-        name: keyword.operator.question.macro-definition.evi
-      - include: '#expressions'
+      contentName: meta.preprocessor.macro.definition.evi
+      # patterns:
+      # - name: punctuation.parentheses.macro-definition.evi
+      #   match: \(|\)
+      # - match: \?
+      #   name: keyword.operator.question.macro-definition.evi
+      # - include: '#expressions'
 
       end: '(?=(?:\\|\\:))|(?<!\\)(?=\n)'
 
@@ -544,7 +547,7 @@ repository:
         '3': { name: string.quoted.double.evi }
   
   macro-invoke:
-    name: entity.name.constant.macro.evi
+    name: entity.name.function.macro.c
     match: '{{ident}}#'
 
   comments:

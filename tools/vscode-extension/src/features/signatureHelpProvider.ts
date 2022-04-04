@@ -19,20 +19,22 @@ export default class EviSignatureHelpProvider implements SignatureHelpProvider {
 		// find params and whatnot
 		let signature: string = "";
 		let params: string[] = [];
-		callEviLint(document, eviLintType.getFunctions, position).functions.forEach(func => {
-			if(signature.length || ident != func.identifier) return;
+		await callEviLint(document, eviLintType.getFunctions, position).then(result => {
+			result.functions.forEach(func => {
+				if(signature.length || ident != func.identifier) return;
 
-			signature = `@${func.identifier} ${func.return_type} (`;
-			for (let param in func.parameters) {
-				params.push(func.parameters[param]);
-				signature += func.parameters[param] + ' ';
-			}
-			if (func.variadic) {
-				signature += "...";
-				params.push("... ");
-			}
-			if (signature.endsWith(' ')) signature = signature.substring(0, signature.length - 1);
-			signature += ')';
+				signature = `@${func.identifier} ${func.return_type} (`;
+				for (let param in func.parameters) {
+					params.push(func.parameters[param]);
+					signature += func.parameters[param] + ' ';
+				}
+				if (func.variadic) {
+					signature += "...";
+					params.push("... ");
+				}
+				if (signature.endsWith(' ')) signature = signature.substring(0, signature.length - 1);
+				signature += ')';
+			});
 		});
 		if(!signature.length) return Promise.reject("Function not found.");
 

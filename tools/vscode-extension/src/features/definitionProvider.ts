@@ -4,8 +4,10 @@ import { callEviLint, eviLintDeclaration, eviLintType } from './utils/eviLintUti
 export default class EviDefenitionProvider implements DefinitionProvider {
 
 	public provideDefinition(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<Definition | LocationLink[]> {
-		const result: eviLintDeclaration = callEviLint(document, eviLintType.getDeclaration, position);
-		if(!result) return Promise.reject("Declaration not found.");
+		let result: eviLintDeclaration;
+		callEviLint(document, eviLintType.getDeclaration, position)
+			.then(_result => result = _result)
+			.catch(_reason => { return Promise.reject("Declaration not found."); });
 		
 		const start: Position = new Position(result.position.line, result.position.column);
 		const end: Position = start.translate(0, result.position.length);

@@ -10,6 +10,8 @@
     <array>
       <string>evi</string>
     </array>
+    <key>firstLineMatch</key>
+    <string>^#!/.*\bevi\b</string>
     <key>patterns</key>
     <array>
       <dict>
@@ -54,7 +56,7 @@
         <key>name</key>
         <string>meta.declaration.function.evi</string>
         <key>begin</key>
-        <string>(@)(\s*!)?\s*(?:([A-Za-z_][A-Za-z_0-9]*)|(\S+))\s*(?:((?:!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)|(\S*))\s*(?:(\()|(\S*))</string>
+        <string>(@)(\s*!)?\s*(?:([A-Za-z_][A-Za-z_0-9]*)|(\S+))\s*(?:((?:\!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)|(\S*))\s*(?:(\()|(\S*))</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -108,7 +110,7 @@
             <key>name</key>
             <string>variable.parameter.evi</string>
             <key>match</key>
-            <string>\b(?:!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*|\*\b</string>
+            <string>(\!)?\s*(?:\!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*\s*(\*)*</string>
           </dict>
           <dict>
             <key>name</key>
@@ -161,7 +163,7 @@
         <key>name</key>
         <string>meta.declaration.variable.evi</string>
         <key>begin</key>
-        <string>(%)(\s*!)?\s*(?:([A-Za-z_][A-Za-z_0-9]*)|(\S*))\s*(?:(?:(,)\s*([A-Za-z_][A-Za-z_0-9]*)\s*)*|(\S*))(?:((?:!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)|(\S*))</string>
+        <string>(%)(\s*!)?\s*(?:([A-Za-z_][A-Za-z_0-9]*)|(\S*))\s*(?:(?:(,)\s*([A-Za-z_][A-Za-z_0-9]*)\s*)*|(\S*))(?:((?:\!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)|(\S*))</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -409,6 +411,10 @@
           </dict>
           <dict>
             <key>include</key>
+            <string>#expressions</string>
+          </dict>
+          <dict>
+            <key>include</key>
             <string>#illegals</string>
           </dict>
         </array>
@@ -551,7 +557,7 @@
             <key>name</key>
             <string>meta.cast.evi</string>
             <key>match</key>
-            <string>(-&gt;)\s*(?:((?:!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)|(\()\s*((?:!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)\s*(\))|(\S+))</string>
+            <string>(-&gt;)\s*(?:((?:\!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)|(\()\s*((?:\!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)\s*(\))|(\S+))</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -590,18 +596,18 @@
             <key>name</key>
             <string>meta.size-of.evi</string>
             <key>match</key>
-            <string>(\?)\s*(?:(?:(\()\s*((?:!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)\s*(\)))|((?:!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*))</string>
+            <string>(\?)\s*(?:(?:(\()\s*((?:\!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*)\s*(\)))|((?:\!\s*)?(?:(?:u)?i(?:(?:128)|(?:16|32|64)|(?:4|8))|i1|chr|bln|sze|flt|dbl|nll)(?:\s*\*)*))</string>
             <key>captures</key>
             <dict>
               <key>1</key>
               <dict>
                 <key>name</key>
-                <string>keyword.operator.size_of.evi</string>
+                <string>keyword.operator.sizeof.c.evi</string>
               </dict>
               <key>2</key>
               <dict>
                 <key>name</key>
-                <string>punctuation.separator.evi</string>
+                <string>punctuation.parentheses.sizeof.start.evi</string>
               </dict>
               <key>3</key>
               <dict>
@@ -611,7 +617,7 @@
               <key>4</key>
               <dict>
                 <key>name</key>
-                <string>punctuation.separator.evi</string>
+                <string>punctuation.parentheses.sizeof.end.evi</string>
               </dict>
               <key>5</key>
               <dict>
@@ -668,7 +674,7 @@
             <array>
               <dict>
                 <key>include</key>
-                <string>#expression</string>
+                <string>#expressions</string>
               </dict>
             </array>
             <key>end</key>
@@ -911,7 +917,7 @@
             <key>name</key>
             <string>string.quoted.single.evi</string>
             <key>begin</key>
-            <string>\'</string>
+            <string>'</string>
             <key>beginCaptures</key>
             <dict>
               <key>0</key>
@@ -928,7 +934,7 @@
               </dict>
             </array>
             <key>end</key>
-            <string>\'</string>
+            <string>'</string>
             <key>endCaptures</key>
             <dict>
               <key>0</key>
@@ -1203,25 +1209,8 @@
                 <string>invalid.misplaced.evi</string>
               </dict>
             </dict>
-            <key>patterns</key>
-            <array>
-              <dict>
-                <key>name</key>
-                <string>punctuation.parentheses.macro-definition.evi</string>
-                <key>match</key>
-                <string>\(|\)</string>
-              </dict>
-              <dict>
-                <key>match</key>
-                <string>\?</string>
-                <key>name</key>
-                <string>keyword.operator.question.macro-definition.evi</string>
-              </dict>
-              <dict>
-                <key>include</key>
-                <string>#expressions</string>
-              </dict>
-            </array>
+            <key>contentName</key>
+            <string>meta.preprocessor.macro.definition.evi</string>
             <key>end</key>
             <string>(?=(?:\\|\\:))|(?&lt;!\\)(?=\n)</string>
           </dict>
@@ -1377,7 +1366,7 @@
       <key>macro-invoke</key>
       <dict>
         <key>name</key>
-        <string>entity.name.constant.macro.evi</string>
+        <string>entity.name.function.macro.c</string>
         <key>match</key>
         <string>[A-Za-z_][A-Za-z_0-9]*#</string>
       </dict>

@@ -451,8 +451,8 @@ VISIT(LogicalNode)
 		if(!can_cast_types(left, booltype)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, left, booltype);
 		if(!can_cast_types(right, booltype)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, right, booltype);
 
-		if(!left->eq(booltype)) CONVERSION_WARNING_AT(&node->_left->_token, left, booltype);
-		if(!right->eq(booltype)) CONVERSION_WARNING_AT(&node->_right->_token, right, booltype);
+		if(!left->eq(booltype, true)) CONVERSION_WARNING_AT(&node->_left->_token, left, booltype);
+		if(!right->eq(booltype, true)) CONVERSION_WARNING_AT(&node->_right->_token, right, booltype);
 		
 		node->_left->_cast_to = booltype;
 		node->_right->_cast_to = booltype;
@@ -714,13 +714,12 @@ VISIT(CallNode)
 		ParsedType* exprtype = pop();
 		ParsedType* argtype = node->_expected_arg_types[i];
 
-		ParsedType* result = resolve_types(argtype, exprtype);
-		node->_arguments[i]->_cast_to = argtype;
-
-		if(!can_cast_types(result ? result : exprtype, argtype)) 
+		if(!can_cast_types(exprtype, argtype)) 
 			ERROR_AT(&node->_arguments[i]->_token, "Cannot implicitly convert argument of type " COLOR_BOLD \
 			"'%s'" COLOR_NONE " to parameter's type " COLOR_BOLD "'%s'" COLOR_NONE ".",
 			exprtype->to_c_string(), argtype->to_c_string());
+		else if(!exprtype->eq(argtype, true))
+			CONVERSION_WARNING_AT(&node->_arguments[i]->_token, exprtype, argtype);
 
 		_panic_mode = false;
 	}

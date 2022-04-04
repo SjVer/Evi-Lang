@@ -191,7 +191,7 @@ void CodeGenerator::finish()
 	{
 		_error_dispatcher.error("Code Generation Error", "LLVM module verification failed: ");
 		llvm::verifyModule(*_top_module, _errstream);
-		cerr << endl << endl;
+		cerr << endl;
 		invalid = true;
 	}
 
@@ -1001,6 +1001,7 @@ VISIT(ReferenceNode)
 	}
 	ASSERT_OR_THROW_INTERNAL_ERROR(var, "during reference retrieval");
 	ASSERT_OR_THROW_INTERNAL_ERROR(type, "during reference retrieval");
+	ASSERT_OR_THROW_INTERNAL_ERROR(node->_cast_to, "during reference retrieval");
 
 	if(node->_cast_to->_keep_as_reference)
 	{

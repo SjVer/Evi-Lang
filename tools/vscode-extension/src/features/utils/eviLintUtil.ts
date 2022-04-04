@@ -1,9 +1,10 @@
 import { TextDocument, Position, window, workspace, MarkdownString, Uri } from 'vscode';
 import { BackwardIterator } from './backwardIterator';
 import { execSync } from 'child_process';
-import { copyFile, rm, writeFileSync } from 'fs';
+import { copyFileSync, rmSync, writeFileSync } from 'fs';
 import { basename, dirname, join } from 'path';
 import { tmpdir } from 'os';
+import { waitUntil } from './async';
 
 export enum eviLintType {
 	getDeclaration = 'get-declaration',
@@ -14,7 +15,7 @@ export enum eviLintType {
 
 export interface eviLintPosition { file: string, line: number, column: number, length: number };
 export interface eviLintDeclaration { position: eviLintPosition };
-export interface eviLintDiagnostics { errors: { position: eviLintPosition, message: string, type: string, related: { position: eviLintPosition, message: string }[] }[] };
+export interface eviLintDiagnostics { diagnostics: { position: eviLintPosition, message: string, type: string, related: { position: eviLintPosition, message: string }[] }[] };
 export interface eviLintFunctions { functions: { identifier: string, return_type: string, parameters: string[], variadic: boolean }[] };
 export interface eviLintVariables { variables: { identifier: string, type: string }[] };
 
@@ -23,45 +24,48 @@ function log(message?: any, ...optionalParams: any[]): void {
 	if (do_log) console.log(message, ...optionalParams);
 }
 
-export function callEviLint(document: TextDocument, type: eviLintType, position: Position): any {
+let blocked = false;
+
+export async function callEviLint(document: TextDocument, type: eviLintType, position?: Position): Promise<any> {
+	if(blocked) waitUntil(() => !blocked, 3000);
+	blocked = true;
+
+	log(`\n\n\n====== LINT: ${type.toUpperCase()} ======`);
+
 	// copy file so that unsaved changes are included
 	let tmpfile = join(tmpdir(), basename(document.fileName) + '.evilint_tmp');
-	copyFile(document.fileName, tmpfile, (err) => {
-		if(!err) return;
-		window.showErrorMessage(`Evi lint failed to copy file "${document.fileName}".`);
-		tmpfile = document.fileName;
-	});
+	copyFileSync(document.fileName, tmpfile);
 	writeFileSync(tmpfile, document.getText());
 	
 	const dir = dirname(document.fileName);
 	const eviExec = workspace.getConfiguration('evi').get<string>('eviExecutablePath');
 	const workspacefolder = workspace.getWorkspaceFolder(document.uri).uri.fsPath;
 
+	let pos = position ? `${position.line + 1}:${position.character}` : "0:0";
 	let cmd = `${eviExec} ${tmpfile} ` +
 				`--include="${dir}" ` +
 				`--lint-type="${type}" ` +
-				`--lint-pos="${position.line + 1}:${position.character}" ` +
+				`--lint-pos="${pos}" ` +
 				`--lint-tab-width="${workspace.getConfiguration('editor').get<number>('tabSize')}" `;
 	workspace.getConfiguration('evi').get<string[]>('includeSearchPaths').forEach(path =>
 		cmd += ` --include=${path}`.replace('${workspaceFolder}', workspacefolder));
 
-	log("\nlint cmd: " + cmd);
+	log("lint cmd: " + cmd);
 	
 	let output: string;
 	try { output = execSync(cmd).toString(); }
-	// catch (error) { window.showErrorMessage(`Failed to execute Evi binary:\n\"${error}\"`); }
-	catch (error) { console.log(`Failed to execute Evi binary:\n\"${error}\"`); }
-	if (tmpfile.endsWith('.evilint_tmp')) rm(tmpfile, () => {});
+	catch (error) { console.warn(`Failed to execute Evi binary:\n\"${error}\"`); }
+	if (tmpfile.endsWith('.evilint_tmp')) rmSync(tmpfile);
 	
+	blocked = false;
+
 	// remove ansii escape codes
 	output = output.replace(RegExp(String.fromCharCode(0x1b) + "\\[([0-9]+;)?[0-9]+m", "g"), '');
-
 	log("lint output: " + output);
 	
 	let data: any;
 	try { data = JSON.parse(output); }
-	// catch (error) { window.showErrorMessage(`Failed to parse data returned by Evi binary:\n"${error}"\nData: "${output}"`); return undefined }
-	catch (error) { console.log(`Failed to parse data returned by Evi binary:\n"${error}"\nData: "${output}"`); return undefined }
+	catch (error) { console.warn(`Failed to parse data returned by Evi binary:\n"${error}"\nData: "${output}"`); return Promise.reject() }
 
 	try { switch (type)
 	{
@@ -78,11 +82,13 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 			};
 
 			log(result as any);
-			return result;
+			return Promise.resolve(result);
 		}
 		case eviLintType.getDiagnostics: {
-			let result: eviLintDiagnostics = { errors: [] };
+			let result: eviLintDiagnostics = { diagnostics: [] };
 			data.forEach((error: any) => {
+				if(error['invalid']) return;
+
 				// gather related information
 				let related: { position: eviLintPosition, message: string }[] = [];
 				
@@ -99,7 +105,7 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 				});
 
 				// create error itself
-				result.errors.push({
+				result.diagnostics.push({
 					position: {
 						file: error['file'] == tmpfile ? document.fileName : error['file'],
 						line: error['line'] - 1,
@@ -112,7 +118,7 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 				});
 			});
 			log(result as any);
-			return result;
+			return Promise.resolve(result);
 		}
 		case eviLintType.getFunctions: {
 			let result: eviLintFunctions = { functions: [] };
@@ -125,7 +131,7 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 				});
 			}
 			log(result as any);
-			return result;
+			return Promise.resolve(result);
 		}
 		case eviLintType.getVariables: {
 			let result: eviLintVariables = { variables: [] };
@@ -135,8 +141,7 @@ export function callEviLint(document: TextDocument, type: eviLintType, position:
 					type: data[varr]
 				});
 			}
-			log(result as any);
-			return result;
+			return Promise.resolve(result);
 		}
 	} } catch (e) { log(e); }
 }
@@ -145,11 +150,11 @@ export interface FuncDocumentation { main: string, params: string[], ret?: strin
 
 export async function getDocumentation(document: TextDocument, position: Position): Promise<FuncDocumentation> {
 	// get defenition location of function
-	const declaration: eviLintDeclaration = callEviLint(document, eviLintType.getDeclaration, position);
-	if (!declaration) return { main: "Function declaration not found.", params: [] };
+	const declaration: eviLintDeclaration = await callEviLint(document, eviLintType.getDeclaration, position);
+	if (!declaration) return Promise.reject("Function declaration not found.");
 
 	let delcdoc: TextDocument = await workspace.openTextDocument(Uri.file(declaration.position.file));
-	if (!delcdoc) return { main: "Could not open file " + declaration.position.file, params: [] };
+	if (!delcdoc) return Promise.reject("Could not open file " + declaration.position.file);
 
 	let it = new BackwardIterator(delcdoc, declaration.position.column, declaration.position.line);
 
@@ -195,7 +200,7 @@ export async function getDocumentation(document: TextDocument, position: Positio
 		ret = match[1];
 	}
 
-	return { main: doc, params: params, ret: ret };
+	return Promise.resolve({ main: doc, params: params, ret: ret });
 }
 
 export async function getDocumentationAsString(document: TextDocument, position: Position): Promise<MarkdownString> {

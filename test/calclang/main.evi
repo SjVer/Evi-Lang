@@ -1,0 +1,16 @@
+#apply "std/io"
+#apply "std/mem"
+#apply "std/str"
+
+#macro MAX_LINE_SIZE 100
+
+@main i32 () !!(;1;;)
+{
+	%line chr* malloc(?(chr) * 100) -> chr*;
+	
+	printf(">>> ");
+	!!(;strlen($line) < 100 && $line[strlen($line) - 1] /= '\n';;)
+		=line[strlen($line) - 1] getchar();
+
+	puts($line);
+}

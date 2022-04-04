@@ -106,8 +106,7 @@ Token Scanner::string()
 		advance();
 	}
 
-	if (isAtEnd())
-		return errorToken("Unterminated string.");
+	if (isAtEnd()) return errorToken("Unterminated string.");
 
 	// The closing quote.
 	advance();

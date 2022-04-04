@@ -51,9 +51,11 @@ export default class EviHoverProvider implements HoverProvider {
 			// variable
 			// find type
 			let signature: string = "";
-			callEviLint(document, eviLintType.getVariables, position).variables.forEach(variable => {
+			await callEviLint(document, eviLintType.getVariables, position).then(result => {
+				result.variables.forEach(variable => {
 				if(signature.length || word != '$' + variable.identifier) return;
 				signature = `%${variable.identifier} ${variable.type}`;
+				});
 			});
 
 			// found!
@@ -67,13 +69,15 @@ export default class EviHoverProvider implements HoverProvider {
 			// function?
 			// find params and whatnot
 			let signature: string = "";
-			callEviLint(document, eviLintType.getFunctions, position).functions.forEach(func => {
-				if(signature.length || word != func.identifier) return;
+			await callEviLint(document, eviLintType.getFunctions, position).then(result => {
+				result.functions.forEach(func => {
+					if(signature.length || word != func.identifier) return;
 
-				signature = `@${func.identifier} ${func.return_type} (`;
-				for (let param in func.parameters) signature += func.parameters[param] + ' ';
-				if (func.variadic) signature += '... ';
-				signature = signature.trim() + ')';
+					signature = `@${func.identifier} ${func.return_type} (`;
+					for (let param in func.parameters) signature += func.parameters[param] + ' ';
+					if (func.variadic) signature += '... ';
+					signature = signature.trim() + ')';
+				});
 			});
 
 			// found!

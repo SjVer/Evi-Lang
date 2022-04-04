@@ -64,7 +64,7 @@
                     "evi.enableLanguageFeatures": {
                         "type": "boolean",
                         "default": true,
-                        "description": "Enable the language features of the Evi-Lang extension"
+                        "description": "Enable the language features of the Evi-Lang extension (requires reload)"
                     },
                     "evi.includeSearchPaths": {
                         "type": "array",
@@ -105,8 +105,12 @@
         "@types/node": "16.x",
         "@types/vscode": "^1.51.0",
         "@types/js-yaml": "latest",
+        "@types/which": "^2.0.0",
         "js-yaml": "latest",
         "plist": "latest"
+    },
+    "dependencies": {
+        "which": "^2.0.2"
     },
     "repository": {
         "type": "git",

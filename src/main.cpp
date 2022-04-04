@@ -16,9 +16,9 @@
 
 const char *argp_program_version = APP_NAME " " APP_VERSION;
 const char *argp_program_bug_address = EMAIL;
-static char args_doc[] = "file...";
+static char args_doc[] = "files...";
 
-#define ARGS_COUNT 1
+#define MAX_INFILES 0xff
 #define MAX_LINKED 0xff
 
 #define ARG_EMIT_LLVM 1
@@ -30,10 +30,10 @@ static char args_doc[] = "file...";
 #define ARG_STD_DIR 7
 #define ARG_STATLIB_DIR 8
 
-/* This structure is used by main to communicate with parse_opt. */
 struct arguments
 {
-	char *args[ARGS_COUNT];	/* script */
+	char *infiles[MAX_INFILES];
+	int infilesc = 0;
 	char *outfile;
 	int linkedc = 0;
 	char *linked[MAX_LINKED];
@@ -45,8 +45,6 @@ struct arguments
 	bool output_given = false;
 	OptimizationType optimization = OPTIMIZE_O3;
 };
-
-// bool lint_pos_given = false;
 
 static struct argp_option options[] =
 {
@@ -244,19 +242,21 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 	case ARGP_KEY_ARG:
 	{
-		if (state->arg_num >= ARGS_COUNT)
+		if(arguments->infilesc == MAX_INFILES)
 		{
-			argp_usage(state);
+			cerr << tools::fstr("[evi] Error: Cannot compile more than %d evi files.", MAX_INFILES) << endl;
+			ABORT(STATUS_CLI_ERROR);
 		}
-		arguments->args[state->arg_num] = arg;
+		else
+		{
+			arguments->infiles[arguments->infilesc] = arg;
+			arguments->infilesc++;
+		}
 		break;
 	}
 	case ARGP_KEY_END:
 	{
-		if (state->arg_num < 1 || state->arg_num < ARGS_COUNT)
-		{
-			argp_usage(state);
-		}
+		if(!arguments->infilesc && !arguments->linkedc) argp_usage(state);
 		break;
 	}
 	default: return ARGP_ERR_UNKNOWN;
@@ -276,19 +276,22 @@ void check_main_function(AST* astree)
 		if(!mainfunc && dynamic_cast<FuncDeclNode*>(node) && ((FuncDeclNode*)node)->_identifier == "main")
 				mainfunc = (FuncDeclNode*)node;
 
+	ParsedType* rettype = PTYPE(TYPE_INTEGER);
+	ParsedType* argone = PTYPE(TYPE_INTEGER);
+	ParsedType* argtwo = PTYPE(TYPE_CHARACTER)->copy_pointer_to()->copy_pointer_to();
+	argtwo->_is_constant = true;
+
 	if(!mainfunc) // main func not found
 		ErrorDispatcher().warning("Warning", "Function " COLOR_BOLD "'main'" COLOR_NONE " not declared.");
 
-	else if(!mainfunc->_ret_type->eq(PTYPE(TYPE_INTEGER), true)) // wrong return type
+	else if(!mainfunc->_ret_type->eq(rettype, true)) // wrong return type
 		ErrorDispatcher().warning_at_token(&mainfunc->_token, "Warning",
 			"Return type of function " COLOR_BOLD "'main'" COLOR_NONE " is not an integer type.");
 
-	else if(mainfunc->_params.size() != 0 && (mainfunc->_params.size() != 2 || !mainfunc->_params[0]->eq(PTYPE(TYPE_INTEGER), true) || 
-			!mainfunc->_params[1]->eq(PTYPE(TYPE_CHARACTER)->copy_pointer_to()->copy_pointer_to(), true))) // incorrect args
+	else if(mainfunc->_params.size() != 0 && (mainfunc->_params.size() != 2 ||
+			!mainfunc->_params[0]->eq(argone, true) || !mainfunc->_params[1]->eq(argtwo, true))) // incorrect args
 		ErrorDispatcher().warning_at_token(&mainfunc->_token, "Warning", 
-			"Function " COLOR_BOLD "'main'" COLOR_NONE " does not have parameters similar to " COLOR_BOLD "'i32 chr**'" COLOR_NONE ".");
-
-	#undef WRONG_PARAMS_MSG
+			"Function " COLOR_BOLD "'main'" COLOR_NONE " does not have parameters similar to " COLOR_BOLD "'i32 !chr**'" COLOR_NONE ".");
 }
 
 int main(int argc, char **argv)
@@ -304,7 +307,7 @@ int main(int argc, char **argv)
 	// figure out output file name
 	if(!arguments.output_given)
 	{
-		arguments.outfile = strdup(arguments.args[0]);
+		arguments.outfile = strdup(arguments.infilesc ? arguments.infiles[0] : arguments.linked[0]);
 		arguments.outfile = strtok(arguments.outfile, ".");
 
 		if(arguments.preprocess_only)
@@ -317,29 +320,35 @@ int main(int argc, char **argv)
 
 	// ===================================
 
-	AST astree;
-	const char* source = strdup(tools::readf(arguments.args[0]).c_str());
+	// temp
+	if(!arguments.infilesc)
+	{
+		cerr << "[evi] CLI Error: Expected at least one Evi file." << endl;
+		ABORT(STATUS_CLI_ERROR);
+	}
 
+	// ===================================
+
+	AST astree;
+	const char* source = strdup(tools::readf(arguments.infiles[0]).c_str());
 	init_builtin_evi_types();
 	Status status;
-	// #define ABORT_IF_UNSUCCESSFULL() if(status != STATUS_SUCCESS && lint_args.type == LINT_NONE) ABORT(status);
+
 	#define ABORT_IF_UNSUCCESSFULL() if(status != STATUS_SUCCESS) { if(lint_args.type == LINT_GET_DIAGNOSTICS) \
 									 { LINT_OUTPUT_END_PLAIN_ARRAY(); cout << lint_output; exit(0); } ABORT(status); }
-
-
 	if(lint_args.type == LINT_GET_DIAGNOSTICS) LINT_OUTPUT_START_PLAIN_ARRAY();
 
 
 	// preprocess
 	Preprocessor* prepr = new Preprocessor();
-	status = prepr->preprocess(arguments.args[0], &source);
+	status = prepr->preprocess(arguments.infiles[0], &source);
 	ABORT_IF_UNSUCCESSFULL();
 	if(arguments.preprocess_only) { tools::writef(arguments.outfile, source); return STATUS_SUCCESS; }
 
 
 	// parse program
 	Parser* parser = new Parser();
-	status = parser->parse(arguments.args[0], source, &astree);
+	status = parser->parse(arguments.infiles[0], source, &astree);
 	ABORT_IF_UNSUCCESSFULL();
 
 
@@ -350,7 +359,7 @@ int main(int argc, char **argv)
 
 	// type check
 	TypeChecker* checker = new TypeChecker();
-	status = checker->check(arguments.args[0], source, &astree);
+	status = checker->check(arguments.infiles[0], source, &astree);
 	ABORT_IF_UNSUCCESSFULL();
 
 
@@ -372,15 +381,15 @@ int main(int argc, char **argv)
 	// generate visualization
 	if(arguments.generate_ast)
 	{
-		ASTVisualizer().visualize(string(arguments.args[0]) + ".svg", &astree);
-		cout << "[evi] AST image written to \"" + string(arguments.args[0]) + ".svg\"." << endl;
+		ASTVisualizer().visualize(string(arguments.infiles[0]) + ".svg", &astree);
+		cout << "[evi] AST image written to \"" + string(arguments.infiles[0]) + ".svg\"." << endl;
 		exit(STATUS_SUCCESS);
 	}
 
 
 	// codegen
 	CodeGenerator* codegen = new CodeGenerator();
-	status = codegen->generate(arguments.args[0], arguments.outfile, source, &astree, arguments.optimization);
+	status = codegen->generate(arguments.infiles[0], arguments.outfile, source, &astree, arguments.optimization);
 	ABORT_IF_UNSUCCESSFULL();
 
 

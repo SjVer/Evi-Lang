@@ -9,7 +9,7 @@
 .SH SYNOPSIS
 .B evi
 .RB [OPTION...]
-.RB file...
+.RB files...
 
 
 
@@ -57,6 +57,12 @@ Link with FILE.
 .TP
 .B \-o, --output=OUTFILE
 Output to OUTFILE instead of to standard output.
+.UNINDENT
+
+.INDENT 0.0
+.TP
+.B \-O LEVEL
+Set the optimization level. (Levels: O0, O1, O2, O3, On, Os, Oz)
 .UNINDENT
 
 .INDENT 0.0

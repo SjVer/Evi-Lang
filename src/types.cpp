@@ -97,6 +97,9 @@ llvm::Type* ParsedType::get_llvm_type()
 
 bool ParsedType::eq(ParsedType* rhs, bool simple)
 {
+	if(simple && (!get_depth() && _lexical_type == TYPE_BOOL && !rhs->get_depth() && rhs->_lexical_type != TYPE_VOID))
+		return true;
+
 	if(_subtype) return get_depth() == rhs->get_depth() && _subtype->eq(rhs->_subtype);
 
 	return _lexical_type == rhs->_lexical_type
