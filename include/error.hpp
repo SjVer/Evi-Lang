@@ -7,13 +7,6 @@ class ErrorDispatcher
 {
     private:
 
-    typedef const char* ccp;
-    // ccp _source;
-
-    // void __dispatch(bool at, Token* t, ccp c, 
-    //                 ccp p, ccp m,
-    //                 uint line = 0, ccp file = NULL);
-
     void __dispatch(ccp color, ccp prompt, ccp message);
     void __dispatch_at_token(ccp color, Token *token, ccp prompt, ccp message);
     void __dispatch_at_line(ccp color, uint line, ccp filename, ccp prompt, ccp message);    
@@ -21,8 +14,6 @@ class ErrorDispatcher
     public:
 
     ErrorDispatcher() {}
-    // ErrorDispatcher(ccp source):
-    //     _source(source) {}
 
     void print_token_marked(Token *token, ccp color);
     void print_line_marked(uint line_no, string line, ccp color);

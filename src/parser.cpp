@@ -41,7 +41,7 @@ void Parser::error_at_current(string message)
 // displays note of declaration of token and line of token
 void Parser::note_declaration(string type, string name, Token* token)
 {
-	const char* msg = strdup((type + " '" + name + "' declared here:").c_str());
+	ccp msg = strdup((type + " '" + name + "' declared here:").c_str());
 
 	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
@@ -360,7 +360,8 @@ void Parser::scope_up()
 		depth,
 		map<string, VarProperties>(),
 		func_props,
-		map<string, FuncProperties>()};
+		map<string, FuncProperties>(),
+		Scope::SCOPE_NORMAL};
 }
 
 void Parser::scope_down()
@@ -1127,7 +1128,7 @@ CallNode* Parser::call()
 
 // ======================= misc. =======================
 
-Status Parser::parse(string infile, const char* source, AST* astree)
+Status Parser::parse(string infile, ccp source, AST* astree)
 {
 	// print_tokens_from_src(source);
 	_astree = astree;

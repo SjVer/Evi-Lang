@@ -2,18 +2,20 @@
 #define EVI_DEBUG_H
 
 #include "common.hpp"
-#include "types.h"
+#include "types.hpp"
 #include "pch.h"
 
-class DebugInfo
+class DebugInfoBuilder
 {
-	unique_ptr<llvm::DIBuilder<>> _builder;
-	unique_ptr<llvm::DICompileUnit> _cunit;
+	unique_ptr<llvm::DIBuilder> _builder;
+	llvm::DICompileUnit* _cunit;
 
 public:
 
-	DebugInfo(llvm::Module* module, const char* filename);
+	DebugInfoBuilder(llvm::Module*, string, bool);
 	void finish();
+
+	void emit_location(uint line);
 
 	llvm::DIType* get_type(ParsedType* type);
 };

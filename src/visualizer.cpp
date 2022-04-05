@@ -291,7 +291,7 @@ VISIT(LiteralNode)
 		case TOKEN_FLOAT:   	ADD_NODE(tools::fstr("%g", node->_float_value).c_str()); break;
 		case TOKEN_CHARACTER:
 		{
-			const char* charstr = tools::unescchr(node->_char_value);
+			ccp charstr = tools::unescchr(node->_char_value);
 			bool escstr = charstr[0] == '\\' ? (charstr++, true) : false;
 
 			_stream << tools::fstr("\tnode%d [label=<&#39;%s%s&#39;>]\n", 

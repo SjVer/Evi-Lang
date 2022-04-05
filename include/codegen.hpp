@@ -22,15 +22,16 @@ typedef enum
 
 class CodeGenerator: public Visitor
 {
-	public:
+public:
 	CodeGenerator();
-	Status generate(const char* infile, const char* outfile, 
-					const char* source, AST* astree, OptimizationType opt);
+	Status generate(ccp infile, ccp outfile, ccp source,
+					AST* astree, OptimizationType opt, bool debug_info);
 
-	Status emit_llvm(const char* filename);
-	Status emit_object(const char* filename);
-	Status emit_binary(const char* filename, const char** linked, int linkedc);
+	Status emit_llvm(ccp filename);
+	Status emit_object(ccp filename);
+	Status emit_binary(ccp filename, ccp* linked, int linkedc);
 
+	#pragma region visitors
 	#define VISIT(_node) void visit(_node* node)
 	VISIT(FuncDeclNode);
 	VISIT(VarDeclNode);
@@ -51,11 +52,11 @@ class CodeGenerator: public Visitor
 			VISIT(ReferenceNode);
 			VISIT(CallNode);
 	#undef VISIT
+	#pragma endregion
 
-	private:
-
+private:
 	void prepare();
-	void optimize(OptimizationType optlevel);
+	void optimize();
 	void finish();
 
 	char* _infile;
@@ -68,10 +69,8 @@ class CodeGenerator: public Visitor
 	#else
 	unique_ptr<llvm::IRBuilder<>> _builder;
 	#endif
-	
 	llvm::TargetMachine* _target_machine;
 	string _target_triple;
-	
 	unique_ptr<llvm::Module> _top_module;
 
 	stack<llvm::Value*>* _value_stack;
@@ -79,14 +78,17 @@ class CodeGenerator: public Visitor
 	map<string, pair<llvm::Value*, ParsedType*>> _named_values;
 	uint _string_literal_count;
 
+	DebugInfoBuilder* _debug_info_builder;
+	bool _build_debug_info;
+	OptimizationType _opt_level;
+
 	void error_at(Token *token, string message);
 	void warning_at(Token *token, string message);
 
 	void push(llvm::Value* value);
 	llvm::Value* pop();
 
-	llvm::AllocaInst* create_entry_block_alloca(
-		llvm::Type* ty, string name);
+	llvm::AllocaInst* create_entry_block_alloca(llvm::Type* ty, string name);
 	llvm::Value* to_bool(llvm::Value* value);
 	llvm::Value* create_cast(llvm::Value* srcval, bool srcsigned, 
 							 llvm::Type* desttype, bool destsigned);

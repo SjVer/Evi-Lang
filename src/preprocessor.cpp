@@ -12,7 +12,7 @@ char* include_paths[MAX_INCLUDE_PATHS] = {};
 #define CHECK_MACRO(macro) (_macros->find(macro) != _macros->end())
 #define FMT_PATH(path) (regex_replace(_current_file, regex(STDLIB_DIR), "<stdlib>"))
 
-Status Preprocessor::preprocess(string infile, const char** source)
+Status Preprocessor::preprocess(string infile, ccp* source)
 {
 	// prepare sum shit
 	_source = *source;
@@ -80,7 +80,7 @@ string Preprocessor::handle_plain_line(string line)
 		if(!CHECK_MACRO(macro))
 		{
 			Token tok = generate_token(line, macro + '#');
-			const char* msg = strdup(tools::fstr("Macro '%s' is not defined.", macro.c_str()).c_str());
+			ccp msg = strdup(tools::fstr("Macro '%s' is not defined.", macro.c_str()).c_str());
 
 			_error_dispatcher.error_at_token(&tok, "Preprocessing Error", msg);
 			cerr << endl;
@@ -151,7 +151,7 @@ vector<string> Preprocessor::remove_comments(vector<string> lines)
 
 // ===============================================================
 
-void Preprocessor::error_at_line(uint line, const char* message, string whole_line)
+void Preprocessor::error_at_line(uint line, ccp message, string whole_line)
 {
 	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
@@ -179,7 +179,7 @@ void Preprocessor::error_at_line(uint line, const char* message, string whole_li
 	}
 }
 
-void Preprocessor::error_at_token(Token* token, const char* message)
+void Preprocessor::error_at_token(Token* token, ccp message)
 {
 	_error_dispatcher.error_at_token(token, "Preprocessing Error", message);
 	cerr << endl;
@@ -188,7 +188,7 @@ void Preprocessor::error_at_token(Token* token, const char* message)
 	_had_error = true;
 }
 
-void Preprocessor::warning_at_line(uint line, const char* message, string whole_line)
+void Preprocessor::warning_at_line(uint line, ccp message, string whole_line)
 {
 	if(lint_args.type == LINT_GET_DIAGNOSTICS)
 	{
@@ -215,7 +215,7 @@ void Preprocessor::warning_at_line(uint line, const char* message, string whole_
 	}
 }
 
-void Preprocessor::warning_at_token(Token* token, const char* message)
+void Preprocessor::warning_at_token(Token* token, ccp message)
 {
 	_error_dispatcher.warning_at_token(token, "Preprocessing Warning", message);
 	cerr << endl;
@@ -227,7 +227,7 @@ Token Preprocessor::generate_token(string line, string token)
 {
 	int offset = 0;
 	while(line.substr(offset, token.length()) != token) offset++;
-	const char* src = strdup(line.c_str());
+	ccp src = strdup(line.c_str());
 	return Token{
 		TOKEN_ERROR,
 		src,
@@ -250,7 +250,7 @@ string Preprocessor::strip_start(string str)
 }
 
 // errors handled in the function
-bool Preprocessor::consume_identifier(string* str, string* dest, uint line, const char* errformat)
+bool Preprocessor::consume_identifier(string* str, string* dest, uint line, ccp errformat)
 {
 	*str = strip_start(*str);
 

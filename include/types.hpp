@@ -22,7 +22,7 @@ typedef enum
 	TYPE_NONE
 } LexicalType;
 
-extern const char* lexical_type_strings[TYPE_NONE];
+extern ccp lexical_type_strings[TYPE_NONE];
 #define GET_LEX_TYPE_STR(type) (lexical_type_strings[type])
 
 // ================================
@@ -77,7 +77,7 @@ public:
 	void set_lex_type(LexicalType type);
 
 	string to_string(bool __first = true);
-	const char* to_c_string();
+	ccp to_c_string();
 	llvm::Type* get_llvm_type();
 
 	bool eq(ParsedType* rhs, bool simple = false);

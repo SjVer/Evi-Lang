@@ -74,7 +74,7 @@ string ParsedType::to_string(bool __first)
 	else return str;
 }
 
-const char* ParsedType::to_c_string()
+ccp ParsedType::to_c_string()
 {
 	// ez
 	return strdup(to_string().c_str());
@@ -154,7 +154,7 @@ bool EviType::eq(EviType* rhs)
 }
 
 
-const char* lexical_type_strings[TYPE_NONE];
+ccp lexical_type_strings[TYPE_NONE];
 
 map<string, EviType*> __evi_types;
 llvm::LLVMContext __context;

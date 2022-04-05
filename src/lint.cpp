@@ -4,7 +4,7 @@
 lint_args_t lint_args = { LINT_NONE, -1, {0, 0} };
 std::string lint_output;
 
-void lint_output_diagnostic_object(Token* token, string message, const char* type)
+void lint_output_diagnostic_object(Token* token, string message, ccp type)
 {
 	LINT_OUTPUT_START_PLAIN_OBJECT();
 	

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 
 #include <errno.h>
 #include <string.h>
@@ -204,13 +205,14 @@ string tools::readf(string path)
 // write string to file
 void tools::writef(string path, string text)
 {
-    fstream file_out;
+    fstream file_out(path, ios_base::out);
 
-    file_out.open(path, std::ios_base::out);
-    if (!file_out.is_open()) {
+    if (!file_out.is_open())
+    {
         cerr << "failed to open " << path << '\n';
         exit(74);
-    } else {
-        file_out << text;
     }
+    
+    file_out << text;
+    file_out.close();
 }

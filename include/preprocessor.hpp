@@ -18,7 +18,7 @@ public:
 		_current_file(),
 		_had_error(false),
 		_error_dispatcher() {}
-	Status preprocess(string infile, const char** source);
+	Status preprocess(string infile, ccp* source);
 
 private:
 
@@ -88,15 +88,15 @@ private:
 	string handle_plain_line(string line);
 	vector<string> remove_comments(vector<string> lines);
 
-	void error_at_line(uint line, const char* message, string whole_line = "");
-	void error_at_token(Token* token, const char* message);
-	void warning_at_line(uint line, const char* message, string whole_line = "");
-	void warning_at_token(Token* token, const char* message);
+	void error_at_line(uint line, ccp message, string whole_line = "");
+	void error_at_token(Token* token, ccp message);
+	void warning_at_line(uint line, ccp message, string whole_line = "");
+	void warning_at_token(Token* token, ccp message);
 	Token generate_token(string line, string token);
 
 	string strip_start(string str);
 	bool consume_identifier(string* str, string* dest, uint line,
-							const char* errformat = "Expected identifier, not '%s'.");
+							ccp errformat = "Expected identifier, not '%s'.");
 	bool consume_string(string* str, string* dest, uint line);
 	bool consume_integer(string* str, uint* dest, uint line);
 
@@ -134,7 +134,7 @@ private:
 
 	// members
 	#pragma region members
-	const char* _source;
+	ccp _source;
 	vector<string> _lines;
 	string _current_file;
 	uint _current_line_no;

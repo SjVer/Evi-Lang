@@ -17,7 +17,7 @@ class Parser
 {
 public:
 	Parser(): _scope_stack() {}
-	Status parse(string infile, const char* source, AST* astree);
+	Status parse(string infile, ccp source, AST* astree);
 
 private:
 
@@ -41,17 +41,17 @@ private:
 
 	typedef struct
 	{
+		int depth;
+		map<string, VarProperties> variables;
+		FuncProperties func_props;
+		map<string, FuncProperties> functions;
+		
 		enum ScopeType
 		{
 			SCOPE_NORMAL,
 			SCOPE_FUNCTION,
 			SCOPE_LOOP
 		} scope_type;
-
-		int depth;
-		map<string, VarProperties> variables;
-		FuncProperties func_props;
-		map<string, FuncProperties> functions;
 	} Scope;
 
 	// methods

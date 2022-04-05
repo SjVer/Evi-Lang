@@ -20,22 +20,22 @@ using namespace std;
 #pragma region
 #ifdef _WIN32
 	#define OS_NAME "Windows 32-bit"
-	#define PATH_SEPARATOR "\\"
+	#define PATH_SEPARATOR '\\'
 #elif _WIN64
 	#define OS_NAME "Windows 64-bit"
-	#define PATH_SEPARATOR "\\"
+	#define PATH_SEPARATOR '\\'
 #elif __APPLE__ || __MACH__
 	#define OS_NAME "Mac OS_NAMEX"
-	#define PATH_SEPARATOR "/"
+	#define PATH_SEPARATOR '/'
 #elif __linux__
 	#define OS_NAME "Linux"
-	#define PATH_SEPARATOR "/"
+	#define PATH_SEPARATOR '/'
 #elif __unix || __unix__
 	#define OS_NAME "Unix"
-	#define PATH_SEPARATOR "/"
+	#define PATH_SEPARATOR '/'
 #else
 	#define OS_NAME "Unknown OS"
-	#define PATH_SEPARATOR "/"
+	#define PATH_SEPARATOR '/'
 #endif
 #pragma endregion
 
@@ -95,7 +95,7 @@ More information at %s.\nBuild: %s %s on %s (%s)."
 
 #define ABORT(status) { cerr << tools::fstr("[evi] Aborted with code %d.\n", status); exit(status); }
 #define THROW_INTERNAL_ERROR(where) { \
-		const char* bn = basename(__FILE__); \
+		ccp bn = basename(__FILE__); \
 		const char ext = strrchr(bn, '.')[1]; \
 		cerr << tools::fstr("[evi:!!!] Internal error %c%c%d%c occurred " where ".", \
 							toupper(bn[0]), toupper(bn[1]), __LINE__, toupper(ext)) << endl; \
@@ -148,5 +148,7 @@ typedef enum
 
 	STATUS_INTERNAL_ERROR = -1
 } Status;
+
+typedef const char* ccp;
 
 #endif

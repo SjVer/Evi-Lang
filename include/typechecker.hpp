@@ -11,7 +11,7 @@
 class TypeChecker: public Visitor
 {
 	public:
-	Status check(string path, const char* source, AST* astree);
+	Status check(string path, ccp source, AST* astree);
 
 	#define VISIT(_node) void visit(_node* node)
 	VISIT(FuncDeclNode);

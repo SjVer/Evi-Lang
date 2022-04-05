@@ -1,7 +1,7 @@
 #include "typechecker.hpp"
 #include "common.hpp"
 
-Status TypeChecker::check(string path, const char* source, AST* astree)
+Status TypeChecker::check(string path, ccp source, AST* astree)
 {
 	_infile = path;
 	_error_dispatcher = ErrorDispatcher();

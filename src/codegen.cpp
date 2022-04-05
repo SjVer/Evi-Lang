@@ -25,7 +25,7 @@ CodeGenerator::CodeGenerator()
 	_target_machine = target->createTargetMachine(_target_triple, cpu, features, opt, rm);
 }
 
-Status CodeGenerator::emit_llvm(const char* outfile)
+Status CodeGenerator::emit_llvm(ccp outfile)
 {
 	ofstream std_file_stream(outfile);
 	llvm::raw_os_ostream file_stream(std_file_stream);
@@ -34,7 +34,7 @@ Status CodeGenerator::emit_llvm(const char* outfile)
 	return STATUS_SUCCESS;
 }
 
-Status CodeGenerator::emit_object(const char* outfile)
+Status CodeGenerator::emit_object(ccp outfile)
 {
 	error_code errcode;
 	llvm::raw_fd_ostream dest(outfile, errcode, llvm::sys::fs::OF_None);
@@ -62,18 +62,18 @@ Status CodeGenerator::emit_object(const char* outfile)
 	return STATUS_SUCCESS;
 }
 
-Status CodeGenerator::emit_binary(const char* outfile, const char** linked, int linkedc)
+Status CodeGenerator::emit_binary(ccp outfile, ccp* linked, int linkedc)
 {
 	// write to temporary object file
-	const char* objfile = strdup(tools::fstr(TEMP_OBJ_FILE_TEMPLATE, _infile, time(0)).c_str());
+	ccp objfile = strdup(tools::fstr(TEMP_OBJ_FILE_TEMPLATE, _infile, time(0)).c_str());
 	DEBUG_PRINT_F_MSG("Emitting object file... (%s)", objfile);
 	Status objstatus = emit_object(objfile);
 	if(objstatus != STATUS_SUCCESS) return objstatus; 
 
 	// object file written, now invoke llc
 	// int ldstatus = execl(LD_PATH, CC_ARGS, NULL);
-	string ldcommand; const char* infile = objfile;
-	for(int i = 0; i < LD_ARGC; i++) { ldcommand += (const char*[]){LD_ARGS}[i]; ldcommand += " "; }
+	string ldcommand; ccp infile = objfile;
+	for(int i = 0; i < LD_ARGC; i++) { ldcommand += (ccp[]){LD_ARGS}[i]; ldcommand += " "; }
 	for(int i = 0; i < linkedc; i++) ldcommand += string(linked[i]) + " ";
 
 	DEBUG_PRINT_MSG("Invoking linker (" LD_PATH " with stdlib at " STATICLIB_DIR ")");
@@ -95,11 +95,14 @@ Status CodeGenerator::emit_binary(const char* outfile, const char** linked, int 
 	return STATUS_SUCCESS;
 }
 
-Status CodeGenerator::generate(const char* infile, const char* outfile, const char* source, AST* astree, OptimizationType opt)
+Status CodeGenerator::generate(ccp infile, ccp outfile, ccp source, AST* astree, OptimizationType opt, bool debug_info)
 {
 	_outfile = strdup(outfile);
 	_infile = strdup(infile);
 	_error_dispatcher = ErrorDispatcher();
+
+	_build_debug_info = debug_info;
+	_opt_level = opt;
 
 	prepare();
 
@@ -110,7 +113,7 @@ Status CodeGenerator::generate(const char* infile, const char* outfile, const ch
 		pop();
 	}
 
-	optimize(opt);
+	optimize();
 
 	finish();
 
@@ -135,11 +138,17 @@ void CodeGenerator::prepare()
 
 	_value_stack = new stack<llvm::Value*>();
 	_string_literal_count = 0;
+
+	if(_build_debug_info)
+	{
+		_debug_info_builder = new DebugInfoBuilder(
+			_top_module.get(), _infile, _opt_level != OPTIMIZE_On);
+	}
 }
 
-void CodeGenerator::optimize(OptimizationType optlevel)
+void CodeGenerator::optimize()
 {
-	if(optlevel == OPTIMIZE_On) return;
+	if(_opt_level == OPTIMIZE_On) return;
 
 	llvm::PassBuilder pass_builder;
 
@@ -168,7 +177,7 @@ void CodeGenerator::optimize(OptimizationType optlevel)
 
 	// get optimization level
 	llvm::PassBuilder::OptimizationLevel level;
-	switch(optlevel)
+	switch(_opt_level)
 	{
 		case OPTIMIZE_O0: level = llvm::PassBuilder::OptimizationLevel::O0; break;
 		case OPTIMIZE_O1: level = llvm::PassBuilder::OptimizationLevel::O1; break;
@@ -193,6 +202,9 @@ void CodeGenerator::finish()
 		llvm::verifyModule(*_top_module, _errstream);
 		cerr << endl;
 	}
+
+	// finish debug builder
+	if(_build_debug_info) _debug_info_builder->finish();
 
 	#ifdef DEBUG
 	DEBUG_PRINT_MSG("Generated LLVM IR:");

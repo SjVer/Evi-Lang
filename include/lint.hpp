@@ -14,7 +14,7 @@ typedef enum
 	LINT_NONE
 } LintType;
 
-static const char* get_lint_type_string(LintType type)
+static ccp get_lint_type_string(LintType type)
 {
 	#define CASE(type, str) case type: return str
 	switch(type)
@@ -29,7 +29,7 @@ static const char* get_lint_type_string(LintType type)
 	#undef CASE
 }
 
-static LintType get_lint_type(const char* str)
+static LintType get_lint_type(ccp str)
 {
 	for(int i = 0; i < LINT_NONE; i++)
 		if(!strcmp(get_lint_type_string((LintType)i), str))
@@ -64,7 +64,7 @@ extern std::string lint_output;
 #define LINT_OUTPUT_ARRAY_END() { if(WRONG_END) lint_output.erase(lint_output.end() - 2); lint_output += "], "; }
 #define LINT_OUTPUT_ARRAY_ITEM(value) { lint_output += '"' + value + "\", "; }
 
-void lint_output_diagnostic_object(Token* token, string message, const char* type);
+void lint_output_diagnostic_object(Token* token, string message, ccp type);
 void lint_output_diagnostic_object_end();
 
 #endif

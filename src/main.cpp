@@ -185,10 +185,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 	case ARG_LD_FLAGS:
 	{
-		const char* infile = "<object-file>";
-		const char* outfile = "<output-file>";
+		ccp infile = "<object-file>";
+		ccp outfile = "<output-file>";
 		string cccommand;
-		for(int i = 0; i < LD_ARGC; i++) { cccommand += (const char*[]){LD_ARGS}[i]; cccommand += " "; }
+		for(int i = 0; i < LD_ARGC; i++) { cccommand += (ccp[]){LD_ARGS}[i]; cccommand += " "; }
 		cout << cccommand << endl;
 		exit(0);
 		break;
@@ -336,7 +336,7 @@ int main(int argc, char **argv)
 	// ===================================
 
 	AST astree;
-	const char* source = strdup(tools::readf(arguments.infiles[0]).c_str());
+	ccp source = strdup(tools::readf(arguments.infiles[0]).c_str());
 	init_builtin_evi_types();
 	Status status;
 
@@ -395,14 +395,15 @@ int main(int argc, char **argv)
 
 	// codegen
 	CodeGenerator* codegen = new CodeGenerator();
-	status = codegen->generate(arguments.infiles[0], arguments.outfile, source, &astree, arguments.optimization);
+	status = codegen->generate(arguments.infiles[0], arguments.outfile, source,
+							   &astree, arguments.optimization, arguments.debug);
 	ABORT_IF_UNSUCCESSFULL();
 
 
 	// output
 	if(arguments.compile_only && !arguments.emit_llvm) status = codegen->emit_object(arguments.outfile);
 	else if(arguments.emit_llvm) status = codegen->emit_llvm(arguments.outfile);
-	else status = codegen->emit_binary(arguments.outfile, (const char**)arguments.linked, arguments.linkedc);
+	else status = codegen->emit_binary(arguments.outfile, (ccp*)arguments.linked, arguments.linkedc);
 	ABORT_IF_UNSUCCESSFULL();
 
 
