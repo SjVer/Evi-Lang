@@ -497,6 +497,23 @@ VISIT(BinaryNode)
 	}
 	else
 	{
+		// handle pointer arithmatic properly
+		if(right->get_depth() && (
+			node->_optype == TOKEN_PLUS  ||
+			node->_optype == TOKEN_MINUS ||
+			node->_optype == TOKEN_STAR  ||
+			node->_optype == TOKEN_SLASH ))
+			// CONVERSION_WARNING_AT(&node->_right->_token, right, PTYPE(TYPE_INTEGER));
+			right = PTYPE(TYPE_INTEGER);
+		
+		if(left->get_depth() && (
+			node->_optype == TOKEN_PLUS  ||
+			node->_optype == TOKEN_MINUS ||
+			node->_optype == TOKEN_STAR  ||
+			node->_optype == TOKEN_SLASH ))
+			// CONVERSION_WARNING_AT(&node->_left->_token, left, PTYPE(TYPE_INTEGER));
+			left = PTYPE(TYPE_INTEGER);
+
 		ParsedType* result = resolve_types(left, right);
 
 		if(result == nullptr) 

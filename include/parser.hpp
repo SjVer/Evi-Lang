@@ -41,6 +41,13 @@ private:
 
 	typedef struct
 	{
+		enum ScopeType
+		{
+			SCOPE_NORMAL,
+			SCOPE_FUNCTION,
+			SCOPE_LOOP
+		} scope_type;
+
 		int depth;
 		map<string, VarProperties> variables;
 		FuncProperties func_props;

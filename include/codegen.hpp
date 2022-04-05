@@ -3,6 +3,7 @@
 
 #include "common.hpp"
 #include "error.hpp"
+#include "debug.hpp"
 #include "ast.hpp"
 #include "pch.h"
 

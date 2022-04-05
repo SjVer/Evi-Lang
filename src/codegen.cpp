@@ -162,7 +162,9 @@ void CodeGenerator::optimize(OptimizationType optlevel)
 	pass_builder.registerFunctionAnalyses(function_analysis_manager);
 	pass_builder.registerLoopAnalyses(loop_analysis_manager);
 	
-	pass_builder.crossRegisterProxies(loop_analysis_manager, function_analysis_manager, c_gscc_analysis_manager, module_analysis_manager);
+	// cross register them too?
+	pass_builder.crossRegisterProxies(loop_analysis_manager, function_analysis_manager,
+									  c_gscc_analysis_manager, module_analysis_manager);
 
 	// get optimization level
 	llvm::PassBuilder::OptimizationLevel level;
@@ -183,16 +185,13 @@ void CodeGenerator::optimize(OptimizationType optlevel)
 }
 
 void CodeGenerator::finish()
-{
-	bool invalid = false;
-	
+{	
 	// verify module
 	if(llvm::verifyModule(*_top_module, nullptr))
 	{
-		_error_dispatcher.error("Code Generation Error", "LLVM module verification failed: ");
+		_error_dispatcher.warning("Code Generation Warning", "LLVM module verification failed: ");
 		llvm::verifyModule(*_top_module, _errstream);
 		cerr << endl;
-		invalid = true;
 	}
 
 	#ifdef DEBUG
@@ -351,15 +350,13 @@ VISIT(FuncDeclNode)
 		else _builder->CreateRetVoid();
 
 		// verify function
-		// if(llvm::verifyFunction(*func, new llvm::raw_os_ostream(cerr)))
-		// {
-		// 	_error_dispatcher.dispatch_error("Code Generation Error", 
-		// 	tools::fstr("LLVM verification of function \"%s\" failed.", func->getName().str().c_str()).c_str());
-		//			
-		// 	cerr << _errstream.str() << endl;
-		//	
-		// 	// ABORT(STATUS_CODEGEN_ERROR);
-		// }
+		if(llvm::verifyFunction(*func, nullptr))
+		{
+			_error_dispatcher.warning("Code Generation Warning", tools::fstr(
+				"LLVM verification of function \"%s\" failed.", func->getName().str().c_str()).c_str());			
+			llvm::verifyFunction(*func, _errstream);
+			cerr << endl;
+		}
 	}
 
 	push(nullptr);

@@ -10,7 +10,7 @@
 #include "typechecker.hpp"
 #include "preprocessor.hpp"
 #include "codegen.hpp"
-#include "debug.hpp"
+#include "visualizer.hpp"
 
 // ================= arg stuff =======================
 
@@ -43,6 +43,7 @@ struct arguments
 	bool generate_ast = false;
 	bool compile_only = false;
 	bool output_given = false;
+	bool debug = false;
 	OptimizationType optimization = OPTIMIZE_O3;
 };
 
@@ -51,23 +52,27 @@ static struct argp_option options[] =
 	{"help", 				'h', 			 0, 		  0, "Display a help message."},
 	{"version", 			'V', 			 0, 		  0, "Display compiler version information."},
 	{"usage", 				'u', 			 0, 		  0, "Display a usage information message."},
-
 	{"verbose", 			'v', 			 0, 		  0, "Produce verbose output."},
+
 	{"output",  			'o', 			 "OUTFILE",   0, "Output to OUTFILE instead of to standard output."},
 	{0,  					'O', 			 "LEVEL",     0, "Set the optimization level."},
-	{"preprocess-only", 	'p', 			 0, 		  0, "Preprocess only but do not compile or link."},
 	{"link", 				'l', 			 "FILE", 	  0, "Link with FILE."},
 	{"include", 			'i', 			 "DIRECTORY", 0, "Add DIRECTORY to include search path."},
+
+	{"debug", 				'd', 			 0, 		  0, "Generate source-level debug information."},
+	{"preprocess-only", 	'p', 			 0, 		  0, "Preprocess only but do not compile or link."},
 	{"compile-only", 		'c', 			 0, 		  0, "Compile and assemble but do not link."},
 	{"emit-llvm",  			ARG_EMIT_LLVM, 	 0, 		  0, "Emit llvm IR instead of an executable."},
 	{"generate-ast",  		ARG_GEN_AST, 	 0, 		  0, "Generate AST image (for debugging purposes)."},
+
 	{"print-ld-flags",  	ARG_LD_FLAGS, 	 0, 		  0, "Display the flags passed to the linker."},
 	{"print-stdlib-dir", 	ARG_STD_DIR, 	 0, 		  0, "Display the standard library header directory."},
 	{"print-staticlib-dir", ARG_STATLIB_DIR, 0, 		  0, "Display the directory of the evi static library."},
 
-	{"lint-type", ARG_LINT_TYPE, "TYPE", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
-	{"lint-pos", ARG_LINT_POS, "POS", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
-	{"lint-tab-width", ARG_LINT_TAB_WIDTH, "WIDTH", OPTION_HIDDEN | OPTION_NO_USAGE, 0},
+	{"lint-type", 			ARG_LINT_TYPE, 		"TYPE",   OPTION_HIDDEN | OPTION_NO_USAGE, 0},
+	{"lint-pos", 			ARG_LINT_POS, 		"POS", 	  OPTION_HIDDEN | OPTION_NO_USAGE, 0},
+	{"lint-tab-width", 		ARG_LINT_TAB_WIDTH, "WIDTH",  OPTION_HIDDEN | OPTION_NO_USAGE, 0},
+
 	{0}
 };
 
@@ -93,10 +98,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'u':
 		argp_usage(state);
 		exit(0);
-
 	case 'v':
 		arguments->verbose += 1;
 		break;
+
 	case 'o':
 		arguments->outfile = arg;
 		arguments->output_given = true;
@@ -131,10 +136,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arguments->optimization = (OptimizationType)(arg[0]);
 		break;
 	}
-
-	case 'p':
-		arguments->preprocess_only = true;
-		break;
 	case 'l':
 	{
 		if(arguments->linkedc == MAX_LINKED)
@@ -166,13 +167,18 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	}
 
+	case 'd':
+		arguments->debug = true;
+		break;
+	case 'p':
+		arguments->preprocess_only = true;
+		break;
 	case 'c':
 		arguments->compile_only = true;
 		break;
 	case ARG_EMIT_LLVM:
 		arguments->emit_llvm = true;
 		break;
-
 	case ARG_GEN_AST:
 		arguments->generate_ast = true;
 		break;

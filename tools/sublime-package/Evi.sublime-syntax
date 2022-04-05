@@ -94,7 +94,7 @@ contexts:
       scope: keyword.operator.cast.evi
       push:
         - meta_scope: keyword.operator.cast.type.evi
-        - match: \b{{type}}\b
+        - match: '{{type}}'
           scope: storage.type.evi
           set:
             - match: \**
@@ -263,7 +263,7 @@ contexts:
             - include: comments
             - meta_scope: meta.parameter_list.evi
 
-            - match: '\b{{type}}\b|\*'
+            - match: '{{type}}'
               scope: variable.parameter.evi
             - match: '\.\.\.'
               scope: keyword.operator.variadic.evi

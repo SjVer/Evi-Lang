@@ -87,7 +87,7 @@ void Preprocessor::initialize_builtin_macros()
 		name, {false, format, nullptr}))
 
 	// compiler information
-	ADD_STATIC_MACRO("__COMPILER_NAME__",			"\"" APP_NAME " (official)\"");
+	ADD_STATIC_MACRO("__COMPILER_NAME__",			"\"" APP_NAME_INTERNAL "\"");
 	ADD_STATIC_MACRO("__COMPILER_VERSION__",		"\"" APP_VERSION "\"");
 	ADD_STATIC_MACRO("__COMPILER_BUILD_TARGET__",	"\"" TARGET "\"");
 	ADD_STATIC_MACRO("__COMPILER_BUILD_DATE__",		"\"" __DATE__ "\"");

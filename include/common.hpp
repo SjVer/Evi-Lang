@@ -48,6 +48,7 @@ using namespace std;
 // app info
 #pragma region
 #define APP_NAME "evi"
+#define APP_NAME_INTERNAL "evi (official)"
 #define APP_VERSION "0.0.1"
 #define APP_DOC "%s -- The Evi compiler.\nWritten by Sjoerd Vermeulen (%s)\v\
 More information at %s.\nBuild: %s %s on %s (%s)."
