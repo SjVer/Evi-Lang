@@ -139,11 +139,8 @@ void CodeGenerator::prepare()
 	_value_stack = new stack<llvm::Value*>();
 	_string_literal_count = 0;
 
-	if(_build_debug_info)
-	{
-		_debug_info_builder = new DebugInfoBuilder(
-			_top_module.get(), _infile, _opt_level != OPTIMIZE_On);
-	}
+	if(_build_debug_info) _debug_info_builder = new DebugInfoBuilder(
+		_top_module.get(), _builder.get(), _infile, _opt_level != OPTIMIZE_On);
 }
 
 void CodeGenerator::optimize()
@@ -198,9 +195,9 @@ void CodeGenerator::finish()
 	// verify module
 	if(llvm::verifyModule(*_top_module, nullptr))
 	{
-		_error_dispatcher.warning("Code Generation Warning", "LLVM module verification failed: ");
+		_error_dispatcher.warning("Code Generation Warning", "LLVM module verification failed:");
 		llvm::verifyModule(*_top_module, _errstream);
-		cerr << endl;
+		cerr << endl << endl;
 	}
 
 	// finish debug builder
@@ -302,6 +299,7 @@ ParsedType* CodeGenerator::from_token_type(TokenType type)
 // =========================================
 
 #define VISIT(_node) void CodeGenerator::visit(_node* node)
+#define DEBUG_EMITLOC() if(_build_debug_info) _debug_info_builder->emit_location(node->_token.line, get_token_col(&node->_token))
 #define ACCEPT_AND_POP(node) { if(node) { node->accept(this); pop(); } }
 #define ERROR_AT(token, format, ...) error_at(token, tools::fstr(format, __VA_ARGS__))
 #define SCOPE_UP() map<string, pair<llvm::Value*, ParsedType*>> oldbindings = _named_values
@@ -330,6 +328,17 @@ VISIT(FuncDeclNode)
 	{
 		llvm::BasicBlock *block = llvm::BasicBlock::Create(__context, "entry", func);
 		_builder->SetInsertPoint(block);
+
+		if(_build_debug_info)
+		{
+			llvm::DIFile* unit = _debug_info_builder->create_file_unit(*node->_token.file);
+			llvm::DISubprogram* subprog = _debug_info_builder->create_subprogram(node, unit);
+
+			func->setSubprogram(subprog);
+			_debug_info_builder->push_subprogram(subprog);
+			_debug_info_builder->emit_location(0, 0);
+		}
+
 
 		SCOPE_UP();
 
@@ -365,9 +374,9 @@ VISIT(FuncDeclNode)
 		if(llvm::verifyFunction(*func, nullptr))
 		{
 			_error_dispatcher.warning("Code Generation Warning", tools::fstr(
-				"LLVM verification of function \"%s\" failed.", func->getName().str().c_str()).c_str());			
+				"LLVM verification of function \"%s\" failed:", func->getName().str().c_str()).c_str());			
 			llvm::verifyFunction(*func, _errstream);
-			cerr << endl;
+			cerr << endl << endl;
 		}
 	}
 
@@ -376,6 +385,7 @@ VISIT(FuncDeclNode)
 
 VISIT(VarDeclNode)
 {
+	DEBUG_EMITLOC();
 	string ir_name = node->_identifier;
 
 	// if the variable is local, but declared static it needs to be treated as a global
@@ -435,6 +445,7 @@ VISIT(VarDeclNode)
 
 VISIT(AssignNode)
 {
+	DEBUG_EMITLOC();
 	llvm::Value* target = _named_values[node->_ident].first;
 	ParsedType* type = _named_values[node->_ident].second;
 
@@ -462,6 +473,7 @@ VISIT(AssignNode)
 
 VISIT(IfNode)
 {
+	DEBUG_EMITLOC();
 	node->_cond->accept(this);
 	
 	// create comparison
@@ -495,6 +507,7 @@ VISIT(IfNode)
 
 VISIT(LoopNode)
 {
+	DEBUG_EMITLOC();
 	llvm::Function* func = _builder->GetInsertBlock()->getParent();
 	llvm::BasicBlock* condblock = llvm::BasicBlock::Create(__context, "loopcond", func);
 	llvm::BasicBlock* loopblock = llvm::BasicBlock::Create(__context, "loopbody", func);
@@ -529,6 +542,7 @@ VISIT(LoopNode)
 
 VISIT(ReturnNode)
 {
+	DEBUG_EMITLOC();
 	if(node->_expr)
 	{
 		node->_expr->accept(this);
@@ -541,6 +555,7 @@ VISIT(ReturnNode)
 
 VISIT(BlockNode)
 {
+	DEBUG_EMITLOC();
 	if(!node->_secret)
 	{
 		SCOPE_UP();
@@ -557,6 +572,7 @@ VISIT(BlockNode)
 
 VISIT(LogicalNode)
 {
+	DEBUG_EMITLOC();
 	llvm::Function* func = _builder->GetInsertBlock()->getParent();
 
 	if(node->_token.type == TOKEN_QUESTION) // ternary
@@ -679,6 +695,7 @@ VISIT(LogicalNode)
 
 VISIT(BinaryNode)
 {
+	DEBUG_EMITLOC();
 	node->_left->accept(this);
 	node->_right->accept(this);
 
@@ -820,6 +837,7 @@ VISIT(BinaryNode)
 
 VISIT(CastNode)
 {
+	DEBUG_EMITLOC();
 	node->_expr->accept(this);
 	llvm::Value* val = pop();
 	push(create_cast(val, false, node->_type->get_llvm_type(), node->_type->is_signed()));
@@ -827,6 +845,7 @@ VISIT(CastNode)
 
 VISIT(UnaryNode)
 {
+	DEBUG_EMITLOC();
 	node->_expr->accept(this);
 	ParsedType* parsedtype = node->_expr->_cast_to;
 	llvm::Type* casttype = parsedtype->get_llvm_type();
@@ -882,6 +901,7 @@ VISIT(UnaryNode)
 
 VISIT(GroupingNode)
 {
+	DEBUG_EMITLOC();
 	node->_expr->accept(this);
 	// ParsedType* casttype = node->_cast_to;
 	// push(create_cast(pop(), false, casttype->get_llvm_type(), casttype->is_signed()));
@@ -890,6 +910,7 @@ VISIT(GroupingNode)
 
 VISIT(SubscriptNode)
 {
+	DEBUG_EMITLOC();
 	node->_expr->accept(this);
 	llvm::Value* ptr = pop();
 
@@ -906,6 +927,7 @@ VISIT(SubscriptNode)
 
 VISIT(LiteralNode)
 {
+	DEBUG_EMITLOC();
 	ParsedType* type = from_token_type(node->_token.type);
 	// llvm::Value* constant;
 	llvm::Constant* constant = nullptr;
@@ -961,6 +983,7 @@ VISIT(LiteralNode)
 
 VISIT(ArrayNode)
 {
+	DEBUG_EMITLOC();
 	// alloca array
 	llvm::ArrayType* arrtype = llvm::ArrayType::get(node->_cast_to->copy_element_of()->get_llvm_type(), node->_elements.size());
 	llvm::AllocaInst* arr = new llvm::AllocaInst(arrtype, 0, string("arrtmp"), _builder->GetInsertBlock());
@@ -989,12 +1012,14 @@ VISIT(ArrayNode)
 
 VISIT(SizeOfNode)
 {
+	DEBUG_EMITLOC();
 	llvm::TypeSize size = _top_module->getDataLayout().getTypeAllocSize(node->_type->get_llvm_type());
 	push(llvm::ConstantInt::get(node->_cast_to->get_llvm_type(), size, false));
 }
 
 VISIT(ReferenceNode)
 {
+	DEBUG_EMITLOC();
 	llvm::Value* var = nullptr;
 	ParsedType* type = nullptr;
 
@@ -1027,6 +1052,7 @@ VISIT(ReferenceNode)
 
 VISIT(CallNode)
 {
+	DEBUG_EMITLOC();
 	llvm::Function* callee = _top_module->getFunction(node->_ident);
 	ASSERT_OR_THROW_INTERNAL_ERROR(callee, "during code generation");
 
