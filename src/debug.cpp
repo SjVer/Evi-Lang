@@ -43,7 +43,7 @@ llvm::DIFile* DebugInfoBuilder::create_file_unit(string filename)
 llvm::DISubprogram* DebugInfoBuilder::create_subprogram(FuncDeclNode* node, llvm::DIFile* file_unit)
 {
 	llvm::DISubprogram* subprog = _debug_builder->createFunction(
-		file_unit, node->_identifier, node->_static ? "Internal" : "External", // llvm::StringRef(),
+		file_unit, node->_identifier, node->_identifier, // llvm::StringRef(),
 		file_unit, node->_token.line, get_function_type(node, file_unit), node->_token.line,
 		llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
 
@@ -74,9 +74,11 @@ llvm::DIType* DebugInfoBuilder::get_type(ParsedType* type)
 		return _debug_builder->createPointerType(elementtype, elementtype->getSizeInBits());
 	}
 	
+	DEBUG_PRINT_F_MSG("Getting debug type for '%s'.", type->to_c_string());
+
 	// get size in bits
-	uint64_t size = _ir_builder->GetInsertPoint()->getModule()->getDataLayout()
-						.getTypeAllocSize(type->get_llvm_type()).getFixedSize();
+	uint64_t size = 0; // _ir_builder->GetInsertPoint()->getModule()->getDataLayout()
+					  // .getTypeAllocSize(type->get_llvm_type()).getFixedSize();
 
 	// get encoding
 	llvm::dwarf::TypeKind encoding = (llvm::dwarf::TypeKind)0;
