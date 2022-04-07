@@ -131,7 +131,7 @@ void CodeGenerator::prepare()
 	#else
 	_builder = make_unique<llvm::IRBuilder<>>(__context);
 	#endif
-	_top_module = make_unique<llvm::Module>("top", __context);
+	_top_module = make_unique<llvm::Module>(string(_infile), __context);
 	_top_module->setSourceFileName(_infile);
 	_top_module->setDataLayout(_target_machine->createDataLayout());
 	_top_module->setTargetTriple(_target_triple);
@@ -191,17 +191,29 @@ void CodeGenerator::optimize()
 }
 
 void CodeGenerator::finish()
-{	
+{
+	// finish debug builder
+	if(_build_debug_info) _debug_info_builder->finish();
+
+	bool invalid = false;
+
+	// verify functions
+	for(auto& function : *_top_module) if(llvm::verifyFunction(function, nullptr))
+	{
+		_error_dispatcher.warning("Code Generation Warning", tools::fstr(
+			"LLVM verification of function \"%s\" failed:", function.getName().str().c_str()).c_str());			
+		llvm::verifyFunction(function, _errstream);
+		cerr << endl << endl;
+		invalid = true;
+	}
+
 	// verify module
-	if(llvm::verifyModule(*_top_module, nullptr))
+	if(!invalid && llvm::verifyModule(*_top_module, nullptr))
 	{
 		_error_dispatcher.warning("Code Generation Warning", "LLVM module verification failed:");
 		llvm::verifyModule(*_top_module, _errstream);
 		cerr << endl << endl;
 	}
-
-	// finish debug builder
-	if(_build_debug_info) _debug_info_builder->finish();
 
 	#ifdef DEBUG
 	DEBUG_PRINT_MSG("Generated LLVM IR:");
@@ -369,15 +381,6 @@ VISIT(FuncDeclNode)
 			_builder->CreateRet(nullret);
 		}
 		else _builder->CreateRetVoid();
-
-		// verify function
-		if(llvm::verifyFunction(*func, nullptr))
-		{
-			_error_dispatcher.warning("Code Generation Warning", tools::fstr(
-				"LLVM verification of function \"%s\" failed:", func->getName().str().c_str()).c_str());			
-			llvm::verifyFunction(*func, _errstream);
-			cerr << endl << endl;
-		}
 	}
 
 	push(nullptr);
@@ -568,7 +571,6 @@ VISIT(BlockNode)
 }
 
 // === Expressions ===
-// all expressions should have a stack effect of 1
 
 VISIT(LogicalNode)
 {
@@ -708,6 +710,7 @@ VISIT(BinaryNode)
 	{
 		case TOKEN_PIPE: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateOr(left, right, "bbotmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateOr(left, right, "ibotmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateOr(left, right,"fbotmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateOr(left, right, "cbotmp")); break;
@@ -716,6 +719,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_CARET: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateXor(left, right, "bbxtmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateXor(left, right, "ibxtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateXor(left, right,"fbxtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateXor(left, right, "cbxtmp")); break;
@@ -724,6 +728,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_AND: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateAnd(left, right, "bbatmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateAnd(left, right, "ibatmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateAnd(left, right,"fbatmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateAnd(left, right, "cbatmp")); break;
@@ -733,6 +738,7 @@ VISIT(BinaryNode)
 
 		case TOKEN_EQUAL_EQUAL: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateICmpEQ(left, right, "beqtmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateICmpEQ(left, right, "ieqtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOEQ(left, right,"feqtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpEQ(left, right, "ceqtmp")); break;
@@ -741,6 +747,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_SLASH_EQUAL: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateICmpNE(left, right, "bnetmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateICmpNE(left, right, "inetmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpONE(left, right,"fnetmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpNE(left, right, "cnetmp")); break;
@@ -750,6 +757,7 @@ VISIT(BinaryNode)
 
 		case TOKEN_GREATER_EQUAL: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateICmpSGE(left, right, "bgetmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateICmpSGE(left, right, "igetmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOGE(left, right,"fgetmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpUGE(left, right, "cgetmp")); break;
@@ -758,6 +766,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_LESS_EQUAL: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateICmpSLE(left, right, "bletmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLE(left, right, "iletmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOLE(left, right,"fletmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpULE(left, right, "cletmp")); break;
@@ -766,6 +775,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_GREATER: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateICmpSGT(left, right, "bgttmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateICmpSGT(left, right, "igttmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOGT(left, right,"fgttmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpUGT(left, right, "cgttmp")); break;
@@ -774,6 +784,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_LESS: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateICmpSLT(left, right, "blttmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateICmpSLT(left, right, "ilttmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFCmpOLT(left, right,"flttmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateICmpULT(left, right, "clttmp")); break;
@@ -783,6 +794,7 @@ VISIT(BinaryNode)
 
 		case TOKEN_GREATER_GREATER: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateLShr(left, right, "bsrtmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateLShr(left, right, "isrtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateLShr(left, right,"fsrtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateLShr(left, right, "csrtmp")); break;
@@ -791,6 +803,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_LESS_LESS: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateShl(left, right, "bsltmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateShl(left, right, "isltmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateShl(left, right,"fsltmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateShl(left, right, "csltmp")); break;
@@ -800,6 +813,7 @@ VISIT(BinaryNode)
 
 		case TOKEN_PLUS: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateAdd(left, right, "baddtmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateAdd(left, right, "iaddtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFAdd(left, right,"faddtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateAdd(left, right, "caddtmp")); break;
@@ -808,6 +822,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_MINUS: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateSub(left, right, "bsubmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateSub(left, right, "isubmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFSub(left, right,"fsubmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateSub(left, right, "csubmp")); break;
@@ -816,6 +831,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_STAR: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateMul(left, right, "bmultmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateMul(left, right, "imultmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFMul(left, right,"fmultmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateMul(left, right, "cmultmp")); break;
@@ -824,6 +840,7 @@ VISIT(BinaryNode)
 			break;
 		case TOKEN_SLASH: switch(AS_LEX(resulttype))
 			{
+				case TYPE_BOOL:   	 push(_builder->CreateSDiv(left, right, "bdivtmp")); break;
 				case TYPE_INTEGER:   push(_builder->CreateSDiv(left, right, "idivtmp")); break;
 				case TYPE_FLOAT:     push(_builder->CreateFDiv(left, right,"fdivtmp")); break;
 				case TYPE_CHARACTER: push(_builder->CreateUDiv(left, right, "cdivtmp")); break;
@@ -1020,6 +1037,7 @@ VISIT(SizeOfNode)
 VISIT(ReferenceNode)
 {
 	DEBUG_EMITLOC();
+
 	llvm::Value* var = nullptr;
 	ParsedType* type = nullptr;
 
@@ -1033,6 +1051,7 @@ VISIT(ReferenceNode)
 		var = _named_values[to_string(node->_parameter)].first;
 		type = _named_values[to_string(node->_parameter)].second;
 	}
+
 	ASSERT_OR_THROW_INTERNAL_ERROR(var, "during reference retrieval");
 	ASSERT_OR_THROW_INTERNAL_ERROR(type, "during reference retrieval");
 	ASSERT_OR_THROW_INTERNAL_ERROR(node->_cast_to, "during reference retrieval");

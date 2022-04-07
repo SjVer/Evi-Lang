@@ -13,11 +13,13 @@ ParsedType::ParsedType(LexicalType lexical_type, EviType* evi_type,
 		case TYPE_INTEGER: 	 _evi_type = GET_EVI_TYPE("i32"); break;
 		case TYPE_FLOAT: 	 _evi_type = GET_EVI_TYPE("dbl"); break;
 		case TYPE_VOID: 	 _evi_type = GET_EVI_TYPE("nll"); break;
-		case TYPE_NONE:		 break;
+		case TYPE_NONE:		 // break;
 		default: THROW_INTERNAL_ERROR("in type construction");
 	}
 
 	_is_reference = is_reference;
+	_keep_as_reference = false;
+	_invalid = false;
 	_subtype = subtype;
 }
 
@@ -54,7 +56,7 @@ ParsedType* ParsedType::copy_pointer_to()
 
 ParsedType* ParsedType::copy_element_of()
 {
-	ASSERT_OR_THROW_INTERNAL_ERROR(_subtype && "cannot copy element of non-pointer type!", "in type clone");
+	ASSERT_OR_THROW_INTERNAL_ERROR(_subtype, "in type clone");
 	return _subtype->copy();
 }
 

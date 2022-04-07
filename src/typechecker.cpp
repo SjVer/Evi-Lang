@@ -471,7 +471,7 @@ VISIT(BinaryNode)
 
 	if(node->_optype == TOKEN_AND
 	|| node->_optype == TOKEN_PIPE
-	|| node->_optype == TOKEN_CARET) // binary op requires ints
+	|| node->_optype == TOKEN_CARET) // bitwise op (requires ints)
 	{
 		ParsedType* inttype = PTYPE(TYPE_INTEGER);
 
@@ -487,18 +487,38 @@ VISIT(BinaryNode)
 			" to type " COLOR_BOLD "'integer'" COLOR_NONE " required by binary operator '%.*s'.",
 			right->to_c_string(), node->_token.length, node->_token.start);
 		}
-		if(AS_LEX(left) != TYPE_INTEGER) CONVERSION_WARNING_AT(&node->_left->_token, left, inttype);
-		if(AS_LEX(right) != TYPE_INTEGER) CONVERSION_WARNING_AT(&node->_right->_token, right, inttype);
+		if(!left->eq(inttype, true)) CONVERSION_WARNING_AT(&node->_left->_token, left, inttype);
+		if(!right->eq(inttype, true)) CONVERSION_WARNING_AT(&node->_right->_token, right, inttype);
 
 		node->_left->_cast_to = inttype;
 		node->_right->_cast_to = inttype;
 		node->_cast_to = inttype; // in case nothing else sets it
+
 		push(inttype);
+		return;
 	}
-	else
+	if(node->_optype == TOKEN_EQUAL_EQUAL
+	|| node->_optype == TOKEN_SLASH_EQUAL
+	|| node->_optype == TOKEN_GREATER
+	|| node->_optype == TOKEN_GREATER_EQUAL
+	|| node->_optype == TOKEN_LESS
+	|| node->_optype == TOKEN_LESS_EQUAL) // inqualty op (pushes bool)
+	{
+		ParsedType* booltype = PTYPE(TYPE_BOOL);
+		if(!can_cast_types(left, booltype)) CANNOT_CONVERT_ERROR_AT(&node->_left->_token, left, booltype);
+		if(!can_cast_types(right, booltype)) CANNOT_CONVERT_ERROR_AT(&node->_right->_token, right, booltype);
+
+		node->_left->_cast_to = booltype;
+		node->_right->_cast_to = booltype;
+		node->_cast_to = booltype;
+
+		push(booltype);
+		return;
+	}
+	else // normal op
 	{
 		// handle pointer arithmatic properly
-		if(right->get_depth() && (
+		if(right->is_pointer() && (
 			node->_optype == TOKEN_PLUS  ||
 			node->_optype == TOKEN_MINUS ||
 			node->_optype == TOKEN_STAR  ||
@@ -506,7 +526,7 @@ VISIT(BinaryNode)
 			// CONVERSION_WARNING_AT(&node->_right->_token, right, PTYPE(TYPE_INTEGER));
 			right = PTYPE(TYPE_INTEGER);
 		
-		if(left->get_depth() && (
+		if(left->is_pointer() && (
 			node->_optype == TOKEN_PLUS  ||
 			node->_optype == TOKEN_MINUS ||
 			node->_optype == TOKEN_STAR  ||
@@ -528,7 +548,9 @@ VISIT(BinaryNode)
 		node->_left->_cast_to = result;
 		node->_right->_cast_to = result;
 		node->_cast_to = result; // in case nothing else sets it
+
 		push(result);
+		return;
 	}
 }
 

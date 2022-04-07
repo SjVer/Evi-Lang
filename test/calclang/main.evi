@@ -6,10 +6,10 @@
 
 @main i32 () !!(;1;;)
 {
-	%line chr* malloc(?(chr) * 100) -> chr*;
+	%line chr* malloc(?(chr) * MAX_LINE_SIZE#) -> chr*;
 	
 	printf(">>> ");
-	!!(;strlen($line) < 100 && $line[strlen($line) - 1] /= '\n';;)
+	!!(;strlen($line) < MAX_LINE_SIZE# && $line[strlen($line) - 1] /= '\n';;)
 		=line[strlen($line) - 1] getchar();
 
 	puts($line);
