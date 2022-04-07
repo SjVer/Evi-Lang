@@ -312,6 +312,7 @@ ParsedType* CodeGenerator::from_token_type(TokenType type)
 
 #define VISIT(_node) void CodeGenerator::visit(_node* node)
 #define DEBUG_EMITLOC() if(_build_debug_info) _debug_info_builder->emit_location(node->_token.line, get_token_col(&node->_token))
+#define IF_BUILD_DEBUG if(_build_debug_info)
 #define ACCEPT_AND_POP(node) { if(node) { node->accept(this); pop(); } }
 #define ERROR_AT(token, format, ...) error_at(token, tools::fstr(format, __VA_ARGS__))
 #define SCOPE_UP() map<string, pair<llvm::Value*, ParsedType*>> oldbindings = _named_values
@@ -321,6 +322,8 @@ ParsedType* CodeGenerator::from_token_type(TokenType type)
 
 VISIT(FuncDeclNode)
 {
+	DEBUG_EMITLOC();
+
 	llvm::Function* func;
 	vector<llvm::Type*> params;
 
@@ -341,7 +344,7 @@ VISIT(FuncDeclNode)
 		llvm::BasicBlock *block = llvm::BasicBlock::Create(__context, "entry", func);
 		_builder->SetInsertPoint(block);
 
-		if(_build_debug_info)
+		IF_BUILD_DEBUG
 		{
 			llvm::DIFile* unit = _debug_info_builder->create_file_unit(*node->_token.file);
 			llvm::DISubprogram* subprog = _debug_info_builder->create_subprogram(node, unit);
@@ -368,12 +371,11 @@ VISIT(FuncDeclNode)
 			_named_values[to_string(i)].second = node->_params[i];
 
 			// add debugging info to parameter
-			if(_build_debug_info) // _debug_info_builder->insert_declare(alloca, ...);
+			if(_build_debug_info)
 			{
 				llvm::DILocalVariable* d = _debug_info_builder->create_parameter(
-					i, node->_token.line, _debug_info_builder->get_type(node->_params[i]));
-
-				// _debug_info_builder->_debug_builder->insertDeclare(alloca, d, );				
+					i, node->_token.line, node->_params[i]);
+				_debug_info_builder->insert_declare(alloca, d);
 			}
 		}
 
@@ -390,7 +392,7 @@ VISIT(FuncDeclNode)
 		}
 		else _builder->CreateRetVoid();
 
-		if(_build_debug_info) _debug_info_builder->pop_subprogram();
+		IF_BUILD_DEBUG _debug_info_builder->pop_subprogram();
 	}
 
 	push(nullptr);
@@ -399,7 +401,9 @@ VISIT(FuncDeclNode)
 VISIT(VarDeclNode)
 {
 	DEBUG_EMITLOC();
+
 	string ir_name = node->_identifier;
+	llvm::Value* storage = nullptr;
 
 	// if the variable is local, but declared static it needs to be treated as a global
 	// its llvm name will be <current function name>.<variable name> (e.g. "func.x")
@@ -432,6 +436,7 @@ VISIT(VarDeclNode)
 		
 		_named_values[node->_identifier].first = global_var;
 		_named_values[node->_identifier].second = node->_type;
+		storage = global_var;
 	}
 	else // local
 	{
@@ -451,6 +456,16 @@ VISIT(VarDeclNode)
 	
 		_named_values[node->_identifier].first = alloca;
 		_named_values[node->_identifier].second = node->_type;
+		storage = alloca;
+	}
+
+	IF_BUILD_DEBUG
+	{
+		ASSERT_OR_THROW_INTERNAL_ERROR(storage, "during debug info generation");
+
+		llvm::DILocalVariable* v = _debug_info_builder->create_variable(
+			node->_identifier, node->_token.line, node->_type, node->_is_global);
+		_debug_info_builder->insert_declare(storage, v);
 	}
 
 	push(nullptr);

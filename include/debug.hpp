@@ -8,9 +8,7 @@
 
 class DebugInfoBuilder
 {
-public:
-	unique_ptr<llvm::DIBuilder> _debug_builder;
-private:
+	unique_ptr<llvm::DIBuilder> _dbuilder;
 	llvm::DICompileUnit* _cunit;
 	vector<llvm::DIScope*> _scopes;
 
@@ -18,7 +16,7 @@ private:
 	llvm::IRBuilder<llvm::NoFolder>* _ir_builder;
 	#define IRBUILDER llvm::IRBuilder<llvm::NoFolder>*
 	#else
-	llvm::IRBuilder<>* _ir_builder;
+	llvm::IRBuilder<>* _ibuilder;
 	#define IRBUILDER llvm::IRBuilder<>*
 	#endif
 
@@ -31,10 +29,11 @@ public:
 
 	llvm::DIFile* create_file_unit(string filename);
 	llvm::DISubprogram* create_subprogram(FuncDeclNode* node, llvm::DIFile* file_unit);
+	llvm::DILocalVariable* create_variable(string ident, int line_no, ParsedType* type, bool global);
 	llvm::DILocalVariable* create_parameter(int index, int line_no, ParsedType* type);
 
 	void emit_location(uint line, uint col);
-	void insert_declare(llvm::AllocaInst*, ...);
+	void insert_declare(llvm::Value* storage, llvm::DILocalVariable* varinfo);
 	void push_subprogram(llvm::DISubprogram* sub_program);
 	void pop_subprogram();
 

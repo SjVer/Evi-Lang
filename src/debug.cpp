@@ -7,9 +7,9 @@ DebugInfoBuilder::DebugInfoBuilder(llvm::Module* module, IRBUILDER builder, stri
 	_directory = string(getcwd(nullptr, 0));
 
 	// create the builder and compile unit
-	_debug_builder = make_unique<llvm::DIBuilder>(*module);
+	_dbuilder = make_unique<llvm::DIBuilder>(*module);
 
-	_cunit = _debug_builder->createCompileUnit(
+	_cunit = _dbuilder->createCompileUnit(
 		llvm::dwarf::DW_LANG_C, // closest thing to Evi
 		create_file_unit(filepath),
 		APP_NAME_INTERNAL, optimized, "", 0
@@ -22,13 +22,13 @@ DebugInfoBuilder::DebugInfoBuilder(llvm::Module* module, IRBUILDER builder, stri
 	if(llvm::Triple(llvm::sys::getProcessTriple()).isOSDarwin())
 		module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 2);
 
-	_ir_builder = builder;
+	_ibuilder = builder;
 }
 
 void DebugInfoBuilder::finish()
 {
 	// finalize the DIBuilder
-	_debug_builder->finalize();
+	_dbuilder->finalize();
 	DEBUG_PRINT_MSG("Debug info builder finalized.");
 }
 
@@ -37,25 +37,36 @@ void DebugInfoBuilder::finish()
 llvm::DIFile* DebugInfoBuilder::create_file_unit(string filename)
 {
 	// just create the file and return it
-	return _debug_builder->createFile(filename, _directory);
+	return _dbuilder->createFile(filename, _directory);
 }
 
 llvm::DISubprogram* DebugInfoBuilder::create_subprogram(FuncDeclNode* node, llvm::DIFile* file_unit)
 {
-	llvm::DISubprogram* subprog = _debug_builder->createFunction(
-		file_unit, node->_identifier, node->_identifier, // llvm::StringRef(),
+	// llvm::DITemplateParameterArray params = llvm::DITemplateParameterArray();
+
+	llvm::DISubprogram* subprog = _dbuilder->createFunction(
+		file_unit, node->_identifier, node->_identifier,
 		file_unit, node->_token.line, get_function_type(node, file_unit), node->_token.line,
-		llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+		llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition); //, params);
 
 	return subprog;
 }
 
-llvm::DILocalVariable* DebugInfoBuilder::create_parameter(int index, int line_no, ParsedType* type)
+llvm::DILocalVariable* DebugInfoBuilder::create_variable(string ident, int line_no, ParsedType* type, bool global)
 {
-	string name = "$" + to_string(index);
+	string name = '$' + ident;
 	llvm::DIScope* scope = _scopes.back();
 
-	return _debug_builder->createParameterVariable(scope, name, index, _cunit, line_no, get_type(type), true);
+	return _dbuilder->createAutoVariable(scope, name, scope->getFile(), line_no, get_type(type));
+}
+
+llvm::DILocalVariable* DebugInfoBuilder::create_parameter(int index, int line_no, ParsedType* type)
+{
+	string name = '$' + to_string(index);
+	llvm::DIScope* scope = _scopes.back();
+
+	return _dbuilder->createParameterVariable(scope, name, index, 
+		scope->getFile(), line_no, get_type(type));
 }
 
 // ===================================================
@@ -63,7 +74,16 @@ llvm::DILocalVariable* DebugInfoBuilder::create_parameter(int index, int line_no
 void DebugInfoBuilder::emit_location(uint line, uint col)
 {
 	llvm::DIScope *scope = _scopes.empty() ? _cunit : _scopes.back();
-	_ir_builder->SetCurrentDebugLocation(llvm::DILocation::get(scope->getContext(), line, col, scope));
+	_ibuilder->SetCurrentDebugLocation(llvm::DILocation::get(scope->getContext(), line, col, scope));
+}
+
+void DebugInfoBuilder::insert_declare(llvm::Value* storage, llvm::DILocalVariable* varinfo)
+{
+	_dbuilder->insertDeclare(storage, varinfo,
+		_dbuilder->createExpression(),
+		_ibuilder->getCurrentDebugLocation(),
+		_ibuilder->GetInsertBlock()
+	);
 }
 
 void DebugInfoBuilder::push_subprogram(llvm::DISubprogram* sub_program)
@@ -85,13 +105,12 @@ llvm::DIType* DebugInfoBuilder::get_type(ParsedType* type)
 	if(type->is_pointer()) 
 	{
 		llvm::DIType* elementtype = get_type(type->copy_element_of());
-		return _debug_builder->createPointerType(elementtype, elementtype->getSizeInBits());
+		return _dbuilder->createPointerType(elementtype, elementtype->getSizeInBits());
 	}
 	
-	DEBUG_PRINT_F_MSG("Getting debug type for '%s'.", type->to_c_string());
-
 	// get size in bits
-	uint64_t size = 0; // _ir_builder->GetInsertPoint()->getModule()->getDataLayout()
+	uint64_t size = type->get_alignment() * 8;
+	// uint64_t size = _ir_builder->GetInsertPoint()->getModule()->getDataLayout()
 					  // .getTypeAllocSize(type->get_llvm_type()).getFixedSize();
 
 	// get encoding
@@ -109,7 +128,7 @@ llvm::DIType* DebugInfoBuilder::get_type(ParsedType* type)
 	}
 
 	// create and return type
-	return _debug_builder->createBasicType(type->to_string(), size, encoding);
+	return _dbuilder->createBasicType(type->to_string(), size, encoding);
 
 }
 
@@ -122,5 +141,5 @@ llvm::DISubroutineType* DebugInfoBuilder::get_function_type(FuncDeclNode* node, 
 	for (int i = 0; i < node->_params.size(); i++)
 		types.push_back(get_type(node->_params[i]));
 
-	return _debug_builder->createSubroutineType(_debug_builder->getOrCreateTypeArray(types));
+	return _dbuilder->createSubroutineType(_dbuilder->getOrCreateTypeArray(types));
 }
