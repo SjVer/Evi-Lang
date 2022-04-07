@@ -348,9 +348,8 @@ VISIT(FuncDeclNode)
 
 			func->setSubprogram(subprog);
 			_debug_info_builder->push_subprogram(subprog);
-			_debug_info_builder->emit_location(0, 0);
+			// _debug_info_builder->emit_location(0, 0);
 		}
-
 
 		SCOPE_UP();
 
@@ -367,6 +366,15 @@ VISIT(FuncDeclNode)
 			// Add arguments to variable symbol table.
 			_named_values[to_string(i)].first = alloca;
 			_named_values[to_string(i)].second = node->_params[i];
+
+			// add debugging info to parameter
+			if(_build_debug_info) // _debug_info_builder->insert_declare(alloca, ...);
+			{
+				llvm::DILocalVariable* d = _debug_info_builder->create_parameter(
+					i, node->_token.line, _debug_info_builder->get_type(node->_params[i]));
+
+				// _debug_info_builder->_debug_builder->insertDeclare(alloca, d, );				
+			}
 		}
 
 		// eval the body
@@ -381,6 +389,8 @@ VISIT(FuncDeclNode)
 			_builder->CreateRet(nullret);
 		}
 		else _builder->CreateRetVoid();
+
+		if(_build_debug_info) _debug_info_builder->pop_subprogram();
 	}
 
 	push(nullptr);

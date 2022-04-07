@@ -2,5 +2,6 @@
 
 @main i32 (i32 !chr**)
 {
-    printf("%p\n", $1 + 1);
+    %var flt 0.0;
+    puts("Test");
 }

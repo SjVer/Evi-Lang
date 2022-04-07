@@ -50,18 +50,32 @@ llvm::DISubprogram* DebugInfoBuilder::create_subprogram(FuncDeclNode* node, llvm
 	return subprog;
 }
 
+llvm::DILocalVariable* DebugInfoBuilder::create_parameter(int index, int line_no, ParsedType* type)
+{
+	string name = "$" + to_string(index);
+	llvm::DIScope* scope = _scopes.back();
+
+	return _debug_builder->createParameterVariable(scope, name, index, _cunit, line_no, get_type(type), true);
+}
+
 // ===================================================
 
 void DebugInfoBuilder::emit_location(uint line, uint col)
 {
-	llvm::DIScope *scope = _lexical_blocks.empty() ? _cunit : _lexical_blocks.back();
+	llvm::DIScope *scope = _scopes.empty() ? _cunit : _scopes.back();
 	_ir_builder->SetCurrentDebugLocation(llvm::DILocation::get(scope->getContext(), line, col, scope));
 }
 
 void DebugInfoBuilder::push_subprogram(llvm::DISubprogram* sub_program)
 {
-	_lexical_blocks.push_back(sub_program);
+	_scopes.push_back(sub_program);
 	emit_location(0, 0);
+}
+
+void DebugInfoBuilder::pop_subprogram()
+{
+	// just a lil pop
+	_scopes.pop_back();
 }
 
 // ===================================================
