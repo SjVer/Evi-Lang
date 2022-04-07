@@ -12,7 +12,7 @@ DebugInfoBuilder::DebugInfoBuilder(llvm::Module* module, IRBUILDER builder, stri
 	_cunit = _dbuilder->createCompileUnit(
 		llvm::dwarf::DW_LANG_C, // closest thing to Evi
 		create_file_unit(filepath),
-		APP_NAME_INTERNAL, optimized, "", 0
+		APP_NAME_INTERNAL " version " APP_VERSION, optimized, "", 0
 	);
 
 	// current debug info version

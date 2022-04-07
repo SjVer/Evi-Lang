@@ -1,4 +1,12 @@
 {
 	"evi.enableLanguageFeatures": false,
-	"evi.logDebugInfo": true
+	"evi.logDebugInfo": true,
+	// "codesnap.showWindowControls": false,
+	// "codesnap.containerPadding": "0em",
+	// "codesnap.boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px",
+	// "codesnap.transparentBackground": true,
+	// "codesnap.roundedCorners": false,
+	// "codesnap.showWindowTitle": false,
+	// "codesnap.backgroundColor": "transparent",
+	
 }
