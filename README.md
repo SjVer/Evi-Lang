@@ -1,6 +1,10 @@
 # Evi
 
-A statically typed programming language using the llvm project<br/><br/>
+A statically typed programming language using the llvm project. \
+ \
+Personally I've lost interest in this project. It works as a minimum viable product and I'm genuinly proud of what it has become and what I've learned from making it, but it's time to move to the next project. \
+ \
+Documentation is unfinished but available at this github page's wiki.
 
 
 ### Building
